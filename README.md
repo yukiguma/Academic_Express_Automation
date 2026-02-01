@@ -2,8 +2,6 @@
 
 Chrome/Edge用のブラウザ拡張機能。Academic Express（京都工芸繊維大学の英語学習システム）の問題を自動解答します。
 
-![Icon](extension/icons/icon128.png)
-
 ## 機能
 
 - ✅ **自動解答**: マッチング、選択問題、穴埋め、並び替え等に対応
