@@ -503,10 +503,6 @@
         updateUIStates();
     }
 
-    // solve is now defined in solvers.js - create a wrapper
-    async function localSolve(answers, type, scope = document, isRandom = false, index = 0) {
-        await solve(answers, type, scope, getWaitTime, isRandom, index);
-    }
 
     async function runSolver(matchedPairs, isNew) {
         if (isSolving) return;
@@ -533,7 +529,7 @@
                 const pair = matchedPairs[i];
                 if (pair.data.isAutoAdvance) autoAdvance = true;
                 // Pass the index to help solvers (e.g. Scanning) identify the question number
-                await localSolve(pair.data.answers, pair.data.type, pair.element, false, i);
+                await solve(pair.data.answers, pair.data.type, pair.element, getWaitTime, false, i);
             }
 
             if (isAutoMode) {
@@ -571,10 +567,12 @@
             }
 
             const buttons = document.querySelectorAll('button');
+            const transitionKeywords = ["採点", "続ける", "判定"];
             for (const b of buttons) {
                 const text = b.textContent;
-                if (text.includes("採点") || text.includes("続ける") || text.includes("判定")) {
-                    console.log(`Transition: Clicking ${text.includes("採点") ? "Score" : text.includes("判定") ? "Judgment" : "Continue"} Button.`);
+                const matched = transitionKeywords.find(kw => text.includes(kw));
+                if (matched) {
+                    console.log(`Transition: Clicking "${matched}" Button.`);
                     simulateClick(b);
                     return;
                 }

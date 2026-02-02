@@ -1,4 +1,4 @@
-# Academic Express Auto Answer
+# Academic Express Automation
 
 Chrome/Edge用のブラウザ拡張機能。Academic Express（英語学習システム）の問題を自動解答します。
 複数のサイトに対応しており、ポップアップメニューから対象サイトを動的に登録・管理できます。
