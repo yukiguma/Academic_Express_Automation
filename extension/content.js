@@ -138,23 +138,9 @@
             total += Math.min(Math.max(words * config.WORD_WAIT, config.READING_MIN), config.READING_MAX);
         }
 
-        pairs.forEach(pair => {
-            const { answers, type } = pair.data;
-            const lowerType = type ? type.toLowerCase() : "";
-
-            if (lowerType === 'matching' || lowerType === 'insertion' || lowerType.includes('sorting')) {
-                total += answers.length * (config.CLICK_WAIT + config.OPTION_WAIT);
-            } else if (lowerType === 'multiplechoice' || lowerType === 'truefalse' || lowerType === 'true_false') {
-                total += answers.length * (config.SOLVE_INTERVAL + (config.OPTION_WAIT / 4));
-            } else if (lowerType === 'scanning') {
-                // Scanning: クリック処理のみ
-                total += answers.length * (config.SOLVE_INTERVAL);
-            } else if (lowerType === 'anaumefilin' || lowerType === 'typing' || lowerType === 'clozetest' || lowerType.includes('fillin')) {
-                total += answers.length * config.SOLVE_INTERVAL;
-            } else {
-                total += answers.length * (config.SOLVE_INTERVAL);
-            }
-        });
+        // Actual execution only waits SOLVE_INTERVAL per QUESTION (not per answer)
+        // Solvers run nearly instantly, so answer count doesn't significantly add to duration
+        total += pairs.length * config.SOLVE_INTERVAL;
 
         total += config.TRANSITION_WAIT;
         return Math.ceil(total / 1000);
