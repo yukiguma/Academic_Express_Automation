@@ -4,7 +4,6 @@
     "version": "1.0.0",
     "description": "Automate Academic Express matching, vocabulary, and other question types",
     "permissions": [
-        "webRequest",
         "storage"
     ],
     "host_permissions": [
@@ -14,6 +13,17 @@
         "service_worker": "background.js"
     },
     "content_scripts": [
+        {
+            "matches": [
+                "https://supereigo.campus.kit.ac.jp/student/*",
+                "https://supereigo.campus.kit.ac.jp/as/lplayer/*"
+            ],
+            "js": [
+                "xhr-intercept.js"
+            ],
+            "run_at": "document_start",
+            "world": "MAIN"
+        },
         {
             "matches": [
                 "https://supereigo.campus.kit.ac.jp/student/*",

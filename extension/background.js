@@ -1,123 +1,59 @@
 // Academic Express Auto Answer - Background Service Worker
-// Intercepts XHR requests to capture question data
+// Processes captured XHR data from content script
 
-console.log("Academic Express Background Service Worker Loaded");
-
-// Helper to check if URL contains question data
-function isInterestingURL(url) {
-    if (!url) return false;
-    if (url.includes('save_progress_start')) return false;
-    return url.endsWith('.xml') ||
-        url.includes('authoring.cfc') ||
-        url.includes('tango_data_manipulate.cfc') ||
-        url.includes('bookXml');
-}
-
-// Listen for completed requests
-chrome.webRequest.onCompleted.addListener(
-    async (details) => {
-        if (!isInterestingURL(details.url)) return;
-
-        console.log("Intercepted interesting request:", details.url);
-
-        try {
-            // Fetch the response body (webRequest doesn't provide body directly in MV3)
-            const response = await fetch(details.url);
-            const text = await response.text();
-
-            let parsed = null;
-            let dataType = null;
-
-            if (text.trim().startsWith('<')) {
-                // XML data
-                parsed = parseXML(text);
-                dataType = 'xml';
-            } else if (text.trim().startsWith('{')) {
-                // JSON data (Vocabulary Bank)
-                try {
-                    parsed = parseJSON(JSON.parse(text));
-                    dataType = 'json';
-                } catch (e) {
-                    console.error("JSON parse error:", e);
-                }
-            }
-
-            if (parsed && parsed.questions && parsed.questions.length > 0) {
-                console.log(`Parsed ${parsed.questions.length} questions from ${dataType}`);
-
-                // Store in session storage
-                await chrome.storage.session.set({
-                    questionData: parsed,
-                    dataUrl: details.url,
-                    timestamp: Date.now()
-                });
-
-                // Notify content script
-                chrome.tabs.sendMessage(details.tabId, {
-                    type: 'QUESTION_DATA_READY',
-                    questionCount: parsed.questions.length,
-                    dataType: dataType
-                }).catch(err => {
-                    // Tab might not have content script ready yet
-                    console.log("Could not send message to tab:", err.message);
-                });
-            }
-        } catch (e) {
-            console.error("Error processing intercepted request:", e);
-        }
-    },
-    { urls: ["*://supereigo.campus.kit.ac.jp/*"] }
-);
-
-// Parse XML question data
+// Parse XML question data (regex-based for Service Worker compatibility)
 function parseXML(xmlText) {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-    const questions = xmlDoc.getElementsByTagName('question');
-
-    if (questions.length === 0) return null;
-
     const questionsList = [];
 
-    for (let i = 0; i < questions.length; i++) {
-        const result = questions[i];
-        const type = result.getAttribute('type');
+    // Extract all <question> elements using regex
+    const questionRegex = /<question[^>]*type="([^"]*)"[^>]*>([\s\S]*?)<\/question>/gi;
+    let questionMatch;
+
+    while ((questionMatch = questionRegex.exec(xmlText)) !== null) {
+        const type = questionMatch[1];
+        const questionContent = questionMatch[2];
 
         // Supported types
         if (type === 'matching' || type === 'Insertion' || type === 'multipleChoice' ||
             type === 'trueFalse' || type === 'anaumeFilIn' || type === 'ClozeTest' ||
             (type && type.includes('sorting'))) {
 
-            const questionTextNode = result.getElementsByTagName('questionText')[0];
-            const questionText = questionTextNode?.textContent || "";
+            // Extract questionText
+            const questionTextMatch = questionContent.match(/<questionText[^>]*>([\s\S]*?)<\/questionText>/i);
+            const questionText = questionTextMatch ? questionTextMatch[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim() : "";
 
             let answers = [];
 
             // Extract answers from [bracketed] text
             if (questionText.includes('[')) {
-                const regex = /\[(.*?)\]/g;
+                const bracketRegex = /\[(.*?)\]/g;
                 let match;
-                while ((match = regex.exec(questionText)) !== null) {
+                while ((match = bracketRegex.exec(questionText)) !== null) {
                     answers.push(match[1]);
                 }
             }
 
             // Check for <answers><answer> structure
-            const answerNode = result.getElementsByTagName('answers')[0];
-            if (answerNode) {
-                const answerElements = answerNode.getElementsByTagName('answer');
-                for (let j = 0; j < answerElements.length; j++) {
-                    const ansVal = answerElements[j].textContent.trim();
+            const answersMatch = questionContent.match(/<answers[^>]*>([\s\S]*?)<\/answers>/i);
+            if (answersMatch) {
+                const answersContent = answersMatch[1];
+                const answerRegex = /<answer[^>]*>([\s\S]*?)<\/answer>/gi;
+                let ansMatch;
+
+                // Extract all choices first
+                const choices = {};
+                const choiceRegex = /<choice[^>]*no="([^"]*)"[^>]*>([\s\S]*?)<\/choice>/gi;
+                let choiceMatch;
+                while ((choiceMatch = choiceRegex.exec(questionContent)) !== null) {
+                    choices[choiceMatch[1]] = choiceMatch[2].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim();
+                }
+
+                while ((ansMatch = answerRegex.exec(answersContent)) !== null) {
+                    const ansVal = ansMatch[1].trim();
                     if (!ansVal) continue;
 
-                    const choices = result.getElementsByTagName('choice');
-                    if (choices.length > 0) {
-                        for (let k = 0; k < choices.length; k++) {
-                            if (choices[k].getAttribute('no') === ansVal) {
-                                answers.push(choices[k].textContent.trim());
-                                break;
-                            }
-                        }
+                    if (Object.keys(choices).length > 0 && choices[ansVal]) {
+                        answers.push(choices[ansVal]);
                     } else {
                         if (!answers.includes(ansVal)) {
                             answers.push(ansVal);
@@ -127,17 +63,17 @@ function parseXML(xmlText) {
             }
 
             // Fallback: Check for <option correct="true">
-            const options = result.getElementsByTagName('option');
-            if (options.length > 0) {
-                for (let j = 0; j < options.length; j++) {
-                    if (options[j].getAttribute('correct') === 'true') {
-                        answers.push(options[j].textContent);
-                    }
+            const optionRegex = /<option[^>]*correct="true"[^>]*>([\s\S]*?)<\/option>/gi;
+            let optMatch;
+            while ((optMatch = optionRegex.exec(questionContent)) !== null) {
+                const optText = optMatch[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim();
+                if (optText && !answers.includes(optText)) {
+                    answers.push(optText);
                 }
             }
 
             if (questionText || answers.length > 0) {
-                const signatureText = questionText.replace(/\[.*?\]/g, '');
+                const signatureText = questionText.replace(/\[.*?\]/g, '').replace(/<[^>]*>/g, '');
                 questionsList.push({
                     type: type,
                     answers: answers,
@@ -148,7 +84,7 @@ function parseXML(xmlText) {
         }
     }
 
-    return { questions: questionsList };
+    return questionsList.length > 0 ? { questions: questionsList } : null;
 }
 
 // Parse JSON question data (Vocabulary Bank)
@@ -175,13 +111,53 @@ function parseJSON(data) {
     return { questions: questionsList };
 }
 
-// Listen for content script requesting data
+// Process captured XHR data
+async function processXHRData(url, responseText, senderId) {
+    let parsed = null;
+    let dataType = null;
+
+    if (responseText.trim().startsWith('<')) {
+        parsed = parseXML(responseText);
+        dataType = 'xml';
+    } else if (responseText.trim().startsWith('{')) {
+        try {
+            parsed = parseJSON(JSON.parse(responseText));
+            dataType = 'json';
+        } catch (e) {
+            // JSON parse error
+        }
+    }
+
+    if (parsed && parsed.questions && parsed.questions.length > 0) {
+        await chrome.storage.session.set({
+            questionData: parsed,
+            dataUrl: url,
+            timestamp: Date.now()
+        });
+
+        if (senderId) {
+            chrome.tabs.sendMessage(senderId, {
+                type: 'QUESTION_DATA_READY',
+                questionCount: parsed.questions.length,
+                dataType: dataType
+            }).catch(() => { });
+        }
+    }
+}
+
+// Listen for messages from content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'GET_QUESTION_DATA') {
         chrome.storage.session.get(['questionData', 'dataUrl', 'timestamp'])
             .then(result => {
                 sendResponse(result);
             });
-        return true; // Keep channel open for async response
+        return true;
+    }
+
+    if (message.type === 'XHR_CAPTURED') {
+        const tabId = sender.tab?.id;
+        processXHRData(message.url, message.responseText, tabId);
+        sendResponse({ success: true });
     }
 });

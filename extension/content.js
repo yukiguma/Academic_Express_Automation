@@ -54,25 +54,45 @@
         return base;
     }
 
+
+    // Listen for captured XHR data from injected script
+    window.addEventListener('message', async (event) => {
+        if (event.source !== window) return;
+        if (event.data.type !== 'ACADEMIC_EXPRESS_XHR_CAPTURED') return;
+
+        const { url, responseText } = event.data;
+
+        // Send to background for parsing and storage
+        try {
+            await chrome.runtime.sendMessage({
+                type: 'XHR_CAPTURED',
+                url: url,
+                responseText: responseText
+            });
+            // Reload question data after background processes it
+            setTimeout(() => loadQuestionData(), 100);
+        } catch (e) {
+            // Failed to send captured data
+        }
+    });
+
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.type === 'QUESTION_DATA_READY') {
-            console.log(`Received ${message.questionCount} questions from background (${message.dataType})`);
             loadQuestionData();
         }
     });
 
-    // Load question data from storage
+    // Load question data from storage via message passing
     async function loadQuestionData() {
         try {
-            const result = await chrome.storage.session.get(['questionData']);
-            if (result.questionData && result.questionData.questions) {
+            const result = await chrome.runtime.sendMessage({ type: 'GET_QUESTION_DATA' });
+            if (result && result.questionData && result.questionData.questions) {
                 questionsList = result.questionData.questions;
-                console.log(`Loaded ${questionsList.length} questions from storage`);
                 updateUIStates();
             }
         } catch (e) {
-            console.error("Failed to load question data:", e);
+            // Failed to load question data
         }
     }
 
