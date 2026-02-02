@@ -60,24 +60,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     disableBtn.addEventListener('click', async () => {
         try {
-            // Note: removing permissions doesn't automatically unregister scripts in MV3 straightforwardly 
-            // without using scripting.unregisterContentScripts with specific IDs.
-            // We'll rely on permission removal for now, but strictly speaking we should also unregister.
+            // Remove permissions
+            const removed = await chrome.permissions.remove(permissions);
 
-            await chrome.permissions.remove(permissions);
+            if (removed) {
+                // Unregister scripts for this origin
+                const cleanOrigin = origin.replace(/[^a-zA-Z0-9]/g, '');
+                const idsToRemove = [`main-${cleanOrigin}`, `xhr-${cleanOrigin}`];
 
-            // Also attempt to unregister scripts for this scope if possible, 
-            // but since we register with static IDs 'main-script' and 'xhr-intercept' 
-            // which likely apply properly due to matches. 
-            // Actually, dynamic scripts persists. We might need a more complex ID strategy 
-            // if we want to selectively disable per site effectively via API, 
-            // but for now permission removal stops future injection permissions effectively.
+                try {
+                    await chrome.scripting.unregisterContentScripts({ ids: idsToRemove });
+                } catch (e) { /* ignore */ }
 
-            statusMsg.textContent = "無効化しました";
-            setTimeout(() => {
-                chrome.tabs.reload(tab.id);
-                window.close();
-            }, 1000);
+                statusMsg.textContent = "無効化しました";
+                setTimeout(() => {
+                    chrome.tabs.reload(tab.id);
+                    window.close();
+                }, 1000);
+            } else {
+                statusMsg.textContent = "削除に失敗しました（固定権限の可能性）";
+            }
         } catch (e) {
             console.error(e);
             statusMsg.textContent = "エラー";
@@ -85,12 +87,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     async function registerScripts(targetOrigin) {
-        // We configure the scripts to run on the specific origin
-        // Note: multiple calls to registerContentScripts with SAME IDs usually update them so it works for multiple origins?
-        // Wait, 'matches' must be an array. If we want to ADD an origin, we need to know the EXISTING origins.
-        // Or we generates unique IDs per origin? "main-script-" + sanitisedOrigin.
-        // Let's use unique IDs to allow multiple sites to be active simultaneously.
-
         const cleanOrigin = targetOrigin.replace(/[^a-zA-Z0-9]/g, '');
         const mainScriptId = `main-${cleanOrigin}`;
         const xhrScriptId = `xhr-${cleanOrigin}`;
@@ -120,6 +116,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- List Enabled Sites ---
     const listContainer = document.getElementById('enabled-list');
 
+    // 固定権限（manifest.jsonのhost_permissionsから取得）
+    const manifest = chrome.runtime.getManifest();
+    const FIXED_ORIGINS = manifest.host_permissions || [];
+
+    function isFixedOrigin(originStr) {
+        return FIXED_ORIGINS.some(fixed => {
+            // ワイルドカードを正規表現に変換して比較
+            const pattern = fixed.replace(/\*/g, '.*');
+            return new RegExp(`^${pattern}$`).test(originStr) || fixed === originStr;
+        });
+    }
+
     async function updateEnabledList() {
         const currentPermissions = await chrome.permissions.getAll();
         const origins = currentPermissions.origins || [];
@@ -129,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const meaningfulOrigins = origins.filter(o => o.includes('://') && !o.includes('<all_urls>'));
 
         // Group by domain
-        const domainMap = {}; // domain -> [origin1, origin2...]
+        const domainMap = {}; // domain -> { origins: [], isFixed: boolean }
 
         meaningfulOrigins.forEach(originStr => {
             try {
@@ -142,9 +150,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 if (!domainMap[domain]) {
-                    domainMap[domain] = [];
+                    domainMap[domain] = { origins: [], isFixed: false };
                 }
-                domainMap[domain].push(originStr);
+                domainMap[domain].origins.push(originStr);
+
+                // いずれかのoriginが固定なら、そのドメインは固定扱い
+                if (isFixedOrigin(originStr)) {
+                    domainMap[domain].isFixed = true;
+                }
             } catch (e) { /* ignore */ }
         });
 
@@ -163,54 +176,64 @@ document.addEventListener('DOMContentLoaded', async () => {
             li.style.cssText = "padding: 4px 0; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;";
 
             const span = document.createElement('span');
-            span.textContent = domain;
 
-            const delBtn = document.createElement('button');
-            delBtn.textContent = "×";
-            delBtn.className = "delete-btn";
-            delBtn.title = "削除";
-            delBtn.style.width = "auto"; // reset width:100% from implicit styles if any
-            delBtn.style.margin = "0 0 0 5px";
+            const domainInfo = domainMap[domain];
 
-            delBtn.onclick = async () => {
-                const originsToRemove = domainMap[domain];
-                if (confirm(`「${domain}」の設定を削除しますか？`)) {
-                    try {
-                        // Remove permissions
-                        await chrome.permissions.remove({ origins: originsToRemove });
+            if (domainInfo.isFixed) {
+                // 固定権限の場合
+                span.innerHTML = `${domain} <span style="color:#888;font-size:11px;">(固定)</span>`;
+                li.appendChild(span);
+            } else {
+                // 動的権限の場合は削除ボタンを表示
+                span.textContent = domain;
 
-                        // Unregister scripts
-                        // Reconstruct IDs from origins. OriginStr is like "https://example.com/*"
-                        const idsToRemove = [];
-                        originsToRemove.forEach(o => {
-                            const cleanOriginStr = o.replace(/\/\*$/, ''); // remove trailing /*
-                            const cleanOriginId = cleanOriginStr.replace(/[^a-zA-Z0-9]/g, '');
-                            idsToRemove.push(`main-${cleanOriginId}`);
-                            idsToRemove.push(`xhr-${cleanOriginId}`);
-                        });
+                const delBtn = document.createElement('button');
+                delBtn.textContent = "×";
+                delBtn.className = "delete-btn";
+                delBtn.title = "削除";
+                delBtn.style.width = "auto";
+                delBtn.style.margin = "0 0 0 5px";
 
+                delBtn.onclick = async () => {
+                    const originsToRemove = domainInfo.origins;
+                    if (confirm(`「${domain}」の設定を削除しますか？`)) {
                         try {
-                            await chrome.scripting.unregisterContentScripts({ ids: idsToRemove });
-                        } catch (e) { console.log("Unregister info:", e); }
+                            // Remove permissions
+                            await chrome.permissions.remove({ origins: originsToRemove });
 
-                        // Refresh UI
-                        await checkState();
-                        await updateEnabledList();
+                            // Unregister scripts
+                            const idsToRemove = [];
+                            originsToRemove.forEach(o => {
+                                const cleanOriginStr = o.replace(/\/\*$/, '');
+                                const cleanOriginId = cleanOriginStr.replace(/[^a-zA-Z0-9]/g, '');
+                                idsToRemove.push(`main-${cleanOriginId}`);
+                                idsToRemove.push(`xhr-${cleanOriginId}`);
+                            });
 
-                        // Reload if current tab matches
-                        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                        if (tab && tab.url && tab.url.includes(domain)) {
-                            chrome.tabs.reload(tab.id);
+                            try {
+                                await chrome.scripting.unregisterContentScripts({ ids: idsToRemove });
+                            } catch (e) { console.log("Unregister info:", e); }
+
+                            // Refresh UI
+                            await checkState();
+                            await updateEnabledList();
+
+                            // Reload if current tab matches
+                            const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                            if (currentTab && currentTab.url && currentTab.url.includes(domain)) {
+                                chrome.tabs.reload(currentTab.id);
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            statusMsg.textContent = "削除エラー";
                         }
-                    } catch (e) {
-                        console.error(e);
-                        statusMsg.textContent = "削除エラー";
                     }
-                }
-            };
+                };
 
-            li.appendChild(span);
-            li.appendChild(delBtn);
+                li.appendChild(span);
+                li.appendChild(delBtn);
+            }
+
             listContainer.appendChild(li);
         });
     }
