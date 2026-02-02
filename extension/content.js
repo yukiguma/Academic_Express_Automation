@@ -144,12 +144,15 @@
 
             if (lowerType === 'matching' || lowerType === 'insertion' || lowerType.includes('sorting')) {
                 total += answers.length * (config.CLICK_WAIT + config.OPTION_WAIT);
-            } else if (lowerType === 'multiplechoice' || lowerType === 'truefalse') {
+            } else if (lowerType === 'multiplechoice' || lowerType === 'truefalse' || lowerType === 'true_false') {
                 total += answers.length * (config.SOLVE_INTERVAL + (config.OPTION_WAIT / 4));
+            } else if (lowerType === 'scanning') {
+                // Scanning: クリック処理のみ
+                total += answers.length * (config.SOLVE_INTERVAL);
             } else if (lowerType === 'anaumefilin' || lowerType === 'typing' || lowerType === 'clozetest' || lowerType.includes('fillin')) {
                 total += answers.length * config.SOLVE_INTERVAL;
             } else {
-                total += answers.length * config.SOLVE_INTERVAL;
+                total += answers.length * (config.SOLVE_INTERVAL);
             }
         });
 
@@ -238,6 +241,20 @@
     }
     startObserving();
 
+    function findQuestionContainer(el) {
+        // Scanning問題: 質問テキストに対応するpassageBox（combinationMain）を探す
+        const combinationQuestion = el.closest('[class*="CombinationQuestionView__combinationQuestion"]');
+        if (combinationQuestion) {
+            // 兄弟要素としてcombinationMainを探す
+            const parent = combinationQuestion.parentElement;
+            const combinationMain = parent?.querySelector('[class*="CombinationQuestionView__combinationMain"]');
+            if (combinationMain) return combinationMain;
+        }
+
+        // 通常の問題タイプ: questionBoxを検索
+        return el.closest('[class*="QuestionBuilder__questionBox___"], [class*="QuestionView__questionBox___"]') || el;
+    }
+
     function findActiveQuestions() {
         const textElements = document.querySelectorAll('[class*="QuestionBuilder__question___"], [class*="QuestionView__question___"]');
         const visibleElements = Array.from(textElements).filter(el => {
@@ -257,7 +274,7 @@
             if (idx !== -1) {
                 usedIndices.add(idx);
                 usedElements.add(el);
-                const container = el.closest('[class*="QuestionBuilder__questionBox___"], [class*="QuestionView__questionBox___"]') || el;
+                const container = findQuestionContainer(el);
                 matchedPairs.push({ element: container, data: questionsList[idx] });
             }
         }
@@ -275,7 +292,7 @@
             if (idx !== -1) {
                 usedIndices.add(idx);
                 usedElements.add(el);
-                const container = el.closest('[class*="QuestionBuilder__questionBox___"], [class*="QuestionView__questionBox___"]') || el;
+                const container = findQuestionContainer(el);
                 matchedPairs.push({ element: container, data: questionsList[idx] });
             }
         }
@@ -294,7 +311,7 @@
             if (idx !== -1) {
                 usedIndices.add(idx);
                 usedElements.add(el);
-                const container = el.closest('[class*="QuestionBuilder__questionBox___"], [class*="QuestionView__questionBox___"]') || el;
+                const container = findQuestionContainer(el);
                 matchedPairs.push({ element: container, data: questionsList[idx] });
             }
         }
@@ -528,8 +545,8 @@
             for (let i = 0; i < matchedPairs.length; i++) {
                 const pair = matchedPairs[i];
                 if (pair.data.isAutoAdvance) autoAdvance = true;
-                // Pass the index to help solvers (e.g. Scanning) identify the question number
-                await solve(pair.data.answers, pair.data.type, pair.element, getWaitTime, false, i);
+                await solve(pair.data.answers, pair.data.type, pair.element);
+                await new Promise(r => setTimeout(r, getWaitTime('SOLVE_INTERVAL')));
             }
 
             if (isAutoMode) {
