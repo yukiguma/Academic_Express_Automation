@@ -5,7 +5,8 @@
     "description": "Automate Academic Express matching, vocabulary, and other question types",
     "permissions": [
         "storage",
-        "scripting"
+        "scripting",
+        "activeTab"
     ],
     "host_permissions": [
         "*://supereigo.campus.kit.ac.jp/*"
