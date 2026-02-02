@@ -241,18 +241,30 @@
     }
     startObserving();
 
-    function findQuestionContainer(el) {
+    function findQuestionContainer(el, type = "") {
         // Scanning問題: 質問テキストに対応するpassageBox（combinationMain）を探す
-        const combinationQuestion = el.closest('[class*="CombinationQuestionView__combinationQuestion"]');
-        if (combinationQuestion) {
-            // 兄弟要素としてcombinationMainを探す
-            const parent = combinationQuestion.parentElement;
-            const combinationMain = parent?.querySelector('[class*="CombinationQuestionView__combinationMain"]');
-            if (combinationMain) return combinationMain;
+        // 他の問題タイプ（True/False等）が同一画面にある場合でも、これらは自身の領域を使うべきなので
+        // typeがScanningの場合のみスコープを変更する
+        if (type && type.toLowerCase() === 'scanning') {
+            const combinationQuestion = el.closest('[class*="CombinationQuestionView__combinationQuestion"]');
+            if (combinationQuestion) {
+                // 兄弟要素としてcombinationMainを探す
+                const parent = combinationQuestion.parentElement;
+                const combinationMain = parent?.querySelector('[class*="CombinationQuestionView__combinationMain"]');
+                if (combinationMain) return combinationMain;
+            }
         }
 
         // 通常の問題タイプ: questionBoxを検索
-        return el.closest('[class*="QuestionBuilder__questionBox___"], [class*="QuestionView__questionBox___"]') || el;
+        const box = el.closest('[class*="QuestionBuilder__questionBox___"], [class*="QuestionView__questionBox___"]');
+        if (box) return box;
+
+        // Fallback: クラスが見つからない場合、親要素（兄弟の選択肢を含む可能性がある）を返す
+        // テキスト要素(el)の親、あるいはその親まで遡る
+        if (el.parentElement && el.parentElement.parentElement) {
+            return el.parentElement.parentElement;
+        }
+        return el.parentElement || el;
     }
 
     function findActiveQuestions() {
@@ -274,7 +286,7 @@
             if (idx !== -1) {
                 usedIndices.add(idx);
                 usedElements.add(el);
-                const container = findQuestionContainer(el);
+                const container = findQuestionContainer(el, questionsList[idx].type);
                 matchedPairs.push({ element: container, data: questionsList[idx] });
             }
         }
@@ -292,7 +304,7 @@
             if (idx !== -1) {
                 usedIndices.add(idx);
                 usedElements.add(el);
-                const container = findQuestionContainer(el);
+                const container = findQuestionContainer(el, questionsList[idx].type);
                 matchedPairs.push({ element: container, data: questionsList[idx] });
             }
         }
@@ -311,7 +323,7 @@
             if (idx !== -1) {
                 usedIndices.add(idx);
                 usedElements.add(el);
-                const container = findQuestionContainer(el);
+                const container = findQuestionContainer(el, questionsList[idx].type);
                 matchedPairs.push({ element: container, data: questionsList[idx] });
             }
         }
