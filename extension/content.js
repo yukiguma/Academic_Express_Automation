@@ -195,10 +195,17 @@
 
     function setGlobalLock(active) {
         lockOverlay.style.display = active ? 'block' : 'none';
+
+        // Unlock Header for "Back" button access
+        const header = document.querySelector('[class*="AppHeader__fixed-top"]');
+        if (header) {
+            header.style.zIndex = active ? '100000' : '';
+        }
+
         const container = document.getElementById('controls-container');
         if (container) {
             container.style.position = 'relative';
-            container.style.zIndex = active ? '100000' : '';
+            container.style.zIndex = active ? '100001' : '';
         }
     }
 
