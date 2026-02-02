@@ -8,11 +8,33 @@
     // Global state
     let questionsList = [];
     let currentButtonState = null;
-    let isAutoMode = false;
     let isFastMode = localStorage.getItem('fast-mode') === 'true';
     let lastSolvedSignature = "";
     let isSolving = false;
     let debounceTimer = null;
+    let isAutoMode = false;
+    try {
+        const storedAuto = localStorage.getItem('auto-mode');
+        const storedAutoUrl = localStorage.getItem('auto-mode-url');
+        if (storedAuto === 'true' && storedAutoUrl === window.location.href) {
+            isAutoMode = true;
+        } else {
+            // URL changed or not set -> Reset AutoMode
+            localStorage.removeItem('auto-mode');
+            localStorage.removeItem('auto-mode-url');
+        }
+    } catch (e) { console.error("AutoMode Init Error", e); }
+
+    function setAutoMode(value) {
+        isAutoMode = value;
+        if (value) {
+            localStorage.setItem('auto-mode', 'true');
+            localStorage.setItem('auto-mode-url', window.location.href);
+        } else {
+            localStorage.removeItem('auto-mode');
+            localStorage.removeItem('auto-mode-url');
+        }
+    }
 
     // Speed configuration (ms)
     const SPEED_CONFIG = {
@@ -108,7 +130,9 @@
         const compositeSig = pairs.map(p => p.data.signature).join('|');
         const isNew = (forceNew !== null) ? forceNew : (compositeSig !== lastSolvedSignature);
 
-        if (!isFast && isNew) {
+        // Skip reading time for vocabulary tests (isAutoAdvance) or fast mode
+        const isVocabularyTest = pairs.some(p => p.data.isAutoAdvance);
+        if (!isFast && isNew && !isVocabularyTest) {
             const totalText = pairs.map(p => p.data.rawText || "").join(" ");
             const words = totalText.trim().split(/\s+/).filter(Boolean).length;
             total += Math.min(Math.max(words * config.WORD_WAIT, config.READING_MIN), config.READING_MAX);
@@ -431,7 +455,7 @@
         btn.style.cursor = 'pointer';
 
         btn.onclick = () => {
-            isAutoMode = true;
+            setAutoMode(true);
             lastSolvedSignature = compositeSig;
             runSolver(activePairs, isNewQuestion);
         };
@@ -479,32 +503,9 @@
         updateUIStates();
     }
 
-    async function solve(answers, type, scope = document, isRandom = false) {
-        if (!isRandom && (!answers || answers.length === 0)) {
-            console.warn(`No answers for type ${type}`);
-            return;
-        }
-        console.log(`Solving ${type} with answers:`, answers, "Scope:", scope);
-
-        const lowerType = type ? type.toLowerCase() : "";
-
-        if (lowerType === 'matching') {
-            await solveMatching(answers, scope);
-        } else if (lowerType === 'insertion') {
-            await solveInsertion(answers, scope);
-        } else if (lowerType === 'multiplechoice' || lowerType === 'truefalse' || lowerType === 'true_false') {
-            await solveMultipleChoice(answers, scope);
-        } else if (lowerType === 'anaumefilin' || lowerType === 'typing' || lowerType === 'clozetest' || lowerType.includes('fillin')) {
-            await solveTyping(answers, scope);
-        } else if (lowerType.includes('sorting')) {
-            await solveSorting(answers, scope);
-        } else {
-            console.log("Unknown type:", type);
-            if (answers.length > 0) {
-                console.log("Attempting Multiple Choice fallback...");
-                await solveMultipleChoice(answers, scope);
-            }
-        }
+    // solve is now defined in solvers.js - create a wrapper
+    async function localSolve(answers, type, scope = document, isRandom = false, index = 0) {
+        await solve(answers, type, scope, getWaitTime, isRandom, index);
     }
 
     async function runSolver(matchedPairs, isNew) {
@@ -514,22 +515,25 @@
         try {
             console.log(`Running solver for ${matchedPairs.length} questions...`);
 
+            const isVocabularyTest = matchedPairs.some(p => p.data.isAutoAdvance);
             const totalEstimatedSeconds = getEstimatedTime(matchedPairs, isFastMode, isNew);
             startHeaderAnimation(totalEstimatedSeconds);
+            setGlobalLock(true);
 
-            if (!isFastMode && isNew) {
+            // Skip reading delay for vocabulary tests
+            if (!isFastMode && isNew && !isVocabularyTest) {
                 const totalText = matchedPairs.map(p => p.data.rawText || "").join(" ");
                 const wait = getWaitTime('READING_WAIT', totalText);
                 console.log(`Initial reading delay: ${wait}ms`);
                 await new Promise(r => setTimeout(r, wait));
             }
 
-            setGlobalLock(true);
-
             let autoAdvance = false;
-            for (const pair of matchedPairs) {
+            for (let i = 0; i < matchedPairs.length; i++) {
+                const pair = matchedPairs[i];
                 if (pair.data.isAutoAdvance) autoAdvance = true;
-                await solve(pair.data.answers, pair.data.type, pair.element);
+                // Pass the index to help solvers (e.g. Scanning) identify the question number
+                await localSolve(pair.data.answers, pair.data.type, pair.element, false, i);
             }
 
             if (isAutoMode) {
@@ -597,204 +601,4 @@
             if (!wasSolving) isSolving = false;
         }
     }
-
-    async function solveMatching(answers, scope) {
-        const blankSelector = 'span[class*="MatchingQuestionBuilder__insertionPosition"]';
-        const optionSelector = '[class*="MatchingQuestionBuilder__baseChoice"]';
-        await genericFillBlankStrategy(answers, blankSelector, optionSelector, scope);
-    }
-
-    async function solveInsertion(answers, scope) {
-        const blankSelector = 'span[class*="InsertionQuestionBuilder__insertionPosition"]';
-        const optionSelector = '[class*="InsertionQuestionBuilder__insertChoice"]';
-        await genericFillBlankStrategy(answers, blankSelector, optionSelector, scope);
-    }
-
-    async function genericFillBlankStrategy(answers, blankSelector, optionSelector, scope) {
-        const blanks = scope.querySelectorAll(blankSelector);
-        if (!blanks.length) {
-            console.warn(`No blanks found in scope.`);
-            ensureSolveButton();
-            return false;
-        }
-
-        for (let i = 0; i < blanks.length; i++) {
-            if (i >= answers.length) break;
-
-            const blank = blanks[i];
-            const answer = answers[i];
-            console.log(`Processing blank ${i + 1}, answer: ${answer}`);
-
-            blank.click();
-            await new Promise(r => setTimeout(r, getWaitTime('CLICK_WAIT')));
-
-            const possibilities = document.querySelectorAll(optionSelector);
-            let found = false;
-            for (const p of possibilities) {
-                const optText = p.textContent.trim().toLowerCase();
-                const ansText = answer.trim().toLowerCase();
-                if (optText === ansText || optText.includes(ansText) || ansText.includes(optText)) {
-                    p.click();
-                    found = true;
-                    console.log(`Clicked option for "${answer}"`);
-                    break;
-                }
-            }
-            if (!found) console.warn(`Option not found for "${answer}"`);
-            await new Promise(r => setTimeout(r, getWaitTime('OPTION_WAIT')));
-        }
-        return true;
-    }
-
-    async function solveMultipleChoice(answers, scope) {
-        const choiceSelector = '[class*="Choice"]:not([class*="choices"]), [class*="underLinePoint"], [class*="Option"]';
-
-        for (const answer of answers) {
-            let choices = Array.from(scope.querySelectorAll(choiceSelector));
-            let found = false;
-
-            const normalizedAns = answer.trim().toLowerCase();
-
-            choices.sort((a, b) => (a.textContent || "").length - (b.textContent || "").length);
-
-            // Phase 1: Exact Match
-            for (const choice of choices) {
-                const choiceText = (choice.textContent || "").trim().toLowerCase();
-                if (choiceText === normalizedAns) {
-                    console.log("Found exact match choice:", choiceText);
-                    clickAppropriateElement(choice);
-                    found = true;
-                    break;
-                }
-            }
-
-            // Phase 2: Partial Match
-            if (!found) {
-                for (const choice of choices) {
-                    const choiceText = (choice.textContent || "").trim().toLowerCase();
-                    if (choiceText.includes(normalizedAns)) {
-                        console.log("Found partial match choice:", choiceText);
-                        clickAppropriateElement(choice);
-                        found = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!found) {
-                console.warn(`Multiple Choice option not found in scope for: "${answer}"`);
-            }
-
-            await new Promise(r => setTimeout(r, getWaitTime('OPTION_WAIT') / 4));
-            await new Promise(r => setTimeout(r, getWaitTime('SOLVE_INTERVAL')));
-        }
-    }
-
-    function clickAppropriateElement(choice) {
-        const btn = choice.querySelector('button, [role="button"], input[type="radio"], [class*="select"]');
-        if (btn) {
-            simulateClick(btn);
-        } else {
-            simulateClick(choice);
-        }
-    }
-
-    async function solveTyping(answers, scope) {
-        let targets = Array.from(scope.querySelectorAll('input[type="text"], textarea, [contenteditable="true"], [role="textbox"]'));
-
-        if (targets.length === 0) {
-            console.log("No inputs found, searching for interactable gaps...");
-            const gaps = scope.querySelectorAll('[class*="Position"], [class*="insertion"]');
-            for (const gap of gaps) {
-                simulateClick(gap);
-                await new Promise(r => setTimeout(r, 300));
-                const found = scope.querySelectorAll('input, [contenteditable="true"]');
-                if (found.length > 0) {
-                    targets = Array.from(found);
-                    break;
-                }
-            }
-        }
-
-        console.log(`Typing Strategy: Found ${targets.length} targets for ${answers.length} answers.`);
-
-        for (let i = 0; i < Math.min(answers.length, targets.length); i++) {
-            const input = targets[i];
-            const answer = answers[i];
-
-            console.log(`Typing "${answer}" into:`, input);
-
-            input.focus();
-
-            if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') {
-                try {
-                    setNativeValue(input, answer);
-                } catch (e) {
-                    input.value = answer;
-                }
-            } else {
-                input.textContent = answer;
-            }
-
-            const eventNames = ['input', 'change', 'keydown', 'keypress', 'keyup'];
-            eventNames.forEach(evt => {
-                input.dispatchEvent(new Event(evt, { bubbles: true }));
-            });
-
-            input.blur();
-
-            await new Promise(r => setTimeout(r, getWaitTime('SOLVE_INTERVAL')));
-        }
-    }
-
-    function setNativeValue(element, value) {
-        const valueSetter = Object.getOwnPropertyDescriptor(element, 'value')?.set;
-        if (!valueSetter) {
-            element.value = value;
-            return;
-        }
-        const prototype = Object.getPrototypeOf(element);
-        const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
-
-        if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-            prototypeValueSetter.call(element, value);
-        } else {
-            valueSetter.call(element, value);
-        }
-    }
-
-    function simulateClick(element) {
-        const events = ['mousedown', 'mouseup', 'click'];
-        events.forEach(eventType => {
-            const event = new MouseEvent(eventType, {
-                bubbles: true,
-                cancelable: true,
-                view: window
-            });
-            element.dispatchEvent(event);
-        });
-    }
-
-    async function solveSorting(answers) {
-        console.log("Starting sorting solver...");
-        for (const token of answers) {
-            const cleanToken = token.trim();
-            let xpath = `//*[contains(@class, "Sorting") and contains(@class, "Word") and contains(text(), "${cleanToken}")]`;
-            let btn = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-
-            if (!btn) {
-                xpath = `//*[contains(@class, "Sorting")]//*[contains(text(), "${cleanToken}")]`;
-                btn = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-            }
-
-            if (btn) {
-                console.log(`Clicking sorting word: ${cleanToken}`);
-                btn.click();
-                await new Promise(r => setTimeout(r, getWaitTime('CLICK_WAIT')));
-            } else {
-                console.warn(`Sorting button not found for token: "${cleanToken}"`);
-            }
-        }
-    }
-
 })();

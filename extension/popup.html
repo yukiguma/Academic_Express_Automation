@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 250px;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        #domain-display {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 20px;
+            word-break: break-all;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: default;
+        }
+
+        #status-msg {
+            font-size: 12px;
+            margin-top: 10px;
+            height: 20px;
+        }
+
+        .active-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0 5px;
+            margin-left: 5px;
+            line-height: 1;
+        }
+
+        .delete-btn:hover {
+            color: #dc3545;
+            background: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Academic Express Automation</h2>
+    <div id="domain-display">Checking...</div>
+
+    <button id="enable-btn">このサイトで有効にする</button>
+    <button id="disable-btn" style="display:none; background-color: #dc3545;">このサイトで無効にする</button>
+
+    <div id="status-msg"></div>
+
+    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+
+    <div style="text-align: left; font-size: 12px; color: #333; margin-bottom: 5px; font-weight: bold;">有効化済みのサイト:</div>
+    <ul id="enabled-list" style="list-style: none; padding: 0; margin: 0; text-align: left; font-size: 11px;">
+        <li style="color: #999;">読み込み中...</li>
+    </ul>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

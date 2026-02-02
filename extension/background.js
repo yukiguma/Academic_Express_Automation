@@ -16,7 +16,7 @@ function parseXML(xmlText) {
         // Supported types
         if (type === 'matching' || type === 'Insertion' || type === 'multipleChoice' ||
             type === 'trueFalse' || type === 'anaumeFilIn' || type === 'ClozeTest' ||
-            (type && type.includes('sorting'))) {
+            type === 'scanning' || (type && type.includes('sorting'))) {
 
             // Extract questionText
             const questionTextMatch = questionContent.match(/<questionText[^>]*>([\s\S]*?)<\/questionText>/i);
