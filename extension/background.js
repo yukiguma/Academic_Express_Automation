@@ -312,8 +312,8 @@ function isTangoQuestion(item) {
 
 function getTangoDirections(data) {
     const wdType = String(data?.wd_type ?? data?.wdType ?? "");
-    if (wdType === "7") return [['ja', 'en']];
-    if (wdType === "8") return [['en', 'ja']];
+    if (wdType === "1") return [['ja', 'en']];
+    if (wdType === "5") return [['en', 'ja']];
     return [['ja', 'en'], ['en', 'ja']];
 }
 
