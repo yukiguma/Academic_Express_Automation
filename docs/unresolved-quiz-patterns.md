@@ -41,3 +41,26 @@ Expected answers in the fixture order:
 7. `Location`
 8. `By special phone.`
 9. `Sunny.`
+
+## tests/authoring2.xml
+
+This fixture uses `combinationQuestion type="readingComprehension"` blocks where
+several questions are shown on the same player page.
+
+Differences from `tests/authoring.xml`:
+
+- The progress indicator can be a range, such as `1 - 2 / 5` or `3 - 5 / 5`.
+  Every question in that range is currently visible and should be solved before
+  clicking the transition/scoring button.
+- The shared prompt/image belongs to the parent `combinationQuestion`; each
+  nested `<question>` has its own visible question text.
+- The number before each question (`1:`, `2:`, etc.) identifies the nested
+  question within the currently displayed range.
+
+Expected answers in the fixture order:
+
+1. `Venezuela`
+2. `Thousands of barrels each day`
+3. `Basketball`
+4. `Three seconds`
+5. `The regional championship`
