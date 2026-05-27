@@ -33,11 +33,122 @@ function simulateType(element, value) {
     }
 }
 
+function normalizeText(text) {
+    return String(text || "")
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+}
+
+function compactText(text) {
+    return normalizeText(text).replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+function isVisible(element) {
+    if (!element || !element.isConnected) return false;
+    const style = window.getComputedStyle(element);
+    if (style.visibility === 'hidden' || style.display === 'none') return false;
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 || rect.height > 0 || normalizeText(element.textContent).length > 0;
+}
+
+function associatedLabel(input, scope) {
+    if (!input || !input.id) return null;
+    try {
+        const escapedId = window.CSS?.escape ? CSS.escape(input.id) : input.id.replace(/"/g, '\\"');
+        return scope.querySelector(`label[for="${escapedId}"]`);
+    } catch (e) {
+        return null;
+    }
+}
+
+function choiceTexts(element, scope) {
+    const texts = [];
+    const push = (value) => {
+        const text = normalizeText(value);
+        if (text && !texts.includes(text)) texts.push(text);
+    };
+
+    if (element.matches?.('input[type="radio"], input[type="checkbox"]')) {
+        push(element.value);
+        push(element.getAttribute('aria-label'));
+        push(element.closest('label')?.textContent);
+        push(associatedLabel(element, scope)?.textContent);
+        return texts;
+    }
+
+    push(element.textContent);
+    push(element.getAttribute?.('aria-label'));
+    push(element.getAttribute?.('title'));
+    push(element.getAttribute?.('alt'));
+    push(element.getAttribute?.('data-value'));
+    push(element.getAttribute?.('value'));
+
+    const input = element.querySelector?.('input[type="radio"], input[type="checkbox"]');
+    if (input) {
+        push(input.value);
+        push(input.getAttribute('aria-label'));
+    }
+
+    return texts;
+}
+
+function textMatches(candidate, answer, exact) {
+    const normalizedCandidate = normalizeText(candidate);
+    const normalizedAnswer = normalizeText(answer);
+    const compactCandidate = compactText(candidate);
+    const compactAnswer = compactText(answer);
+
+    if (!normalizedCandidate || !normalizedAnswer) return false;
+    if (normalizedCandidate === normalizedAnswer || compactCandidate === compactAnswer) return true;
+    return !exact && (normalizedCandidate.includes(normalizedAnswer) || compactCandidate.includes(compactAnswer));
+}
+
+function collectChoiceCandidates(scope) {
+    const selector = [
+        'button',
+        'label',
+        '[role="button"]',
+        '[role="radio"]',
+        '[role="checkbox"]',
+        'input[type="radio"]',
+        'input[type="checkbox"]',
+        '[class*="Choice"]:not([class*="choices"])',
+        '[class*="choice"]:not([class*="choices"])',
+        '[class*="Option"]',
+        '[class*="option"]',
+        '[class*="underLinePoint"]'
+    ].join(', ');
+    const candidates = new Set(scope.querySelectorAll(selector));
+
+    scope.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+        const label = input.closest('label') || associatedLabel(input, scope);
+        candidates.add(label || input);
+    });
+
+    return Array.from(candidates)
+        .filter(el => isVisible(el) && choiceTexts(el, scope).length > 0)
+        .sort((a, b) => a.textContent.length - b.textContent.length);
+}
 
 // Solver: Fill-in-the-blank (Matching / Insertion)
 async function solveFillBlank(answers, scope) {
-    const blankSelector = 'span[class*="MatchingQuestionBuilder__insertionPosition"], span[class*="InsertionQuestionBuilder__insertionPosition"]';
-    const optionSelector = '[class*="MatchingQuestionBuilder__baseChoice"], [class*="InsertionQuestionBuilder__insertChoice"]';
+    const blankSelector = [
+        'span[class*="MatchingQuestionBuilder__insertionPosition"]',
+        'span[class*="InsertionQuestionBuilder__insertionPosition"]',
+        '[class*="insertionPosition"]',
+        '[class*="Blank"]',
+        '[class*="blank"]',
+        '[role="combobox"]'
+    ].join(', ');
+    const optionSelector = [
+        '[class*="MatchingQuestionBuilder__baseChoice"]',
+        '[class*="InsertionQuestionBuilder__insertChoice"]',
+        '[class*="baseChoice"]',
+        '[class*="insertChoice"]',
+        '[role="option"]',
+        'option'
+    ].join(', ');
 
     const blanks = scope.querySelectorAll(blankSelector);
     if (!blanks.length) {
@@ -45,6 +156,7 @@ async function solveFillBlank(answers, scope) {
         return false;
     }
 
+    let filledAny = false;
     for (let i = 0; i < blanks.length; i++) {
         if (i >= answers.length) break;
 
@@ -57,38 +169,65 @@ async function solveFillBlank(answers, scope) {
         const possibilities = document.querySelectorAll(optionSelector);
         let found = false;
         for (const p of possibilities) {
-            const optText = p.textContent.trim().toLowerCase();
-            const ansText = answer.trim().toLowerCase();
-            if (optText === ansText || optText.includes(ansText) || ansText.includes(optText)) {
+            if (!isVisible(p)) continue;
+            if (textMatches(p.textContent, answer, false)) {
                 simulateClick(p);
                 found = true;
+                filledAny = true;
                 console.log(`Clicked option for "${answer}"`);
                 break;
             }
         }
         if (!found) console.warn(`Option not found for "${answer}"`);
     }
-    return true;
+    return filledAny;
+}
+
+// Solver: Native select dropdowns
+async function solveDropdown(answers, scope) {
+    const selects = Array.from(scope.querySelectorAll('select')).filter(isVisible);
+    if (!selects.length) return false;
+
+    let selectedAny = false;
+    for (let i = 0; i < Math.min(answers.length, selects.length); i++) {
+        const select = selects[i];
+        const answer = answers[i];
+        const option = Array.from(select.options).find(opt => {
+            return textMatches(opt.textContent, answer, true) ||
+                textMatches(opt.value, answer, true) ||
+                textMatches(opt.textContent, answer, false);
+        });
+
+        if (!option) {
+            console.warn(`Dropdown option not found for: "${answer}"`);
+            continue;
+        }
+
+        select.value = option.value;
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        selectedAny = true;
+    }
+
+    return selectedAny;
 }
 
 // Solver: Multiple Choice
 async function solveMultipleChoice(answers, scope) {
-    const choiceSelector = '[class*="Choice"]:not([class*="choices"]), [class*="underLinePoint"], [class*="Option"]';
+    if (await solveDropdown(answers, scope)) return true;
 
+    let foundAny = false;
     for (const answer of answers) {
-        let choices = Array.from(scope.querySelectorAll(choiceSelector));
+        let choices = collectChoiceCandidates(scope);
         let found = false;
-
-        const normalizedAns = answer.trim().toLowerCase();
-        choices.sort((a, b) => (a.textContent || "").length - (b.textContent || "").length);
 
         // Phase 1: Exact Match
         for (const choice of choices) {
-            const choiceText = (choice.textContent || "").trim().toLowerCase();
-            if (choiceText === normalizedAns) {
-                console.log("Found exact match choice:", choiceText);
+            if (choiceTexts(choice, scope).some(text => textMatches(text, answer, true))) {
+                console.log("Found exact match choice:", answer);
                 simulateClick(choice);
                 found = true;
+                foundAny = true;
                 break;
             }
         }
@@ -96,11 +235,11 @@ async function solveMultipleChoice(answers, scope) {
         // Phase 2: Partial Match
         if (!found) {
             for (const choice of choices) {
-                const choiceText = (choice.textContent || "").trim().toLowerCase();
-                if (choiceText.includes(normalizedAns)) {
-                    console.log("Found partial match choice:", choiceText);
+                if (choiceTexts(choice, scope).some(text => textMatches(text, answer, false))) {
+                    console.log("Found partial match choice:", answer);
                     simulateClick(choice);
                     found = true;
+                    foundAny = true;
                     break;
                 }
             }
@@ -110,11 +249,13 @@ async function solveMultipleChoice(answers, scope) {
             console.warn(`Multiple Choice option not found in scope for: "${answer}"`);
         }
     }
+
+    return foundAny;
 }
 
 // Solver: Typing / Fill-in
 async function solveTyping(answers, scope) {
-    let targets = Array.from(scope.querySelectorAll('input[type="text"], textarea, [contenteditable="true"], [role="textbox"]'));
+    let targets = Array.from(scope.querySelectorAll('input[type="text"], textarea, [contenteditable="true"], [role="textbox"]')).filter(isVisible);
 
     if (targets.length === 0) {
         console.log("No inputs found, searching for interactable gaps...");
@@ -123,7 +264,7 @@ async function solveTyping(answers, scope) {
             simulateClick(gap);
             const found = scope.querySelectorAll('input, [contenteditable="true"]');
             if (found.length > 0) {
-                targets = Array.from(found);
+                targets = Array.from(found).filter(isVisible);
                 break;
             }
         }
@@ -156,6 +297,8 @@ async function solveTyping(answers, scope) {
 
         input.blur();
     }
+
+    return targets.length > 0;
 }
 
 // Solver: Sorting
@@ -237,23 +380,27 @@ async function solve(answers, type, scope) {
     }
     console.log(`Solving ${type} with answers:`, answers);
 
-    switch (type.toLowerCase()) {
-        case 'matching':
-        case 'insertion':
-            return solveFillBlank(answers, scope);
-        case 'multiplechoice':
-        case 'truefalse':
-        case 'true_false':
-            return solveMultipleChoice(answers, scope);
-        case 'anaumefilin':
-        case 'typing':
-        case 'clozetest':
-            return solveTyping(answers, scope);
-        case 'scanning':
-            return solveScanning(answers, scope);
-        case 'sorting':
-            return solveSorting(answers, scope);
-        default:
-            console.warn("Unknown question type:", type);
+    const normalizedType = String(type || "").toLowerCase();
+
+    if (normalizedType === 'matching' || normalizedType === 'insertion') {
+        return solveFillBlank(answers, scope);
     }
+    if (normalizedType.includes('choice') || normalizedType.includes('true') || normalizedType.includes('select') || normalizedType.includes('quiz')) {
+        return solveMultipleChoice(answers, scope);
+    }
+    if (normalizedType.includes('anaume') || normalizedType.includes('typing') || normalizedType.includes('cloze') || normalizedType.includes('fill')) {
+        return solveTyping(answers, scope);
+    }
+    if (normalizedType.includes('scanning')) {
+        return solveScanning(answers, scope);
+    }
+    if (normalizedType.includes('sort')) {
+        return solveSorting(answers, scope);
+    }
+
+    console.warn("Unknown question type, trying generic strategies:", type);
+    if (await solveTyping(answers, scope)) return;
+    if (await solveDropdown(answers, scope)) return;
+    if (await solveFillBlank(answers, scope)) return;
+    return solveMultipleChoice(answers, scope);
 }

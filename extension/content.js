@@ -249,7 +249,17 @@
         }
 
         // 通常の問題タイプ: questionBoxを検索
-        const box = el.closest('[class*="QuestionBuilder__questionBox___"], [class*="QuestionView__questionBox___"]');
+        const box = el.closest([
+            '[class*="QuestionBuilder__questionBox___"]',
+            '[class*="QuestionView__questionBox___"]',
+            '[class*="Question"][class*="questionBox"]',
+            '[class*="questionBox"]',
+            '[class*="Quiz"]',
+            '[class*="quiz"]',
+            'form',
+            'section',
+            'article'
+        ].join(', '));
         if (box) return box;
 
         // Fallback: クラスが見つからない場合、親要素（兄弟の選択肢を含む可能性がある）を返す
@@ -260,11 +270,77 @@
         return el.parentElement || el;
     }
 
+    function normalizeSignature(text, limit = 40) {
+        return String(text || "")
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}]/gu, '')
+            .slice(0, limit);
+    }
+
+    function isVisibleElement(el) {
+        if (!el || !el.isConnected) return false;
+        const tagName = el.tagName;
+        if (tagName === 'SCRIPT' || tagName === 'STYLE' || tagName === 'NOSCRIPT') return false;
+
+        const style = window.getComputedStyle(el);
+        if (style.visibility === 'hidden' || style.display === 'none') return false;
+
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 || rect.height > 0 || el.textContent.trim().length > 0;
+    }
+
+    function matchesQuestionSignature(text, question) {
+        const domSig = normalizeSignature(text, 120);
+        const questionSig = question.signature || normalizeSignature(question.rawText);
+        if (!domSig || !questionSig) return false;
+        return domSig.includes(questionSig) ||
+            questionSig.includes(domSig.slice(0, Math.min(20, domSig.length)));
+    }
+
+    function findQuestionElementByText(question, usedElements) {
+        const candidates = Array.from(document.body?.querySelectorAll([
+            '[class*="Question"]',
+            '[class*="question"]',
+            '[class*="Quiz"]',
+            '[class*="quiz"]',
+            '[class*="Sentence"]',
+            '[class*="sentence"]',
+            'h1',
+            'h2',
+            'h3',
+            'p',
+            'li',
+            'span',
+            'div'
+        ].join(', ')) || []);
+
+        let best = null;
+        let bestScore = -Infinity;
+
+        for (const el of candidates) {
+            if (usedElements.has(el) || !isVisibleElement(el)) continue;
+
+            const text = el.textContent.trim();
+            if (text.length < 3 || text.length > 2000 || !matchesQuestionSignature(text, question)) continue;
+
+            const className = String(el.className || "");
+            let score = 2000 - text.length;
+            if (className.includes('Question') || className.includes('question')) score += 500;
+            if (className.includes('Quiz') || className.includes('quiz')) score += 250;
+
+            if (score > bestScore) {
+                best = el;
+                bestScore = score;
+            }
+        }
+
+        return best;
+    }
+
     function findActiveQuestions() {
         const textElements = document.querySelectorAll('[class*="QuestionBuilder__question___"], [class*="QuestionView__question___"]');
         const visibleElements = Array.from(textElements).filter(el => {
-            const style = window.getComputedStyle(el);
-            return style.visibility !== 'hidden' && style.display !== 'none' && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.textContent.trim().length > 0);
+            return isVisibleElement(el);
         });
 
         const matchedPairs = [];
@@ -273,7 +349,7 @@
 
         // Phase 1: Exact Signature Match
         for (const el of visibleElements) {
-            const domSig = el.textContent.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40);
+            const domSig = normalizeSignature(el.textContent);
             const idx = questionsList.findIndex((q, i) => !usedIndices.has(i) && q.signature === domSig);
 
             if (idx !== -1) {
@@ -288,7 +364,7 @@
         for (const el of visibleElements) {
             if (usedElements.has(el)) continue;
 
-            const domSig = el.textContent.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40);
+            const domSig = normalizeSignature(el.textContent);
             const idx = questionsList.findIndex((q, i) => {
                 if (usedIndices.has(i)) return false;
                 return domSig.includes(q.signature) || q.signature.includes(domSig);
@@ -306,7 +382,7 @@
         for (const el of visibleElements) {
             if (usedElements.has(el)) continue;
 
-            const domSig = el.textContent.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40);
+            const domSig = normalizeSignature(el.textContent);
             const idx = questionsList.findIndex((q, i) => {
                 if (usedIndices.has(i)) return false;
                 const cleanXml = q.signature.slice(0, 20);
@@ -319,6 +395,20 @@
                 const container = findQuestionContainer(el, questionsList[idx].type);
                 matchedPairs.push({ element: container, data: questionsList[idx] });
             }
+        }
+
+        // Phase 4: Generic class-name fallback for newer player layouts
+        for (let i = 0; i < questionsList.length; i++) {
+            if (usedIndices.has(i)) continue;
+
+            const question = questionsList[i];
+            const el = findQuestionElementByText(question, usedElements);
+            if (!el) continue;
+
+            usedIndices.add(i);
+            usedElements.add(el);
+            const container = findQuestionContainer(el, question.type);
+            matchedPairs.push({ element: container, data: question });
         }
 
         return matchedPairs;
