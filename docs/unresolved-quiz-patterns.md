@@ -103,6 +103,21 @@ fixture から確認した例:
 - `shuffleQuestions=true` のため、XML 上の順番ではなく画面テキストで照合する必要がある。
 - `know_chk` は正答ではなく、既知/学習状態を表すフラグとして扱う。
 
+`wd_type` の対応:
+
+| `wd_type` | プレイヤー上の生成処理 | 問題形式 | 画面に出る主な問題文 | 正答 |
+| --- | --- | --- | --- | --- |
+| `1` | `f` | multipleChoice | `keyword.ja` | `keyword.en` |
+| `2` | `h` | typing / sentenceTyping | `keyword.ja`、または `sentence.en` の穴埋め | `keyword.en`、または穴埋め後の英文 |
+| `5` | `c` | multipleChoice | `keyword.en` | `keyword.ja` |
+| `7` | `d` | multipleChoice | `keyword.ja` または `keyword.en` を問題ごとにランダム選択 | 表示方向と逆側の `keyword` |
+
+補足:
+
+- 保存された `player-tango.js` の `switch(o)` では `1`, `2`, `5`, `7` だけが扱われ、それ以外は `wd_type指定誤りです。` のエラーになる。
+- `wd_type=7` は `Math.random() < .5` で `f` または `c` を選ぶため、URL やレスポンスの `wd_type` だけでは日→英/英→日のどちらが出るか確定できない。
+- `contents_type_no` はモード判定に使われ、`21` は `drill`、`19`/`22`/`28` は `test`、`1` は `shiwake` として扱われる。これは出題方向ではない。
+
 実装上の対応:
 
 - 汎用 JSON パーサより先に `tango_data_manipulate` 形式を判定する。
