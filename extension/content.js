@@ -13,26 +13,40 @@
     let isSolving = false;
     let debounceTimer = null;
     let isAutoMode = false;
+
+    function isQuizPlayerPage() {
+        return window.location.pathname.includes('/as/lplayer/');
+    }
+
+    function isStudentPage() {
+        return window.location.pathname.includes('/student/');
+    }
+
+    function clearAutoModeStorage() {
+        localStorage.removeItem('auto-mode');
+        localStorage.removeItem('auto-mode-url');
+    }
+
     try {
         const storedAuto = localStorage.getItem('auto-mode');
         const storedAutoUrl = localStorage.getItem('auto-mode-url');
-        if (storedAuto === 'true' && storedAutoUrl === window.location.href) {
+        if (isStudentPage()) {
+            clearAutoModeStorage();
+        } else if (isQuizPlayerPage() && storedAuto === 'true' && storedAutoUrl === window.location.href) {
             isAutoMode = true;
         } else {
             // URL changed or not set -> Reset AutoMode
-            localStorage.removeItem('auto-mode');
-            localStorage.removeItem('auto-mode-url');
+            clearAutoModeStorage();
         }
     } catch (e) { console.error("AutoMode Init Error", e); }
 
     function setAutoMode(value) {
-        isAutoMode = value;
-        if (value) {
+        isAutoMode = value && isQuizPlayerPage();
+        if (isAutoMode) {
             localStorage.setItem('auto-mode', 'true');
             localStorage.setItem('auto-mode-url', window.location.href);
         } else {
-            localStorage.removeItem('auto-mode');
-            localStorage.removeItem('auto-mode-url');
+            clearAutoModeStorage();
         }
     }
 
