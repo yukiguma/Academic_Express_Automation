@@ -297,6 +297,52 @@
             questionSig.includes(domSig.slice(0, Math.min(20, domSig.length)));
     }
 
+    function getCurrentProgressQuestionNumber() {
+        const text = document.body?.innerText || "";
+        const match = text.match(/(?:^|\s)(\d{1,3})\s*\/\s*(\d{1,3})(?:\s|$)/);
+        if (!match) return null;
+
+        const current = Number(match[1]);
+        const total = Number(match[2]);
+        if (!Number.isInteger(current) || !Number.isInteger(total)) return null;
+        if (current < 1 || total < current || total !== questionsList.length) return null;
+        return current;
+    }
+
+    function getVisibleQuestionNumber(el) {
+        let current = el;
+
+        for (let depth = 0; current && depth < 5; depth++) {
+            const text = current.innerText || current.textContent || "";
+            if (text.length <= 3000) {
+                const match = text.match(/(?:^|\s)(\d{1,3})\s*[:：]/);
+                if (match) {
+                    const number = Number(match[1]);
+                    if (Number.isInteger(number) && number >= 1 && number <= questionsList.length) {
+                        return number;
+                    }
+                }
+            }
+            current = current.parentElement;
+        }
+
+        return getCurrentProgressQuestionNumber();
+    }
+
+    function findQuestionIndexForElement(el, usedIndices, matches) {
+        const visibleNumber = getVisibleQuestionNumber(el);
+        if (visibleNumber !== null) {
+            const orderedIndex = questionsList.findIndex((q, i) => {
+                return !usedIndices.has(i) &&
+                    Number(q.displayOrder) === visibleNumber &&
+                    matches(q, i);
+            });
+            if (orderedIndex !== -1) return orderedIndex;
+        }
+
+        return questionsList.findIndex((q, i) => !usedIndices.has(i) && matches(q, i));
+    }
+
     function findQuestionElementByText(question, usedElements) {
         const candidates = Array.from(document.body?.querySelectorAll([
             '[class*="Question"]',
@@ -350,7 +396,7 @@
         // Phase 1: Exact Signature Match
         for (const el of visibleElements) {
             const domSig = normalizeSignature(el.textContent);
-            const idx = questionsList.findIndex((q, i) => !usedIndices.has(i) && q.signature === domSig);
+            const idx = findQuestionIndexForElement(el, usedIndices, q => q.signature === domSig);
 
             if (idx !== -1) {
                 usedIndices.add(idx);
@@ -365,8 +411,7 @@
             if (usedElements.has(el)) continue;
 
             const domSig = normalizeSignature(el.textContent);
-            const idx = questionsList.findIndex((q, i) => {
-                if (usedIndices.has(i)) return false;
+            const idx = findQuestionIndexForElement(el, usedIndices, q => {
                 return domSig.includes(q.signature) || q.signature.includes(domSig);
             });
 
@@ -383,8 +428,7 @@
             if (usedElements.has(el)) continue;
 
             const domSig = normalizeSignature(el.textContent);
-            const idx = questionsList.findIndex((q, i) => {
-                if (usedIndices.has(i)) return false;
+            const idx = findQuestionIndexForElement(el, usedIndices, q => {
                 const cleanXml = q.signature.slice(0, 20);
                 return domSig.includes(cleanXml);
             });

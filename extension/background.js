@@ -153,6 +153,7 @@ function parseXML(xmlText) {
     const questionsList = [];
     const questionRegex = /<question\b([^>]*)>([\s\S]*?)<\/question>/gi;
     let questionMatch;
+    let displayOrder = 0;
 
     while ((questionMatch = questionRegex.exec(xmlText)) !== null) {
         const attrs = parseAttributes(questionMatch[1]);
@@ -169,11 +170,14 @@ function parseXML(xmlText) {
         const answers = collectXMLAnswers(questionContent, questionText);
 
         if (questionText || answers.length > 0) {
+            displayOrder += 1;
             questionsList.push({
                 type: type,
                 answers: answers,
                 rawText: questionText,
-                signature: makeSignature(questionText)
+                signature: makeSignature(questionText),
+                displayOrder: displayOrder,
+                questionNo: attrs.no || ""
             });
         }
     }
@@ -268,7 +272,7 @@ function parseJSON(data) {
 
     const questionsList = [];
 
-    questionItems.forEach(q => {
+    questionItems.forEach((q, index) => {
         const questionText = firstStringValue(q, [
             'keyword.en',
             'keyword.ja',
@@ -289,6 +293,8 @@ function parseJSON(data) {
                 answers: answers,
                 rawText: questionText,
                 signature: makeSignature(questionText),
+                displayOrder: index + 1,
+                questionNo: String(q.no ?? q.id ?? ""),
                 isAutoAdvance: Boolean(q.keyword)
             });
         }
