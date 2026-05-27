@@ -89,3 +89,27 @@ fixture から確認した例:
 - `I was very late because I took the ------- bus.` は XML 上では8問目だが、画面では `1 / 23` として出ることがある。
 - この問題の正答は `wrong`。
 - 所有格・複数所有格のようにアポストロフィ位置だけが違う選択肢がある。`girl's` と `girls'` は記号を落とすとどちらも `girls` になるため、exact 判定ではアポストロフィを保持して比較する。
+
+## `tests/tango_data_manipulate.htm`
+
+単語テストの `tango_data_manipulate.cfc?method=get_question...` から取得される JSON payload。
+
+特徴:
+
+- XML の `<answer>` や `correctAnswer` のような正解専用フィールドはない。
+- `questions[]` の各要素に `keyword.ja` と `keyword.en` があり、この組み合わせが問題文と正答になる。
+- `tangolists_jan` と `tangolists_eng` は選択肢リストで、`keyword.en` が英語選択肢側の正答。
+- `shuffleQuestions=true` のため、XML 上の順番ではなく画面テキストで照合する必要がある。
+- `know_chk` は正答ではなく、既知/学習状態を表すフラグとして扱う。
+
+実装上の対応:
+
+- 汎用 JSON パーサより先に `tango_data_manipulate` 形式を判定する。
+- `keyword.ja` を画面照合用の `rawText`、`keyword.en` を `answers` として保存する。
+- 単語テストは選択後にページ側が自動で次問へ進むため、`isAutoAdvance=true` として扱う。
+
+fixture から確認した例:
+
+- `はがき` の正答は `postcard`。
+- `（手紙の冒頭で）親愛なる、いとしい、かわいい` の正答は `dear`。
+- `可能にする` の正答は `enable`。

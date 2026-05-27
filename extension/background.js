@@ -303,8 +303,46 @@ function collectJSONAnswers(q) {
     return answers;
 }
 
+function isTangoQuestion(item) {
+    return item && typeof item === 'object' &&
+        item.keyword && typeof item.keyword === 'object' &&
+        Array.isArray(item.tangolists_eng) &&
+        Array.isArray(item.tangolists_jan);
+}
+
+function parseTangoData(data) {
+    if (!data || !Array.isArray(data.questions) || !data.questions.some(isTangoQuestion)) {
+        return null;
+    }
+
+    const questionsList = [];
+
+    data.questions.forEach((q, index) => {
+        if (!isTangoQuestion(q)) return;
+
+        const japanese = unwrapText(q.keyword.ja);
+        const english = unwrapText(q.keyword.en);
+        if (!japanese || !english) return;
+
+        questionsList.push({
+            type: 'multipleChoice',
+            answers: [english],
+            rawText: japanese,
+            signature: makeSignature(japanese),
+            displayOrder: index + 1,
+            questionNo: String(q.word_no ?? q.level_no ?? ""),
+            isAutoAdvance: true
+        });
+    });
+
+    return questionsList.length > 0 ? { questions: questionsList } : null;
+}
+
 // Parse JSON question data (Vocabulary Bank and newer API payloads)
 function parseJSON(data) {
+    const tangoData = parseTangoData(data);
+    if (tangoData) return tangoData;
+
     const questionItems = findQuestionItems(data);
     if (!questionItems.length) return null;
 
