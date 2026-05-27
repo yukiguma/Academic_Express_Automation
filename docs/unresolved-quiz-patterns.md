@@ -1,36 +1,34 @@
-# Unresolved Quiz Pattern Notes
+# クイズパターン対応メモ
 
-## tests/authoring.xml
+このドキュメントは、Academic Express の問題データと画面構造が既存パターンと違ったケース、および拡張機能側で入れた対応をまとめるものです。
 
-This fixture is a `book` payload whose questions are nested inside
-`combinationQuestion type="listeningComprehension"` blocks.
+## 共通の対応方針
 
-Differences from the previously handled patterns:
+- XML の `<answer>2</answer>` のような番号参照は、同じ `<question>` 内の `<choice no="2">...</choice>` に解決してからクリックする。
+- 選択肢の表示順は `shuffleChoices="true"` で変わるため、番号や位置ではなく、解決済みの選択肢テキストでクリックする。
+- 自動実行で「すでに解いた問題か」を判定するキーは、問題文だけではなく `displayOrder + questionNo + signature` を使う。
+- 画面上に複数の問題コンポーネントが残る場合があるため、進捗表示と画面中の問題番号を使って、現在表示中の問題だけを対象にする。
+- `shuffleQuestions="true"` の場合、画面の `1 / 23` は XML 上の1問目とは限らない。問題文がユニークなら画面テキスト照合を優先し、同じ問題文が重複している場合だけ進捗番号で絞り込む。
 
-- The visible `questionText` can be identical across multiple questions.
-  The first six questions all use `Click your answer on the screen.`, so
-  matching only by question text/signature selects the first matching item
-  repeatedly.
-- The actual listening prompt is outside `<question>` in sibling fields such
-  as `<en_script>`, `<jp_script>`, `<sound>`, and `<image>`.
-- Answers are numeric references (`<answer>2</answer>`) that must be mapped to
-  `<choice no="2">...</choice>` before solving.
-- The page displays a question order such as `6:` and `6 / 9`. That order is
-  needed to disambiguate repeated question text.
-- The player can keep multiple same-text question components mounted at once.
-  The active progress indicator (`2 / 9`, etc.) must be used to solve only the
-  current question.
-- Auto-mode must track solved questions by order/question id as well as text.
-  The first six questions share the same text signature, so text-only tracking
-  stops after the first question.
-- Choice counts vary. Some questions have four options (`a.` to `d.`), while
-  others have three.
-- `shuffleChoices` may be `true`, so answers should be clicked by mapped choice
-  text rather than by position.
-- Some questions include extra explanatory fields such as
-  `<explain_jp_script>` that are not part of the visible question prompt.
+## `tests/authoring.xml`
 
-Expected answers in the fixture order:
+`combinationQuestion type="listeningComprehension"` の中に `<question>` が入るリスニング系の payload。
+
+特徴:
+
+- 前半6問の `questionText` がすべて `Click your answer on the screen.` で同一。
+- 実際のリスニング本文や画像は `<question>` の外側にある `<en_script>`、`<jp_script>`、`<sound>`、`<image>` に入っている。
+- 正答は `<answer>2</answer>` のような番号で渡される。
+- 画面には `6:` や `6 / 9` のような番号が出る。
+- 同じ問題文のコンポーネントが画面内に複数残ることがある。
+
+実装上の対応:
+
+- XML パース時に `displayOrder` と `questionNo` を保存する。
+- 同じ `signature` の問題が複数ある場合は、画面の進捗番号と `displayOrder` を使って対象問題を特定する。
+- 1問ずつ進む画面では `2 / 9` を `2-2` の範囲として扱い、その1問だけを解く。
+
+fixture の期待正答:
 
 1. `b.`
 2. `d.`
@@ -42,22 +40,24 @@ Expected answers in the fixture order:
 8. `By special phone.`
 9. `Sunny.`
 
-## tests/authoring2.xml
+## `tests/authoring2.xml`
 
-This fixture uses `combinationQuestion type="readingComprehension"` blocks where
-several questions are shown on the same player page.
+`combinationQuestion type="readingComprehension"` の中に複数の `<question>` が入り、1画面に複数問が同時表示される読解系の payload。
 
-Differences from `tests/authoring.xml`:
+特徴:
 
-- The progress indicator can be a range, such as `1 - 2 / 5` or `3 - 5 / 5`.
-  Every question in that range is currently visible and should be solved before
-  clicking the transition/scoring button.
-- The shared prompt/image belongs to the parent `combinationQuestion`; each
-  nested `<question>` has its own visible question text.
-- The number before each question (`1:`, `2:`, etc.) identifies the nested
-  question within the currently displayed range.
+- 進捗表示が `1 - 2 / 5` や `3 - 5 / 5` のような範囲になる。
+- 範囲内の問題は同じ画面に表示されており、遷移や採点の前にまとめて解く必要がある。
+- 画像や共通プロンプトは親の `combinationQuestion` 側にあり、各 `<question>` には個別の問題文がある。
+- 画面中の `1:`、`2:` などが、表示範囲内の個別問題を識別する。
 
-Expected answers in the fixture order:
+実装上の対応:
+
+- 進捗表示を単一番号ではなく範囲として読む。
+- `1 - 2 / 5` は1問目から2問目、`3 - 5 / 5` は3問目から5問目を active として扱う。
+- 範囲外の問題は解答対象から外す。
+
+fixture の期待正答:
 
 1. `Venezuela`
 2. `Thousands of barrels each day`
@@ -65,18 +65,25 @@ Expected answers in the fixture order:
 4. `Three seconds`
 5. `The regional championship`
 
-## Vocabulary / Grammar Bank Pages
+## `tests/question_authoring.xml`
 
-Observed from the live vocabulary page:
+単語集・文法問題系の `question_authoring.cfc?method=sortingXml...` から取得される payload。
 
-- The player can show generic Japanese instructions in the visible question
-  header while the captured answer data uses a different prompt/source field.
-  Text-signature matching may fail even when the answer data has been captured.
-- In that case, the progress indicator (`1 / 23`, etc.) is the reliable link
-  between the visible page and the captured question order.
-- When `shuffleQuestions="true"`, the progress indicator is not the XML order.
-  Use progress order only for duplicated prompt signatures; otherwise prefer
-  visible text matching.
-- The authoring endpoint can be `question_authoring.cfc?method=sortingXml...`
-  even when the visible interaction is multiple choice. The parser should avoid
-  assuming the method name is the solver type.
+特徴:
+
+- endpoint 名に `sortingXml` が含まれていても、画面上の操作は multiple choice の場合がある。
+- `shuffleQuestions="true"` なので、XML 上の順番と画面上の出題順が一致しない。
+- 画面には `1 / 23` のように現在番号が表示されるが、これは XML 上の `displayOrder` ではなく、シャッフル後の表示順。
+- 画面の日本語ヘッダーは汎用文言で、取得データ内の問題文とは一致しない場合がある。
+
+実装上の対応:
+
+- `method=sortingXml` のような endpoint 名だけで solver type を決めない。
+- XML の `<questionText>` と画面テキストが一致する場合は、テキスト照合を優先する。
+- 問題文がユニークな場合は進捗番号で絞り込まない。これにより、シャッフル後に XML の8問目が画面の1問目として出ても検出できる。
+- 表示テキストと取得データが一致しない場合の保険として、進捗番号・出題順ベースの fallback を残す。ただしこれは重複問題文など、テキストだけで特定できないケース向け。
+
+fixture から確認した例:
+
+- `I was very late because I took the ------- bus.` は XML 上では8問目だが、画面では `1 / 23` として出ることがある。
+- この問題の正答は `wrong`。
