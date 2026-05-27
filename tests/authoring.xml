@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<result>
+            <success>true</success> 
+            <err_msg_no/>
+            <err_msg/>
+            <data>
+        	
+                                <book limitTime="300" mission="100" mode="book" no="4657" shuffleQuestions="false">
+                            
+                        
+                        <booktitle/>
+                        <explanation/>
+                        <pass_comment/>
+                        <fail_comment/>
+                        <bookcover/>
+                        
+                       
+    
+                        
+                        
+                    
+                    <questions>
+                    
+    
+    							
+                                
+                                <combinationQuestion no="9050" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[Look at the picture on the screen.<br/><br/>a. There is a laptop computer on the desk.<br/>b. There is a computer printer on the desk.<br/>c. There is a vase of tall flowers on the desk.<br/>d. There is a pair of speakers on the desk.]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[画面の写真を見なさい。<br/><br/>a. 机の上にはラップトップコンピュータが置かれています。<br/>b. 机の上にはコンピュータ用のプリンタが置かれています。<br/>c. 机の上には丈の長い花が何本か入っている花瓶が１つあります。<br/>d. 机の上には一対のスピーカーがあります。]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=163700&contents_flag=S&id=0585EE81F702B86F26EE7AEAD5C25001]]></sound>
+                                        
+                                        <image><![CDATA[/as/flash/materialImage.cfm?ver=0_0&upd=163700&contents_flag=S&id=0585EE81F702B86F26EE7AEAD5C25001]]></image>
+                                        
+
+<question no="1590" point="11" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[Click your answer on the screen.]]></questionText>
+	
+	<description><![CDATA[【解答】b.]]></description>
+	<answers><answer>2</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="false">
+        	
+                            <choice no="1"><![CDATA[a.]]></choice>
+                            
+                            <choice no="2"><![CDATA[b.]]></choice>
+                            
+                            <choice no="3"><![CDATA[c.]]></choice>
+                            
+                            <choice no="4"><![CDATA[d.]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="9051" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[Look at the picture on the screen.<br/><br/>a. Some people are working out at the beach.<br/>b. Some people are walking along the beach.<br/>c. Some people are talking with each other.<br/>d. Some people are playing some beach sports.<br/>]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[画面の写真を見なさい。<br/><br/>a. 海辺でトレーニングをしている人々が何人かいます。<br/>b. 海辺に沿って歩いている人々が何人かいます。<br/>c. 互いに話し合っている人々が何人かいます。<br/>d. ビーチスポーツをしている人々が何人かいます。]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=164100&contents_flag=S&id=8D80BC35E5263D1E07EB9D0AA051D7F4]]></sound>
+                                        
+                                        <image><![CDATA[/as/flash/materialImage.cfm?ver=0_0&upd=164100&contents_flag=S&id=8D80BC35E5263D1E07EB9D0AA051D7F4]]></image>
+                                        
+
+<question no="1591" point="11" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[Click your answer on the screen.]]></questionText>
+	
+	<description><![CDATA[【解答】d.<br><br>【重要表現】<br>talk with each other：お互いに話し合う]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="false">
+        	
+                            <choice no="1"><![CDATA[a.]]></choice>
+                            
+                            <choice no="2"><![CDATA[b.]]></choice>
+                            
+                            <choice no="3"><![CDATA[c.]]></choice>
+                            
+                            <choice no="4"><![CDATA[d.]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="9052" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[Look at the picture on the screen.<br/><br/>a. People are in the yard.<br/>b. People are by a beach.<br/>c. People are in a mountain.<br/>d. People are on a hill.]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[画面の写真を見なさい。<br/><br/>a. 人々が庭にいます。<br/>b. 人々が海辺のそばにいます。<br/>c. 人々が山の中にいます。<br/>d. 人々が丘の上にいます。]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=164500&contents_flag=S&id=051A366B6423B878E08454F51088FB73]]></sound>
+                                        
+                                        <image><![CDATA[/as/flash/materialImage.cfm?ver=0_0&upd=164500&contents_flag=S&id=051A366B6423B878E08454F51088FB73]]></image>
+                                        
+
+<question no="1592" point="11" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[Click your answer on the screen.]]></questionText>
+	
+	<description><![CDATA[【解答】d.]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="false">
+        	
+                            <choice no="1"><![CDATA[a.]]></choice>
+                            
+                            <choice no="2"><![CDATA[b.]]></choice>
+                            
+                            <choice no="3"><![CDATA[c.]]></choice>
+                            
+                            <choice no="4"><![CDATA[d.]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="9053" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[Is this dress made of silk or cotton?<br/><br/>a. Yes, I like silk better.<br/>b. It's an all-silk dress.<br/>c. I have made both types.]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[このドレスは絹製ですか、それとも綿でできていますか？<br/><br/>a. はい、私は絹のほうが好きです。<br/>b. それは全部絹で織られたドレスです。<br/>c. ２種類とも私が作りました。]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=133400&contents_flag=S&id=0E452683A107F2D8CBB59D498CE34C88]]></sound>
+                                        
+
+<question no="14940" point="11" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[Click your answer on the screen.]]></questionText>
+	
+	<description><![CDATA[【解説】<br>設問はドレスが絹製なのか、綿製なのかを尋ねる疑問文ですので、b の「全部絹で織られたドレスです」が正答です。<br><br>【重要表現】<br>(be) made of ～：～製である/～でできている<br>（～は材料にあたる名詞で、できた製品から材質の見当がつくものに限ります）]]></description>
+	<answers><answer>2</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="false">
+        	
+                            <choice no="1"><![CDATA[a.]]></choice>
+                            
+                            <choice no="2"><![CDATA[b.]]></choice>
+                            
+                            <choice no="3"><![CDATA[c.]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="9054" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[You can't speak German, can you?<br/><br/>a. No, it's not my mother tongue, either.<br/>b. Yes, I will perhaps study German.<br/>c. Yes, I'm afraid I'm poor at German.]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[ドイツ語は話せませんよね？<br/><br/>a. 話せません。私の母国語でもありませんし。<br/>b. 話せます。たぶんドイツ語を勉強します。<br/>c. 話せます。残念ながら、ドイツ語は得意ではありません。<br/>]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=140900&contents_flag=S&id=532EBFB21256FDAC1A08650C47EDA82B]]></sound>
+                                        
+
+<question no="14942" point="11" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[Click your answer on the screen.]]></questionText>
+	
+	<description><![CDATA[【解説】<br>設問は「ドイツ語は話せませんよね？」という意味の否定疑問文です。話せる場合には Yes, (I can.)、話せない場合には No, (I can't.)で答えます。ですから b や c のように、Yes,（話せます）と言っておいて、「たぶんドイツ語を勉強するでしょう」とか「残念ながら、ドイツ語は得意ではありません」と続けるのは意味的に変です。a は No,（話せません）と断ってから、「私の母国語でもないのです」と説明していますので、これが正答です。<br><br>【重要表現】<br>not ～, either：～でもない<br>I'm afraid (that)-節：残念ながら、～<br>(be) poor at ～：～が苦手である]]></description>
+	<answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="false">
+        	
+                            <choice no="1"><![CDATA[a.]]></choice>
+                            
+                            <choice no="2"><![CDATA[b.]]></choice>
+                            
+                            <choice no="3"><![CDATA[c.]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="9055" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[What is Bill doing?<br/><br/>a. He is a carpenter.<br/>b. Jogging as usual.<br/>c. He will do it well.]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[ビルは何をしているのですか？<br/><br/>a. 彼は大工です。<br/>b. いつものようにジョギングをしています。<br/>c. 彼はそれを上手にやります。<br/>]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=141200&contents_flag=S&id=06C4EAFEE0F2D8BC2211191A932ABD6C]]></sound>
+                                        
+
+<question no="14944" point="11" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[Click your answer on the screen.]]></questionText>
+	
+	<description><![CDATA[【解説】<br>設問は What is Bill doing?「ビルは何をしているのですか？」と現在進行中の動作について尋ねていますので、b の (He is) Jogging as usual.「いつものように、（現在）ジョギングをしています」が正答です。<br><br>【重要表現】<br>as usual：いつものように]]></description>
+	<answers><answer>2</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="false">
+        	
+                            <choice no="1"><![CDATA[a.]]></choice>
+                            
+                            <choice no="2"><![CDATA[b.]]></choice>
+                            
+                            <choice no="3"><![CDATA[c.]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="9553" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[M: May I help you, ma'am?<br/>W: Yeah, can you tell me where I can buy language books?<br/>M: Go down this hall and stop at the cashier. It will be on your left.<br/>]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[男性：いらっしゃいませ、お客様。<br/>女性：あの、言語の本はどこにあるのか教えていただけませんか？<br/>男性：この通路を進んで、レジ係のところで止まってください。左側にありますから。]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=140200&contents_flag=S&id=28463376C05E20FEDEAC914FEB920803]]></sound>
+                                        
+
+<question no="1498" point="11" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[What is the woman asking?]]></questionText>
+	
+	<description><![CDATA[女性は何を尋ねていますか？<br><br>a. 場所<br>b. 言語<br>c. 値段<br>d. 時間<br><br>【解説】<br>女性は ..., can you tell me where I can buy language books? と尋ねており、言語の本がある場所を聞いています。よって、a. が正答です。<br><br>（重要表現）<br>May I help you?：いらっしゃいませ。<br>go down ～：～を進む<br>on one's left：左側に]]></description>
+	<answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="true">
+        	
+                        	<choice no="1"><![CDATA[Location]]></choice>
+                            
+                        	<choice no="2"><![CDATA[Language]]></choice>
+                            
+                        	<choice no="3"><![CDATA[Price]]></choice>
+                            
+                        	<choice no="4"><![CDATA[Time]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="9554" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[Please don't use mobile telephones, radios and computers while the aircraft is in the air. They can bother other people and affect the aircraft's normal operations. We have special telephones if you want to make a call.]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[旅客機の飛行中は携帯電話、ラジオおよびコンピュータを使用しないでください。他のお客様のご迷惑になったり、機の正常な運航に影響を与えたりしかねません。お電話をなさりたい場合には、特別な電話を機内に用意してございます。<br/>]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=101900&contents_flag=S&id=392FEFA0A7E7658565E8544D0E2D6598]]></sound>
+                                        
+
+<question no="14866" point="11" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[How can you make a call on the plane?]]></questionText>
+	
+	<description><![CDATA[【解説】<br>話の最後に We have special telephones if you want to make a call. と言っていますので、d が正答です。<br><br>【重要表現】<br>～ is in the air.：～が空中にいる。<br>make a call：電話をする<br>on the plane：機内で]]></description>
+	    	
+    	<explain_jp_script><![CDATA[機内で電話をかける場合はどうすればよいですか？<br/><br/>a. 携帯電話を使用する。<br/>b. 公衆電話を利用する。<br/>c. コンピュータ電話を使う。<br/>d. 特別な電話を利用する。]]></explain_jp_script>
+    <answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="true">
+        	
+                        	<choice no="1"><![CDATA[By mobile phone.]]></choice>
+                            
+                        	<choice no="2"><![CDATA[By pay phone.]]></choice>
+                            
+                        	<choice no="3"><![CDATA[By computer phone.]]></choice>
+                            
+                        	<choice no="4"><![CDATA[By special phone.]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="9555" type="listeningComprehension">
+                                    <title/>
+                                    <direction><![CDATA[音声を聞いて、質問に答えなさい。]]></direction>
+                                    
+                                            <en_script><![CDATA[By tomorrow morning, the weather will clear up. And that's good news for everyone participating in the Boston Marathon. The temperature in the morning should be in the low fifties, with just a few high scattered clouds.]]></en_script>                            
+                                        
+                                        <jp_script><![CDATA[明朝までに天気は快晴になるでしょう。そして、それはボストンマラソンに参加する全ての人々にとって良い知らせですね。午前中の気温は（華氏）50度前半で、少しばかりの千切れ雲が空高く現れるでしょう。]]></jp_script>
+                                    
+    
+                                        <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&upd=135300&contents_flag=S&id=06165C21158A3CC2C6D929EB834649C6]]></sound>
+                                        
+
+<question no="1494" point="12" skillType="2" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[What will the weather be like tomorrow?]]></questionText>
+	
+	<description><![CDATA[【解答】d.<br>最初に By tomorrow morning, the weather will clear up. と述べられ 、 最後にも、with just a few high scattered cloudsと述べられていますので、(D) が正答です。<br><br>【重要表現】<br>clear up：晴れる<br>participate in ～：～に参加する<br>in the low fifties：（温度について）５０度前半]]></description>
+	    	
+    	<explain_jp_script><![CDATA[明日の天気はどうですか？<br/><br/>a. 雨<br/>b. 曇り<br/>c. 雪<br/>d. 晴れ]]></explain_jp_script>
+    <answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="true">
+        	
+                        	<choice no="1"><![CDATA[Rainy.]]></choice>
+                            
+                        	<choice no="2"><![CDATA[Cloudy.]]></choice>
+                            
+                        	<choice no="3"><![CDATA[Snowy.]]></choice>
+                            
+                        	<choice no="4"><![CDATA[Sunny.]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+                    </questions>
+                    
+                    
+                    
+                    
+                    
+                    
+                        </book>
+                    
+            </data>
+        </result>

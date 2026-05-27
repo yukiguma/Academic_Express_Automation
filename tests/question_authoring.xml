@@ -1,0 +1,733 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<result>
+                <success>true</success> 
+                <err_msg_no/>
+                <err_msg/>
+                <data>
+            	
+				<book limitTime="" mission="" mode="" no="" shuffleQuestions="true">
+                    <explanation/>
+					<pass_comment/>
+					<fail_comment/>
+					<bookcover/>
+					<questions>
+
+                        
+						
+
+<question no="20013626" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[It has been raining on and ------- since this morning.]]></questionText>
+	<description><![CDATA[今朝から、雨が降ったりやんだりしている。<br><br>熟語的表現の問題です。on and off で「（雨などが）降ったりやんだり (= intermittently) 」という意味の熟語になります。 (off) が正答です。<br><br>【重要表現】<br>on and off：断続的に (= intermittently)<br>]]></description>
+	<answers><answer>2</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[in]]></choice>
+				
+				<choice no="2"><![CDATA[off]]></choice>
+				
+				<choice no="3"><![CDATA[out]]></choice>
+				
+				<choice no="4"><![CDATA[up]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014026" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The captain of the team avoided making any ------- comments.]]></questionText>
+	<description><![CDATA[そのチームのキャプテンはそれ以上、コメントをするのを避けた。<br><br>far は「（距離的に）遠い」と抽象的に「（程度が）甚だしい」という2つの意味を持っています。その2つの意味によって2つの比較級、最上級があります。「遠い」の意味では farther -- farthest、「甚だしい」の意味では further -- furthest のようになります。more, most は付きませんので、 (more far) は不適切です。ここでは ------- comments で「それ以上のコメント」という意味になるはずですので、「抽象的な程度」を表す further が最適で、(further) が正解になります。<br><br>【重要表現】<br>avoid 〜ing：〜するのを避ける<br>make comments：コメントをする/（批評的な）意見を述べる<br>]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[far]]></choice>
+				
+				<choice no="2"><![CDATA[more far]]></choice>
+				
+				<choice no="3"><![CDATA[farther]]></choice>
+				
+				<choice no="4"><![CDATA[further]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013856" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The rumor that he got married ------- be true.]]></questionText>
+	<description><![CDATA[彼が結婚したという噂は本当のはずがない。<br><br>助動詞とその後に続く BE動詞の形についての問題です。 (isn't) の後には 〜ing か -ed 形が置かれますし、(doesn't) は does not be とは言いませんので、不適切です。(had not) を助動詞とするのは「過去完了」ですので、後には「過去分詞」が続くはずで、これも不適切です。よって、動詞の原形を続ける (cannot) が正解です。cannot be (= can't be) 〜 は「〜のはずがない」という意味で使われますので、意味的にも自然です。<br><br>【重要表現】<br>get married：結婚する<br>]]></description>
+	<answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[isn't]]></choice>
+				
+				<choice no="2"><![CDATA[doesn't]]></choice>
+				
+				<choice no="3"><![CDATA[cannot]]></choice>
+				
+				<choice no="4"><![CDATA[had not]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20012786" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The gentleman ------- his book down beside his computer.]]></questionText>
+	<description><![CDATA[その紳士は、自分のコンピュータの横に本を置いた。<br><br>つづりの似た単語の識別に関する問題です。選択肢は全て動詞であり、ブランクの直後に his book という名詞句がありますので、これがブランクに入る動詞の目的語になると判断できます。つまり、ブランクに入る動詞は他動詞のはずです。(lay) の lay は「～を横たえる/置く」という他動詞、または「横たわる」という意味の自動詞 lie の過去形の可能性がありますが、主語が the gentleman と三人称、単数ですので、後者のはずです。(laid) は他動詞 lay の過去形、(lied) は「うそをつく」という意味の動詞 lie の過去形、(lain) は「横たわる/寝る」という意味の動詞 lie の過去分詞形です。この中でブランクに入れるのに最適な他動詞は (laid) です。以下のつづりの似た単語を識別して覚えておきましょう。<br> <br> 原形   過去形  過去分詞形<br> lie 「うそをつく」  lied   lied<br> lie 「横たわる」  lay  lain<br> lay 「～を横たえる」　 laid  laid<br> <br> （重要表現）<br> lay ～ down：～を置く/下ろす]]></description>
+	<answers><answer>2</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[lay]]></choice>
+				
+				<choice no="2"><![CDATA[laid]]></choice>
+				
+				<choice no="3"><![CDATA[lied]]></choice>
+				
+				<choice no="4"><![CDATA[lain]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014606" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The man showed me his ID, saying, "Here ------- are."]]></questionText>
+	<description><![CDATA[その男性は「はい、どうぞ」と言って、自分の身分証を私に見せた。<br><br>「はい、どうぞ」という意味の慣用表現についての問題です。「はい、どうぞ」は "Here you are." もしくは "Here it is." と言います。 (you) が正解です。<br><br>【重要表現】<br>Here you are.：はいどうぞ。<br>]]></description>
+	<answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[these]]></choice>
+				
+				<choice no="2"><![CDATA[they]]></choice>
+				
+				<choice no="3"><![CDATA[you]]></choice>
+				
+				<choice no="4"><![CDATA[we]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014416" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[In his youth, Uncle Bob caused a lot of -------.]]></questionText>
+	<description><![CDATA[若い頃、ボブおじさんは多くの面倒を引き起こした。<br><br>与えられた名詞から意味的に最適な単語を探す問題です。(studying)は「学習」、(subject) は「教科」、(trouble) は「問題/面倒」、(travel) は「旅行」という意味です。この中で caused a lot of ------- 「多くの-------を引き起こした」のブランクに入れるのに最適であるのは、「面倒」の意味を持つ trouble であり、(trouble) が正解になります。<br><br>【重要表現】<br>in one's youth：若い頃<br>a lot of 〜：たくさんの〜<br>]]></description>
+	<answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[studying]]></choice>
+				
+				<choice no="2"><![CDATA[subject]]></choice>
+				
+				<choice no="3"><![CDATA[trouble]]></choice>
+				
+				<choice no="4"><![CDATA[travel]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014006" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[Jane found herself ------- on the hospital bed.]]></questionText>
+	<description><![CDATA[ジェーンは気がついてみると、病院のベッドの上に寝ていた。<br><br>「find oneself 〜」 は「ふと気がつくと、〜である」という意味の慣用表現です。「〜」には、現在分詞、過去分詞、前置詞句などが置かれますが、「〜」が「現在分詞」の場合は「ふと気がつくと、〜している」という意味になります。<br><br>（例）Jim found himself looking at the girl.（ジムはふと気がつくと/知らず知らずのうちに、その少女を見ていた）<br><br>(to lie) は to-不定詞、(lay) は自動詞 lie「横たわる/寝る」の「過去形」ですので、不適切です。(lying) は同じ自動詞の「現在分詞形」ですので、これが正解になります。<br><br>【重要表現】<br>find oneself 〜ing：ふと気付くと〜している<br>]]></description>
+	<answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[lying]]></choice>
+				
+				<choice no="2"><![CDATA[to lie]]></choice>
+				
+				<choice no="3"><![CDATA[lay]]></choice>
+				
+				<choice no="4"><![CDATA[lain]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013896" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[I was very late because I took the ------- bus.]]></questionText>
+	<description><![CDATA[間違ったバスに乗ってしまったので、私はたいへん遅れた。<br><br>文脈上最適な形容詞を選択する問題です。(bad)「悪い」、(poor)「貧しい」は意味的に不適切です。(mistaken) は原則として人が主語になり I was mistaken.（「私は間違っていた」）のように用いますので、不適切です。よって、「間違ったバス」という意味になる (wrong) が正解です。<br><br>【重要表現】<br>take the wrong bus：間違ったバスに乗る<br>]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[bad]]></choice>
+				
+				<choice no="2"><![CDATA[mistaken]]></choice>
+				
+				<choice no="3"><![CDATA[poor]]></choice>
+				
+				<choice no="4"><![CDATA[wrong]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013556" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[I cannot ------- my neighbor who plays such loud music.]]></questionText>
+	<description><![CDATA[音楽をあんなに大音響でかける隣人に私は我慢ができない。<br><br>意味的に適切な動詞を選択する問題です。選択肢は全て他動詞で、文法的にはどれもブランクに入りますので、意味で判断しなくてはいけません。(drive) は「〜を車で連れていく」、(finish) は「〜を終える」、(seat) は「〜を座らせる」という意味でどれも不適切です。最後に、(stand) は「〜に耐える」という意味で、ブランクに入れると、「音楽をそんなに大音響でかける隣人に我慢ができない」という意味になりますので、これが正答です。]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[drive]]></choice>
+				
+				<choice no="2"><![CDATA[finish]]></choice>
+				
+				<choice no="3"><![CDATA[seat]]></choice>
+				
+				<choice no="4"><![CDATA[stand]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014506" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[Bill plays ------- very well.]]></questionText>
+	<description><![CDATA[ビルはとても上手にフルートを演奏する。<br><br>「楽器 (〜) を演奏する」は play the 〜 の形をとります。play the violin「バイオリンを弾く」、play the piano「ピアノを弾く」などがその良い例です。よって、ここでは play the flute「フルートを演奏する」となるはずであり、(the flute) が正解です。]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[flutist]]></choice>
+				
+				<choice no="2"><![CDATA[flutes]]></choice>
+				
+				<choice no="3"><![CDATA[a flute]]></choice>
+				
+				<choice no="4"><![CDATA[the flute]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014076" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The hotel clerk asked Kate if she had a -------.]]></questionText>
+	<description><![CDATA[そのホテルの職員は、ケイトに予約してあるかどうかを尋ねた。<br><br>意味的に適切な語を選択する問題です。(convention) は「会議」、(negotiation) は「交渉」、(preservation) は「保存」、(reservation) は「予約」という意味です。場所はホテルですので、had a reservation とし、「予約してある」という意味になるのが最適でしょう。よって、(reservation) が正解です。<br><br>【重要表現】<br>ask 人 if-節：人に〜かどうかを尋ねる<br>]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[convention]]></choice>
+				
+				<choice no="2"><![CDATA[negotiation]]></choice>
+				
+				<choice no="3"><![CDATA[preservation]]></choice>
+				
+				<choice no="4"><![CDATA[reservation]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013516" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[When you sit down, your ------- is on the chair.]]></questionText>
+	<description><![CDATA[座るときには、お尻が椅子の上に乗る。<br><br>文脈から意味的に適切な単語を選択する問題です。「座ったとき」には腰掛けにはお尻が乗るわけで、(bottom) が正答です。(down) は「下落」、(end) は「末尾」、(hip) は「腰/お尻の片側」の意味で、どれも不適切です。日本人は「お尻＝hip」と考える傾向がありますが、hip は両側の腰骨のあたりを指し、hips と複数形で使われるのが一般的です。<br><br>【重要表現】<br>sit down：座る/腰を下ろす<br>]]></description>
+	<answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[bottom]]></choice>
+				
+				<choice no="2"><![CDATA[down]]></choice>
+				
+				<choice no="3"><![CDATA[end]]></choice>
+				
+				<choice no="4"><![CDATA[hip]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013846" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[Sue went to a ------- high school.]]></questionText>
+	<description><![CDATA[スーは女子校に通っていた。<br><br>「女子（高）校」を何と言うか、という問題です。girls という複数名詞に 's を付けた所有格を (high) school の前に置きます。girls's とはならずに、最後の s は省略され、girls' となることに注意しましょう。つまり、girls' (high) school となるのです。ちなみに「女子大」は women's college と言います。]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[girl]]></choice>
+				
+				<choice no="2"><![CDATA[girls]]></choice>
+				
+				<choice no="3"><![CDATA[girl's]]></choice>
+				
+				<choice no="4"><![CDATA[girls']]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014346" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The waitress went to the ------- to check her makeup.]]></questionText>
+	<description><![CDATA[そのウェイトレスは化粧のチェックのためにトイレに行った。<br><br>単語の意味を問う問題です。(ballroom) は「パーティー用のダンスルーム」、(spare room) は「空き部屋/余分の部屋」、(restroom) は「お手洗い/化粧室」、(waiting room) は「待合室」の意味です。ここでは文脈上、to check her makeup「化粧をチェックするために」に最も適切な選択肢は restroom「お手洗い/化粧室」で、(restroom) が正解です。]]></description>
+	<answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[ballroom]]></choice>
+				
+				<choice no="2"><![CDATA[spare room]]></choice>
+				
+				<choice no="3"><![CDATA[restroom]]></choice>
+				
+				<choice no="4"><![CDATA[waiting room]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014536" point="4" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[In winter we need to wear a lot of -------.]]></questionText>
+	<description><![CDATA[冬にはたくさんの服を着なければならない。<br><br>名詞の意味についての問題です。(clothes) は「衣服」、(covers) は「覆い」、(dressings) は「（いくつかの種類の）ドレッシング」、(statues) は「像」という意味です。(clothes) が正解です。<br><br>【重要表現】<br>in winter：冬に（「in 季節」の形で、「〜の季節に」の意味）<br>need to-不定詞：〜する必要がある<br>a lot of 〜：たくさんの〜<br>]]></description>
+	<answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[clothes]]></choice>
+				
+				<choice no="2"><![CDATA[covers]]></choice>
+				
+				<choice no="3"><![CDATA[dressings]]></choice>
+				
+				<choice no="4"><![CDATA[statues]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014426" point="5" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[Nothing is ------- than a true friend.]]></questionText>
+	<description><![CDATA[真の友人ほど助けになるものはない。<br><br>比較級の形についての問題です。ブランクの直後に than a true friend「真の友人より」がありますので、ブランクには比較級が入るはずです。3音節以上の長めの形容詞/副詞の比較級は原則として「more＋形容詞/副詞」の形になることを知っていれば、(more helpful) が正解であるとわかるでしょう。]]></description>
+	<answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[most helpful]]></choice>
+				
+				<choice no="2"><![CDATA[better helpful]]></choice>
+				
+				<choice no="3"><![CDATA[ever helpful]]></choice>
+				
+				<choice no="4"><![CDATA[more helpful]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013586" point="5" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[Beth dropped in at my place ------- her way home.]]></questionText>
+	<description><![CDATA[ベスは帰宅途中で私の家に立ち寄った。<br><br>慣用句の一部となる前置詞を問う問題です。on one's way home で「〜の帰宅途中」の意味になりますので、(on) が正答です。on one's way を用いた表現は他にもたくさんあります。on one's way to 〜「〜へ行く途中」、on one's way back from 〜「〜から帰る途中」、on one's way abroad/downtown/upstairs「外国へ/町の中心街へ/２階へ行く途中」などは覚えておくと便利でしょう。<br><br>【重要表現】<br>drop in at 場所：〜に立ち寄る（drop in on 人：〜の家に立ち寄る）<br>on one's way home：帰宅途中で<br>]]></description>
+	<answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[at]]></choice>
+				
+				<choice no="2"><![CDATA[in]]></choice>
+				
+				<choice no="3"><![CDATA[on]]></choice>
+				
+				<choice no="4"><![CDATA[to]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013816" point="5" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The boy ------- will sing next is Mr. Smith's son.]]></questionText>
+	<description><![CDATA[次に歌う少年は、スミスさんの息子だ。<br><br>関係代名詞の格の問題です。ブランクに入る関係代名詞は will sing の主語になります。よって、関係代名詞は主格であり、(who) が正解です。このように関係代名詞の格は関係詞節中（ここでは、who will sing next）での関係代名詞の役割を示します。]]></description>
+	<answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[who]]></choice>
+				
+				<choice no="2"><![CDATA[whose]]></choice>
+				
+				<choice no="3"><![CDATA[whom]]></choice>
+				
+				<choice no="4"><![CDATA[what]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014586" point="5" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The beggar does not have a house to -------.]]></questionText>
+	<description><![CDATA[その乞食は住む家がない。<br><br>ここでの不定詞は形容詞的用法で、「住むための」という意味になり、a house を後ろから修飾します。意味的に考えると、修飾される名詞は修飾する to-不定詞の目的語の関係になっています。to live in a house とは言えますが、to live a house とは言えませんので、in という前置詞を置かなくてはいけません。よって、(live in) が正解です。]]></description>
+	<answers><answer>2</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[live]]></choice>
+				
+				<choice no="2"><![CDATA[live in]]></choice>
+				
+				<choice no="3"><![CDATA[be living]]></choice>
+				
+				<choice no="4"><![CDATA[be lived]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014566" point="5" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[On that day, the taxi driver ------- avoided an accident.]]></questionText>
+	<description><![CDATA[その日、そのタクシーの運転手はかろうじて事故を免れた。<br><br>-ly の接尾辞を持つ副詞の中から意味的に最適な語を選ぶ問題です。(barely) は「かろうじて/すんでのところで」、(commonly) は「普通」、(generally) は「一般的に」、(recently) は「最近」という意味で、(commonly)、(generally)、(recently) はどれも「習慣的行為」と共に用いられる動詞であり、on that day「その日（に）」という特定の時点を表す語句と一緒には用いません。よって、「かろうじて/すんでのところで」というある特定の時点での行為を修飾できる (barely) が正解になります。]]></description>
+	<answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[barely]]></choice>
+				
+				<choice no="2"><![CDATA[commonly]]></choice>
+				
+				<choice no="3"><![CDATA[generally]]></choice>
+				
+				<choice no="4"><![CDATA[recently]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013826" point="5" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[The soccer game was so ------- that everyone went wild.]]></questionText>
+	<description><![CDATA[そのサッカーの試合は非常に白熱したので、みんな熱狂した。<br><br>so … that 〜 の構文です。ブランクには形容詞/副詞が入ります。よって、動詞である (excite) や名詞である (excitement) は不適切になります。現在分詞である (exciting) や過去分詞である (excited) は形容詞相当語句ですので、文法的にはブランクに入りますが、ここで意味的な選択をする必要があります。主部が The soccer game ですので、excited「興奮した」というのは変で、 exciting「（人を）興奮させる」が適切です。よって、(exciting) が正解になります。excite は他動詞で本来「〜を興奮させる」という意味ですので、現在分詞では exciting「（人）を興奮させる」、過去分詞では受け身的になり、「興奮させられた ---> 興奮した」という意味になることを覚えておいてください。<br><br>【重要表現】<br>go wild：熱狂する<br>]]></description>
+	<answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[excite]]></choice>
+				
+				<choice no="2"><![CDATA[excited]]></choice>
+				
+				<choice no="3"><![CDATA[exciting]]></choice>
+				
+				<choice no="4"><![CDATA[excitement]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20013426" point="5" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[Tom felt a sharp ------- in his stomach.]]></questionText>
+	<description><![CDATA[トムは胃に鋭い痛みを覚えた。<br><br>似た意味の単語から最も適切な語を選択する問題です。(harm) は「損傷」、(injury) は「外傷」、(wound) は「傷」でどれも felt「感じた」には意味的に続きません。この場合、feel pain「痛みを感じる」が意味的に最も適切な表現になりますので、(pain) が正答です。]]></description>
+	<answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[harm]]></choice>
+				
+				<choice no="2"><![CDATA[injury]]></choice>
+				
+				<choice no="3"><![CDATA[pain]]></choice>
+				
+				<choice no="4"><![CDATA[wound]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+
+<question no="20014106" point="5" skillType="3" type="multipleChoice">
+
+
+
+	
+	
+    <title>文法問題</title>
+	<direction><![CDATA[空所に入る最も適当な語句を選びなさい。]]></direction>
+	<questionText><![CDATA[Anne is as nice a girl ------- Lucy.]]></questionText>
+	<description><![CDATA[アンはルーシー同様、親切な少女だ。<br><br>比較表現の問題です。まず、ブランクに先行する形容詞 nice の前に as があることに着目しましょう。「as 形容詞/副詞の原級 as 〜 」は「〜と同様に.../〜に負けず劣らず...」という意味の同等比較を表す表現です。よって、ブランクには as が入ることがわかります。また、2つの as の間に 「a/an 形容詞＋名詞」が挟まれる場合には「as 形容詞 a/an 名詞 as」の語順になることも併せて覚えておきましょう。]]></description>
+	<answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+		<choices shuffleChoices="true">
+        	
+				<choice no="1"><![CDATA[as]]></choice>
+				
+				<choice no="2"><![CDATA[but]]></choice>
+				
+				<choice no="3"><![CDATA[like]]></choice>
+				
+				<choice no="4"><![CDATA[of]]></choice>
+				
+		</choices>
+	    
+    <check_flag/>
+
+	
+	
+</question>
+
+					</questions>
+            	</book>
+            </data>
+        </result>
