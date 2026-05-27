@@ -536,8 +536,10 @@
         }
 
         // Phase 5: Progress/order fallback for vocabulary pages whose visible
-        // prompt text differs from the captured answer data.
-        if (activeQuestionRange !== null) {
+        // prompt text differs from the captured answer data. Only use this when
+        // text-based matching found nothing; otherwise it adds hidden/shuffled
+        // questions and produces noisy "not found" logs.
+        if (activeQuestionRange !== null && matchedPairs.length === 0) {
             for (let i = 0; i < questionsList.length; i++) {
                 if (usedIndices.has(i)) continue;
 
