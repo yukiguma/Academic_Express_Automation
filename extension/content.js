@@ -344,8 +344,13 @@
         return null;
     }
 
-    function questionMatchesActiveOrder(question, activeQuestionRange) {
-        if (activeQuestionRange === null) return true;
+    function hasDuplicateSignature(question) {
+        if (!question.signature) return false;
+        return questionsList.filter(q => q.signature === question.signature).length > 1;
+    }
+
+    function questionMatchesActiveOrder(question, activeQuestionRange, forceOrderMatch = false) {
+        if (activeQuestionRange === null || (!forceOrderMatch && !hasDuplicateSignature(question))) return true;
         const order = Number(question.displayOrder);
         return order >= activeQuestionRange.start && order <= activeQuestionRange.end;
     }
@@ -408,6 +413,42 @@
 
             const className = String(el.className || "");
             let score = 2000 - text.length;
+            if (className.includes('Question') || className.includes('question')) score += 500;
+            if (className.includes('Quiz') || className.includes('quiz')) score += 250;
+
+            if (score > bestScore) {
+                best = el;
+                bestScore = score;
+            }
+        }
+
+        return best;
+    }
+
+    function findQuestionElementByNumber(questionNumber, usedElements) {
+        const candidates = Array.from(document.body?.querySelectorAll([
+            '[class*="Question"]',
+            '[class*="question"]',
+            '[class*="Quiz"]',
+            '[class*="quiz"]',
+            'section',
+            'article',
+            'div',
+            'li'
+        ].join(', ')) || []);
+
+        let best = null;
+        let bestScore = -Infinity;
+
+        for (const el of candidates) {
+            if (usedElements.has(el) || !isVisibleElement(el)) continue;
+            if (getVisibleQuestionNumber(el) !== questionNumber) continue;
+
+            const text = el.innerText || el.textContent || "";
+            if (text.length > 4000) continue;
+
+            const className = String(el.className || "");
+            let score = 4000 - text.length;
             if (className.includes('Question') || className.includes('question')) score += 500;
             if (className.includes('Quiz') || className.includes('quiz')) score += 250;
 
@@ -492,6 +533,25 @@
             usedElements.add(el);
             const container = findQuestionContainer(el, question.type);
             matchedPairs.push({ element: container, data: question });
+        }
+
+        // Phase 5: Progress/order fallback for vocabulary pages whose visible
+        // prompt text differs from the captured answer data.
+        if (activeQuestionRange !== null) {
+            for (let i = 0; i < questionsList.length; i++) {
+                if (usedIndices.has(i)) continue;
+
+                const question = questionsList[i];
+                if (!questionMatchesActiveOrder(question, activeQuestionRange, true)) continue;
+
+                const questionNumber = Number(question.displayOrder);
+                const el = findQuestionElementByNumber(questionNumber, usedElements);
+                const container = el ? findQuestionContainer(el, question.type) : document.body;
+
+                usedIndices.add(i);
+                if (el) usedElements.add(el);
+                matchedPairs.push({ element: container, data: question });
+            }
         }
 
         return matchedPairs;

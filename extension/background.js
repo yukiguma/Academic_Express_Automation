@@ -70,7 +70,7 @@ function firstTagText(content, tagNames) {
 
 function collectChoices(questionContent) {
     const choices = {};
-    const choiceRegex = /<(choice|option)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
+    const choiceRegex = /<(choice|option|select|selection)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
     let match;
 
     while ((match = choiceRegex.exec(questionContent)) !== null) {
@@ -126,7 +126,22 @@ function collectXMLAnswers(questionContent, questionText) {
         if (isCorrect) pushMappedAnswer(answers, correctMatch[3], choices);
     }
 
-    ['correctAnswer', 'correctAnswers', 'rightAnswer', 'solution'].forEach(tagName => {
+    [
+        'answerText',
+        'answer_text',
+        'correct',
+        'correctNo',
+        'correctChoice',
+        'correct_choice',
+        'correctAnswer',
+        'correctAnswers',
+        'correct_answer',
+        'correct_answers',
+        'right',
+        'rightAnswer',
+        'right_answer',
+        'solution'
+    ].forEach(tagName => {
         const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
         let match;
         while ((match = regex.exec(questionContent)) !== null) {
@@ -155,17 +170,27 @@ function parseXML(xmlText) {
     let questionMatch;
     let displayOrder = 0;
 
-    while ((questionMatch = questionRegex.exec(xmlText)) !== null) {
-        const attrs = parseAttributes(questionMatch[1]);
-        const type = inferType(attrs.type || attrs.questiontype || attrs.kind, questionMatch[2]);
-        const questionContent = questionMatch[2];
+    function pushQuestion(attrs, questionContent) {
+        const type = inferType(attrs.type || attrs.questiontype || attrs.kind, questionContent);
         const questionText = unwrapText(firstTagText(questionContent, [
             'questionText',
+            'question_text',
+            'qText',
+            'q_text',
             'questionSentence',
+            'question_sentence',
             'sentence',
+            'sentenceText',
+            'sentence_text',
+            'example',
+            'phrase',
+            'promptText',
+            'prompt_text',
             'prompt',
             'body',
-            'text'
+            'text',
+            'en',
+            'eng'
         ]));
         const answers = collectXMLAnswers(questionContent, questionText);
 
@@ -179,6 +204,19 @@ function parseXML(xmlText) {
                 displayOrder: displayOrder,
                 questionNo: attrs.no || ""
             });
+        }
+    }
+
+    while ((questionMatch = questionRegex.exec(xmlText)) !== null) {
+        pushQuestion(parseAttributes(questionMatch[1]), questionMatch[2]);
+    }
+
+    if (questionsList.length === 0) {
+        const genericBlockRegex = /<(item|row|entry|quiz|problem|word)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
+        let blockMatch;
+
+        while ((blockMatch = genericBlockRegex.exec(xmlText)) !== null) {
+            pushQuestion(parseAttributes(blockMatch[2]), blockMatch[3]);
         }
     }
 

@@ -64,3 +64,19 @@ Expected answers in the fixture order:
 3. `Basketball`
 4. `Three seconds`
 5. `The regional championship`
+
+## Vocabulary / Grammar Bank Pages
+
+Observed from the live vocabulary page:
+
+- The player can show generic Japanese instructions in the visible question
+  header while the captured answer data uses a different prompt/source field.
+  Text-signature matching may fail even when the answer data has been captured.
+- In that case, the progress indicator (`1 / 23`, etc.) is the reliable link
+  between the visible page and the captured question order.
+- When `shuffleQuestions="true"`, the progress indicator is not the XML order.
+  Use progress order only for duplicated prompt signatures; otherwise prefer
+  visible text matching.
+- The authoring endpoint can be `question_authoring.cfc?method=sortingXml...`
+  even when the visible interaction is multiple choice. The parser should avoid
+  assuming the method name is the solver type.
