@@ -329,18 +329,34 @@
         return getCurrentProgressQuestionNumber();
     }
 
-    function findQuestionIndexForElement(el, usedIndices, matches) {
+    function questionMatchesActiveOrder(question, activeQuestionNumber) {
+        return activeQuestionNumber === null ||
+            Number(question.displayOrder) === activeQuestionNumber;
+    }
+
+    function findQuestionIndexForElement(el, usedIndices, matches, activeQuestionNumber = null) {
         const visibleNumber = getVisibleQuestionNumber(el);
+        if (activeQuestionNumber !== null &&
+            visibleNumber !== null &&
+            visibleNumber !== activeQuestionNumber) {
+            return -1;
+        }
+
         if (visibleNumber !== null) {
             const orderedIndex = questionsList.findIndex((q, i) => {
                 return !usedIndices.has(i) &&
+                    questionMatchesActiveOrder(q, activeQuestionNumber) &&
                     Number(q.displayOrder) === visibleNumber &&
                     matches(q, i);
             });
             if (orderedIndex !== -1) return orderedIndex;
         }
 
-        return questionsList.findIndex((q, i) => !usedIndices.has(i) && matches(q, i));
+        return questionsList.findIndex((q, i) => {
+            return !usedIndices.has(i) &&
+                questionMatchesActiveOrder(q, activeQuestionNumber) &&
+                matches(q, i);
+        });
     }
 
     function findQuestionElementByText(question, usedElements) {
@@ -384,6 +400,7 @@
     }
 
     function findActiveQuestions() {
+        const activeQuestionNumber = getCurrentProgressQuestionNumber();
         const textElements = document.querySelectorAll('[class*="QuestionBuilder__question___"], [class*="QuestionView__question___"]');
         const visibleElements = Array.from(textElements).filter(el => {
             return isVisibleElement(el);
@@ -396,7 +413,7 @@
         // Phase 1: Exact Signature Match
         for (const el of visibleElements) {
             const domSig = normalizeSignature(el.textContent);
-            const idx = findQuestionIndexForElement(el, usedIndices, q => q.signature === domSig);
+            const idx = findQuestionIndexForElement(el, usedIndices, q => q.signature === domSig, activeQuestionNumber);
 
             if (idx !== -1) {
                 usedIndices.add(idx);
@@ -413,7 +430,7 @@
             const domSig = normalizeSignature(el.textContent);
             const idx = findQuestionIndexForElement(el, usedIndices, q => {
                 return domSig.includes(q.signature) || q.signature.includes(domSig);
-            });
+            }, activeQuestionNumber);
 
             if (idx !== -1) {
                 usedIndices.add(idx);
@@ -431,7 +448,7 @@
             const idx = findQuestionIndexForElement(el, usedIndices, q => {
                 const cleanXml = q.signature.slice(0, 20);
                 return domSig.includes(cleanXml);
-            });
+            }, activeQuestionNumber);
 
             if (idx !== -1) {
                 usedIndices.add(idx);
@@ -446,6 +463,7 @@
             if (usedIndices.has(i)) continue;
 
             const question = questionsList[i];
+            if (!questionMatchesActiveOrder(question, activeQuestionNumber)) continue;
             const el = findQuestionElementByText(question, usedElements);
             if (!el) continue;
 

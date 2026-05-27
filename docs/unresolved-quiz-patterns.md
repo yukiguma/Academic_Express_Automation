@@ -17,6 +17,9 @@ Differences from the previously handled patterns:
   `<choice no="2">...</choice>` before solving.
 - The page displays a question order such as `6:` and `6 / 9`. That order is
   needed to disambiguate repeated question text.
+- The player can keep multiple same-text question components mounted at once.
+  The active progress indicator (`2 / 9`, etc.) must be used to solve only the
+  current question.
 - Choice counts vary. Some questions have four options (`a.` to `d.`), while
   others have three.
 - `shuffleChoices` may be `true`, so answers should be clicked by mapped choice
