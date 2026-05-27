@@ -98,14 +98,17 @@ fixture から確認した例:
 
 - XML の `<answer>` や `correctAnswer` のような正解専用フィールドはない。
 - `questions[]` の各要素に `keyword.ja` と `keyword.en` があり、この組み合わせが問題文と正答になる。
-- `tangolists_jan` と `tangolists_eng` は選択肢リストで、`keyword.en` が英語選択肢側の正答。
+- `tangolists_jan` と `tangolists_eng` は選択肢リストで、出題方向によってどちらをクリックするかが変わる。
+- `wd_type=7` は日→英、`wd_type=8` は英→日として扱う。
 - `shuffleQuestions=true` のため、XML 上の順番ではなく画面テキストで照合する必要がある。
 - `know_chk` は正答ではなく、既知/学習状態を表すフラグとして扱う。
 
 実装上の対応:
 
 - 汎用 JSON パーサより先に `tango_data_manipulate` 形式を判定する。
-- `keyword.ja` を画面照合用の `rawText`、`keyword.en` を `answers` として保存する。
+- 日→英では `keyword.ja` を画面照合用の `rawText`、`keyword.en` を `answers` として保存する。
+- 英→日では `keyword.en` を画面照合用の `rawText`、`keyword.ja` を `answers` として保存する。
+- `wd_type` が取れない場合だけ、両方向の候補を保存する。
 - 単語テストは選択後にページ側が自動で次問へ進むため、`isAutoAdvance=true` として扱う。
 
 fixture から確認した例:

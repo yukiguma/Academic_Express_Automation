@@ -310,28 +310,38 @@ function isTangoQuestion(item) {
         Array.isArray(item.tangolists_jan);
 }
 
+function getTangoDirections(data) {
+    const wdType = String(data?.wd_type ?? data?.wdType ?? "");
+    if (wdType === "7") return [['ja', 'en']];
+    if (wdType === "8") return [['en', 'ja']];
+    return [['ja', 'en'], ['en', 'ja']];
+}
+
 function parseTangoData(data) {
     if (!data || !Array.isArray(data.questions) || !data.questions.some(isTangoQuestion)) {
         return null;
     }
 
     const questionsList = [];
+    const directions = getTangoDirections(data);
 
     data.questions.forEach((q, index) => {
         if (!isTangoQuestion(q)) return;
 
-        const japanese = unwrapText(q.keyword.ja);
-        const english = unwrapText(q.keyword.en);
-        if (!japanese || !english) return;
+        directions.forEach(([promptLang, answerLang]) => {
+            const prompt = unwrapText(q.keyword[promptLang]);
+            const answer = unwrapText(q.keyword[answerLang]);
+            if (!prompt || !answer) return;
 
-        questionsList.push({
-            type: 'multipleChoice',
-            answers: [english],
-            rawText: japanese,
-            signature: makeSignature(japanese),
-            displayOrder: index + 1,
-            questionNo: String(q.word_no ?? q.level_no ?? ""),
-            isAutoAdvance: true
+            questionsList.push({
+                type: 'multipleChoice',
+                answers: [answer],
+                rawText: prompt,
+                signature: makeSignature(prompt),
+                displayOrder: index + 1,
+                questionNo: String(q.word_no ?? q.level_no ?? ""),
+                isAutoAdvance: true
+            });
         });
     });
 
