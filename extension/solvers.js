@@ -35,6 +35,7 @@ function simulateType(element, value) {
 
 function normalizeText(text) {
     return String(text || "")
+        .replace(/[\u2018\u2019\u02bc]/g, "'")
         .replace(/\s+/g, ' ')
         .trim()
         .toLowerCase();
@@ -42,6 +43,10 @@ function normalizeText(text) {
 
 function compactText(text) {
     return normalizeText(text).replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+function hasApostrophe(text) {
+    return /['\u2018\u2019\u02bc]/.test(String(text || ""));
 }
 
 function isVisible(element) {
@@ -96,12 +101,16 @@ function choiceTexts(element, scope) {
 function textMatches(candidate, answer, exact) {
     const normalizedCandidate = normalizeText(candidate);
     const normalizedAnswer = normalizeText(answer);
-    const compactCandidate = compactText(candidate);
-    const compactAnswer = compactText(answer);
 
     if (!normalizedCandidate || !normalizedAnswer) return false;
-    if (normalizedCandidate === normalizedAnswer || compactCandidate === compactAnswer) return true;
-    return !exact && (normalizedCandidate.includes(normalizedAnswer) || compactCandidate.includes(compactAnswer));
+    if (normalizedCandidate === normalizedAnswer) return true;
+    if (exact) return false;
+    if (normalizedCandidate.includes(normalizedAnswer)) return true;
+    if (hasApostrophe(candidate) || hasApostrophe(answer)) return false;
+
+    const compactCandidate = compactText(candidate);
+    const compactAnswer = compactText(answer);
+    return compactCandidate === compactAnswer || compactCandidate.includes(compactAnswer);
 }
 
 function collectChoiceCandidates(scope) {
