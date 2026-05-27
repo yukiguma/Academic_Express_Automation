@@ -317,16 +317,54 @@ function getTangoDirections(data) {
     return [['ja', 'en'], ['en', 'ja']];
 }
 
+function buildTangoTypingQuestion(q, index) {
+    const japanese = unwrapText(q.keyword.ja);
+    const english = unwrapText(q.keyword.en);
+    if (!japanese || !english) return null;
+
+    const sentenceEnglish = unwrapText(q.sentence?.en);
+    const sentenceJapanese = unwrapText(q.sentence?.ja);
+    if (sentenceEnglish && sentenceJapanese) {
+        const answer = sentenceEnglish.replace(/[\[\]]/g, '');
+        return {
+            type: 'sentenceTyping',
+            answers: [answer],
+            rawText: sentenceEnglish,
+            signature: makeSignature(sentenceEnglish),
+            displayOrder: index + 1,
+            questionNo: String(q.word_no ?? q.level_no ?? ""),
+            isAutoAdvance: true
+        };
+    }
+
+    return {
+        type: 'typing',
+        answers: [english],
+        rawText: japanese,
+        signature: makeSignature(japanese),
+        displayOrder: index + 1,
+        questionNo: String(q.word_no ?? q.level_no ?? ""),
+        isAutoAdvance: true
+    };
+}
+
 function parseTangoData(data) {
     if (!data || !Array.isArray(data.questions) || !data.questions.some(isTangoQuestion)) {
         return null;
     }
 
     const questionsList = [];
+    const wdType = String(data?.wd_type ?? data?.wdType ?? "");
     const directions = getTangoDirections(data);
 
     data.questions.forEach((q, index) => {
         if (!isTangoQuestion(q)) return;
+
+        if (wdType === "2") {
+            const question = buildTangoTypingQuestion(q, index);
+            if (question) questionsList.push(question);
+            return;
+        }
 
         directions.forEach(([promptLang, answerLang]) => {
             const prompt = unwrapText(q.keyword[promptLang]);

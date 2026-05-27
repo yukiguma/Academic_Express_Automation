@@ -123,6 +123,7 @@ fixture から確認した例:
 - 汎用 JSON パーサより先に `tango_data_manipulate` 形式を判定する。
 - 日→英では `keyword.ja` を画面照合用の `rawText`、`keyword.en` を `answers` として保存する。
 - 英→日では `keyword.en` を画面照合用の `rawText`、`keyword.ja` を `answers` として保存する。
+- `wd_type=2` は multipleChoice として扱わず、`keyword.en` を入力する `typing` として保存する。`sentence.en` / `sentence.ja` がある場合は `sentenceTyping` として、穴埋め記号を外した英文を正答にする。
 - `wd_type=7` または方向が取れない場合は、両方向の候補を保存し、実際に画面へ表示されている語句との照合で対象を決める。
 - 単語テストは選択後にページ側が自動で次問へ進むため、`isAutoAdvance=true` として扱う。
 
