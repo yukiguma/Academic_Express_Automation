@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<result>
+            <success>true</success> 
+            <err_msg_no/>
+            <err_msg/>
+            <data>
+        	
+                                <book limitTime="240" mission="100" mode="book" no="4454" shuffleQuestions="false">
+                            
+                        
+                        <booktitle/>
+                        <explanation/>
+                        <pass_comment/>
+                        <fail_comment/>
+                        <bookcover/>
+                        
+                       
+    
+                        
+                        
+                    
+                    <questions>
+                    
+    
+    							
+                                
+                                <combinationQuestion no="8435" type="readingComprehension">
+                                    <title/>
+                                    <direction><![CDATA[次の画像を見て、質問に答えなさい。]]></direction>
+                                    
+                                        <jp_script><![CDATA[合衆国への原油の輸入<br/>産油国別（2002 年現在）<br/><br/>Rank: 順位<br/>Country of Origin: 原油国<br/>Thousand Barrels/day: １日の輸入量（1000バレル単位）<br/><br/>Saudi Arabia: サウジアラビア<br/>Mexico: メキシコ<br/>Canada: カナダ<br/>Venezuela: ベネズエラ<br/>Nigeria: ナイジェリア<br/>Iraq: イラク<br/>United Kingdom: イギリス<br/>Norway: ノルウェー<br/>Angola: アンゴラ<br/>Colombia: コロンビア ]]></jp_script>
+                                    
+    
+                                        <image><![CDATA[/as/flash/materialImage.cfm?ver=0_0&upd=151500&contents_flag=S&id=7C6863093B33C0F0C6539F2B217A9763]]></image>
+                                    
+
+<question no="14556" point="20" skillType="1" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[Which country was among the top five suppliers to the United States?]]></questionText>
+	
+	<description><![CDATA[【解説】<br>表を参照すると、Saudi Arabia, Mexico, Canada, Venezuela, Nigeria が合衆国への石油供給量の最も多いトップ５の国々であることがわかります。よって、正答は d です。]]></description>
+	    	
+    	<explain_jp_script><![CDATA[合衆国への原油供給量が上位５つの産油国に入ったのはどの国ですか？<br/><br/>a. アンゴラ<br/>b. ノルウェー<br/>c. イラク<br/>d. ベネズエラ]]></explain_jp_script>
+    <answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="true">
+        	
+                        	<choice no="1"><![CDATA[Angola]]></choice>
+                            
+                        	<choice no="2"><![CDATA[Norway]]></choice>
+                            
+                        	<choice no="3"><![CDATA[Iraq]]></choice>
+                            
+                        	<choice no="4"><![CDATA[Venezuela]]></choice>
+                            
+		</choices>
+	
+</question>
+
+
+<question no="14558" point="20" skillType="1" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[What is the unit of measure for the oil?]]></questionText>
+	
+	<description><![CDATA[【解説】<br>表の右側の見出しに Thousand Barrels/day と書いてありますので、d が正答です。]]></description>
+	    	
+    	<explain_jp_script><![CDATA[原油（輸入量）の表示単位は何ですか？<br/><br/>a. １日あたりの100万バレル単位<br/>b. １年あたりの100ガロン単位<br/>c. １月あたりのバレル単位<br/>d. １日あたりの1000バレル単位]]></explain_jp_script>
+    <answers><answer>4</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="true">
+        	
+                        	<choice no="1"><![CDATA[Millions of barrels each day]]></choice>
+                            
+                        	<choice no="2"><![CDATA[Hundreds of gallons each year]]></choice>
+                            
+                        	<choice no="3"><![CDATA[Barrels each month]]></choice>
+                            
+                        	<choice no="4"><![CDATA[Thousands of barrels each day]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+    
+    							
+                                
+                                <combinationQuestion no="8436" type="readingComprehension">
+                                    <title/>
+                                    <direction><![CDATA[次の画像を見て、質問に答えなさい。]]></direction>
+                                    
+                                        <jp_script><![CDATA[昨晩行われたバスケットボール地区トーナメントはエキサイティングな時間を提供してくれました。3点差を追う形で、残り3秒になってしまい、地元チームのパイロッツは敗北をきっするところでした。しかし、リッキー＝アンダーウッドがハーフコートの地点からボールを投げた時、フーターズの人気ガードのジョニー＝ベイツがつまずいて、彼に倒れかかったのです。シュートしたボールは入りました。「入ったのにはビックリしたよ。僕は普通、シュートは下手だからね。」とガードのアンダーウッドは言っています。<br/><br/>次にリッキーはフリースローのラインへと進みました。ボールはバスケットを通り抜け、パイロッツは 57 対 56 で、地区大会優勝を勝ち得ました。信じられないバスケットボールの勝利です！パイロッツは来週の日曜日、キャピタルシティで午後3時にミドルタウンマスターズと試合をし、その試合の勝者が州決勝戦に進むことになります。]]></jp_script>
+                                    
+    
+                                        <image><![CDATA[/as/flash/materialImage.cfm?ver=0_0&upd=151000&contents_flag=S&id=1595AF6435015C77A7149E92A551338E]]></image>
+                                    
+
+<question no="1365" point="20" skillType="1" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[What sport does the story refer to?]]></questionText>
+	
+	<description><![CDATA[【解説】<br>本文最初に The regional basketball tournament offered an exciting time last night. と書かれていますので、バスケットボールの試合についての話であることが分かります。よって、c が正解です。<br><br>（重要表現）<br>refer to X：X に言及する/X に（話の中で）触れる]]></description>
+	    	
+    	<explain_jp_script><![CDATA[どんなスポーツについての話ですか？<br/><br/>a. フットボール<br/>b. 陸上競技<br/>c. バスケットボール<br/>d. サッカー]]></explain_jp_script>
+    <answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="true">
+        	
+                        	<choice no="1"><![CDATA[Football]]></choice>
+                            
+                        	<choice no="2"><![CDATA[Track and Field]]></choice>
+                            
+                        	<choice no="3"><![CDATA[Basketball]]></choice>
+                            
+                        	<choice no="4"><![CDATA[Soccer]]></choice>
+                            
+		</choices>
+	
+</question>
+
+
+<question no="1366" point="20" skillType="1" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[How much time was left when Ricky Underwood threw from half court?]]></questionText>
+	
+	<description><![CDATA[【解説】<br>本文の初めの方に Trailing by three points, with three seconds to go, the home team Pilots were facing defeat. But Ricky Underwood threw the ball from half court as Johnny Bates, the Hooters’ star guard, tripped and fell against him. と書かれていますので、３点差で、残り３秒の時、リッキー＝アンダーウッドがハーフコートからボールを投げたのが分かります。よって、正解は c です。]]></description>
+	    	
+    	<explain_jp_script><![CDATA[リッキー＝アンダーウッドがハーフコートからボールを投げた時、時間は後どれくらい残っていましたか？<br/><br/>a. １秒<br/>b. ２秒<br/>c. ３秒<br/>d. ４秒]]></explain_jp_script>
+    <answers><answer>3</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="true">
+        	
+                        	<choice no="1"><![CDATA[One second]]></choice>
+                            
+                        	<choice no="2"><![CDATA[Two seconds]]></choice>
+                            
+                        	<choice no="3"><![CDATA[Three seconds]]></choice>
+                            
+                        	<choice no="4"><![CDATA[Four seconds]]></choice>
+                            
+		</choices>
+	
+</question>
+
+
+<question no="1367" point="20" skillType="1" type="multipleChoice">
+	<title><![CDATA[Q & A Multiple Choice]]></title>
+	<direction/>
+	<questionText><![CDATA[What did the Pilots win?]]></questionText>
+	
+	<description><![CDATA[【解説】<br>本文の後半に The ball went through the basket, and the Pilots won the regional championship, 57-56. と書かれていますので、パイロッツは地区大会で優勝したことが分かります。よって、a が正解です。]]></description>
+	    	
+    	<explain_jp_script><![CDATA[パイロッツは何を勝ち得ましたか？<br/><br/>a. 地区大会優勝<br/>b. 州大会優勝<br/>c. 全国大会優勝<br/>d. キャピタルシティ大会優勝]]></explain_jp_script>
+    <answers><answer>1</answer></answers> 
+		<!-- 選択肢 -->
+        
+        
+
+		<choices shuffleChoices="true">
+        	
+                        	<choice no="1"><![CDATA[The regional championship]]></choice>
+                            
+                        	<choice no="2"><![CDATA[The state championship]]></choice>
+                            
+                        	<choice no="3"><![CDATA[The national championship]]></choice>
+                            
+                        	<choice no="4"><![CDATA[The Capital City championship]]></choice>
+                            
+		</choices>
+	
+</question>
+
+                                </combinationQuestion>
+                                
+                    </questions>
+                    
+                    
+                    
+                    
+                    
+                    
+                        </book>
+                    
+            </data>
+        </result>
