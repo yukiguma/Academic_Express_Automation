@@ -76,6 +76,18 @@
         return base;
     }
 
+    function getQuestionRunKey(question) {
+        return [
+            question.displayOrder || "",
+            question.questionNo || "",
+            question.signature || ""
+        ].join(':');
+    }
+
+    function getCompositeRunKey(pairs) {
+        return pairs.map(p => getQuestionRunKey(p.data)).join('|');
+    }
+
 
     // Listen for captured XHR data from injected script
     window.addEventListener('message', async (event) => {
@@ -127,7 +139,7 @@
         const config = SPEED_CONFIG[mode];
         let total = 0;
 
-        const compositeSig = pairs.map(p => p.data.signature).join('|');
+        const compositeSig = getCompositeRunKey(pairs);
         const isNew = (forceNew !== null) ? forceNew : (compositeSig !== lastSolvedSignature);
 
         // Skip reading time for vocabulary tests (isAutoAdvance) or fast mode
@@ -620,7 +632,7 @@
             return;
         }
 
-        const compositeSig = activePairs.map(p => p.data.signature).join('|');
+        const compositeSig = getCompositeRunKey(activePairs);
         const isNewQuestion = compositeSig !== lastSolvedSignature;
         const estimatedSeconds = getEstimatedTime(activePairs, isFastMode, isNewQuestion);
 

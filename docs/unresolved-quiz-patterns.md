@@ -20,6 +20,9 @@ Differences from the previously handled patterns:
 - The player can keep multiple same-text question components mounted at once.
   The active progress indicator (`2 / 9`, etc.) must be used to solve only the
   current question.
+- Auto-mode must track solved questions by order/question id as well as text.
+  The first six questions share the same text signature, so text-only tracking
+  stops after the first question.
 - Choice counts vary. Some questions have four options (`a.` to `d.`), while
   others have three.
 - `shuffleChoices` may be `true`, so answers should be clicked by mapped choice
