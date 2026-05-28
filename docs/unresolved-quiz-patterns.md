@@ -252,6 +252,7 @@ E2E での確認:
 - 単語 spelling では先頭など一部文字がヒント表示済みになることがあり、未入力の文字枠だけを送る。
 - `sentenceTyping` では画面上の英文から bracket 内の単語だけが空欄になり、保存 payload 上の正答は全文になる。solver は正答全文と表示済み英文の差分から空欄語を推定して入力する。
 - 保存 API は `save_progress_up` を使う。typing 系では送信 body の JSON `data.answer` は空文字で、`ok_flag=1` と `word_no` で完走を検証する。
+- 最終問題後は `isAutoAdvance` のまま解答一覧画面へ遷移するため、auto mode 中に `続ける` ボタンが表示されたら1回だけクリックして次の画面へ進める。
 
 fixture の期待正答:
 

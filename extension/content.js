@@ -11,6 +11,7 @@
     let isFastMode = localStorage.getItem('fast-mode') === 'true';
     let lastSolvedSignature = "";
     let isSolving = false;
+    let isTransitioning = false;
     let debounceTimer = null;
     let isAutoMode = false;
 
@@ -804,6 +805,17 @@
             return;
         }
 
+        const continueButton = findTransitionButton(["続ける"]);
+        if (continueButton && isAutoMode && !isSolving && !isTransitioning) {
+            console.log('Auto-Mode: Continue page detected. Clicking "続ける".');
+            isTransitioning = true;
+            simulateClick(continueButton);
+            setTimeout(() => {
+                isTransitioning = false;
+            }, 3000);
+            return;
+        }
+
         const isGradedPage = document.querySelector('[class*="ScoreView__scoreViewContainer"]');
         if (isGradedPage) {
             const speedCtrl = document.getElementById('speed-control');
@@ -859,6 +871,7 @@
                     isSolving = false;
                     resetHeaderProgress();
                     setGlobalLock(false);
+                    setTimeout(ensureSolveButton, Math.max(getWaitTime('TRANSITION_WAIT'), 500));
                     return;
                 }
                 await handleTransition();
@@ -874,6 +887,7 @@
     async function handleTransition() {
         const wasSolving = isSolving;
         isSolving = true;
+        isTransitioning = true;
 
         try {
             console.log("Attempting transition...");
@@ -887,15 +901,11 @@
                 return;
             }
 
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const transitionKeywords = ["採点", "判定", "続ける", "終了"];
-            for (const keyword of transitionKeywords) {
-                const button = buttons.find(b => b.textContent.includes(keyword));
-                if (button) {
-                    console.log(`Transition: Clicking "${keyword}" Button.`);
-                    simulateClick(button);
-                    return;
-                }
+            const button = findTransitionButton(["採点", "判定", "続ける", "終了"]);
+            if (button) {
+                console.log(`Transition: Clicking "${button.textContent.trim()}" Button.`);
+                simulateClick(button);
+                return;
             }
 
             const quitBtn = document.getElementById('quitButton');
@@ -917,6 +927,15 @@
             console.log("Transition: No suitable button found.");
         } finally {
             if (!wasSolving) isSolving = false;
+            isTransitioning = false;
         }
+    }
+
+    function findTransitionButton(keywords) {
+        const buttons = Array.from(document.querySelectorAll('button')).filter(isVisibleElement);
+        return buttons.find(button => {
+            const text = button.textContent || "";
+            return keywords.some(keyword => text.includes(keyword));
+        });
     }
 })();

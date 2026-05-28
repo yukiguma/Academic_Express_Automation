@@ -112,7 +112,16 @@ test('VocabrarySpelling wd_type 2 fixture is auto-solved with keyboard input', {
     await runAutoSolve({
         questionData,
         server,
-        waitFor: () => waitForProgressSaves(saveRequests, expectedSpellingWordNos.length)
+        waitFor: async page => {
+            await waitForProgressSaves(saveRequests, expectedSpellingWordNos.length);
+            await page.waitForFunction(() => {
+                const visibleButtons = Array.from(document.querySelectorAll('button')).filter(button => {
+                    return button.offsetWidth || button.offsetHeight || button.getClientRects().length;
+                });
+                return visibleButtons.some(button => button.textContent.includes('前のページに戻る')) &&
+                    !visibleButtons.some(button => button.textContent.includes('続ける'));
+            }, { timeout: 10_000 });
+        }
     });
 
     const progress = saveRequests
