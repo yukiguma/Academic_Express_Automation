@@ -1,0 +1,8 @@
+# Test fixtures / saved webpages should not dominate GitHub language stats
+tests/fixtures/** linguist-vendored
+
+# Optional: saved static assets
+tests/fixtures/**/*.js linguist-vendored
+tests/fixtures/**/*.html linguist-vendored
+tests/fixtures/**/*.css linguist-vendored
+tests/fixtures/**/*.json linguist-vendored
