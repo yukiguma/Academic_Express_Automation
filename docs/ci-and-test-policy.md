@@ -29,7 +29,7 @@
 - 失敗したときに原因を追いやすいよう、最初は小さな job に分けすぎず、`install`、`syntax check`、`test` の流れを明確にする。
 - GitHub Actions の action バージョンは、workflow を追加する時点で公式情報を確認し、major version を明示して使う。
 
-現在の workflow は `.github/workflows/ci.yml` に置き、Node.js 24 で `npm ci` と `npm test` を実行する。
+現在の workflow は `.github/workflows/ci.yml` に置き、Node.js 24 で `npm ci`、`npx playwright install --with-deps chromium`、`npm test` を実行する。
 
 ## 最初に実装するテスト
 
@@ -70,10 +70,17 @@ npm test
 
 - Academic Express の実サイトへアクセスする end-to-end テスト。
 - 個人アカウント、学習履歴、セッション、Cookie に依存するテスト。
-- Chrome 拡張を実ブラウザへ読み込む操作テスト。
 - 速度モードの待ち時間や実クリックの完全な再現テスト。
 
 これらは必要になった時点で、ローカル検証手順または手動確認手順として別途整理する。
+
+## E2E fixture 方針
+
+- ログインなしで再現できる保存ページ fixture は `tests/fixtures/<fixture-name>/` に置く。
+- E2E テストは Node.js の `http` サーバーをテストプロセス内で起動し、fixture を `127.0.0.1` の一時ポートで配信する。
+- 実サイトに近いパスが必要な場合は、テスト用 HTTP サーバーで `/as/lplayer/index.cfm` や `/as/flash/data_manipulate.cfc` にマップする。
+- 画像やフォントなど、解答ロジックに不要な静的アセットは fixture に含めなくてよい。テスト用サーバーはそれらを 204 として扱える。
+- 解答結果の検証は、画面の見た目だけではなく、保存 API に送られる `question_no`、`answer`、`correct_flag`、`totalscore` を優先する。
 
 ## ドキュメント更新ルール
 

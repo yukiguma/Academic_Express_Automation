@@ -4,5 +4,8 @@
   "private": true,
   "scripts": {
     "test": "node --test \"tests/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0"
   }
 }
