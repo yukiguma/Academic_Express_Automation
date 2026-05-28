@@ -325,8 +325,7 @@ var AcademicExpressParser = (function () {
     function isTangoQuestion(item) {
         return item && typeof item === 'object' &&
             item.keyword && typeof item.keyword === 'object' &&
-            Array.isArray(item.tangolists_eng) &&
-            Array.isArray(item.tangolists_jan);
+            (typeof item.keyword.en === 'string' || typeof item.keyword.ja === 'string');
     }
 
     function getTangoDirections(data) {

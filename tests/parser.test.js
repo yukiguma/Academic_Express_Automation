@@ -141,6 +141,21 @@ test('parses saved vocabulary bank payload as wd_type 5 questions', () => {
     assert.ok(parsed.questions.every(q => q.isAutoAdvance));
 });
 
+test('parses saved vocabulary spelling payload as wd_type 2 questions', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabrarySpelling', 'tango_data_manipulate.cfc'));
+
+    assert.equal(dataType, 'json');
+    assert.equal(parsed.questions.length, 5);
+    assert.deepEqual(parsed.questions.map(q => [q.type, q.rawText, q.answers[0]]), [
+        ['typing', '特別な、特殊な', 'special'],
+        ['sentenceTyping', 'I want to play freely in a [field].', 'I want to play freely in a field.'],
+        ['sentenceTyping', 'Organic [oil] is expensive.', 'Organic oil is expensive.'],
+        ['typing', '両方の', 'both'],
+        ['sentenceTyping', 'This [study] is about the human brain.', 'This study is about the human brain.']
+    ]);
+    assert.ok(parsed.questions.every(q => q.isAutoAdvance));
+});
+
 test('parses tango direction and typing variants without using know_chk as an answer', () => {
     const baseQuestion = {
         keyword: { ja: 'はがき', en: 'postcard' },

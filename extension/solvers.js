@@ -285,6 +285,10 @@ async function solveMultipleChoice(answers, scope) {
 async function solveTyping(answers, scope) {
     let targets = Array.from(scope.querySelectorAll('input[type="text"], textarea, [contenteditable="true"], [role="textbox"]')).filter(isVisible);
 
+    if (targets.length === 0 && await solveFontBoxTyping(answers, scope)) {
+        return true;
+    }
+
     if (targets.length === 0) {
         console.log("No inputs found, searching for interactable gaps...");
         const gaps = scope.querySelectorAll('[class*="Position"], [class*="insertion"]');
@@ -327,6 +331,70 @@ async function solveTyping(answers, scope) {
     }
 
     return targets.length > 0;
+}
+
+function compactAnswerChars(text) {
+    return String(text || "").replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+function inferMissingFontBoxText(answer, boxes) {
+    const visible = compactAnswerChars(boxes.map(box => box.textContent || "").join(''));
+    const full = compactAnswerChars(answer);
+    const visibleLower = visible.toLowerCase();
+    const fullLower = full.toLowerCase();
+
+    let prefix = 0;
+    while (
+        prefix < visibleLower.length &&
+        prefix < fullLower.length &&
+        visibleLower[prefix] === fullLower[prefix]
+    ) {
+        prefix++;
+    }
+
+    let suffix = 0;
+    while (
+        suffix < visibleLower.length - prefix &&
+        suffix < fullLower.length - prefix &&
+        visibleLower[visibleLower.length - 1 - suffix] === fullLower[fullLower.length - 1 - suffix]
+    ) {
+        suffix++;
+    }
+
+    return full.slice(prefix, full.length - suffix);
+}
+
+async function solveFontBoxTyping(answers, scope) {
+    let boxes = Array.from(scope.querySelectorAll('[class*="FontBox__fontBox"]')).filter(isVisible);
+    if (!boxes.length && scope !== document) {
+        boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]')).filter(isVisible);
+    }
+    if (!boxes.length) return false;
+
+    const hasHiddenEmptyBoxes = boxes.some(box => {
+        const className = String(box.className || "");
+        return className.includes('FontBox__hide') && !String(box.textContent || "").trim();
+    });
+    const chars = hasHiddenEmptyBoxes
+        ? inferMissingFontBoxText(answers?.[0], boxes)
+        : boxes
+            .filter(box => !String(box.className || "").includes('fontBox_ok'))
+            .map(box => {
+                const label = box.querySelector('[class*="FontBox__label_txt"]');
+                return String(label?.textContent || box.textContent || "").trim().slice(0, 1);
+            })
+            .join('');
+
+    if (!chars) return false;
+
+    console.log(`FontBox Typing Strategy: Typing ${chars.length} remaining characters.`);
+    for (const char of chars) {
+        dispatchKeyboardChar(char, document);
+        await sleep(5);
+    }
+
+    await sleep(500);
+    return true;
 }
 
 function keyboardInfoForChar(char) {

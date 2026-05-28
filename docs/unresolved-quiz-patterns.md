@@ -24,6 +24,7 @@
 | `tests/fixtures/ReadingTest` | Reading | `Insertion`、`readingComprehension`、`trueFalse`、`anaumeFilIn`、`multipleChoice` | parser / E2E |
 | `tests/question_authoring.xml` | Grammar / mixed | `shuffleQuestions="true"`、XML 順と画面順の不一致、アポストロフィつき選択肢 | parser |
 | `tests/fixtures/VocabularyBank` | Vocabulary Bank | `wd_type=5` 英→日、`save_progress_up`、自動次問遷移 | parser / E2E |
+| `tests/fixtures/VocabrarySpelling` | Vocabulary Bank | `wd_type=2` spelling / sentenceTyping、文字枠への keyboard event 入力、`save_progress_up` | parser / E2E |
 
 ## `tests/authoring.xml`
 
@@ -238,6 +239,29 @@ E2E での確認:
 - 各 `word_no` に対して期待正答の `answer` が送信されること。
 - 各保存 payload の `ok_flag` が `1` であること。
 - 最終保存 payload の `save_type` が `1` であること。
+
+## `tests/fixtures/VocabrarySpelling`
+
+保存済みの Vocabulary Bank spelling 画面と `tango_data_manipulate.cfc` payload を使う E2E fixture。ディレクトリ名は追加時の `VocabrarySpelling` をそのまま使っている。
+
+特徴:
+
+- `wd_type=2` の typing / sentenceTyping。
+- `tangolists_jan` と `tangolists_eng` は配列ではなく空文字になるため、tango payload 判定は `keyword.ja` / `keyword.en` を基準にする。
+- 通常の input / textarea はなく、`FontBox` 文字枠が document-level の keyboard event を受けて進む。
+- 単語 spelling では先頭など一部文字がヒント表示済みになることがあり、未入力の文字枠だけを送る。
+- `sentenceTyping` では画面上の英文から bracket 内の単語だけが空欄になり、保存 payload 上の正答は全文になる。solver は正答全文と表示済み英文の差分から空欄語を推定して入力する。
+- 保存 API は `save_progress_up` を使う。typing 系では送信 body の JSON `data.answer` は空文字で、`ok_flag=1` と `word_no` で完走を検証する。
+
+fixture の期待正答:
+
+| `word_no` | parser type | 問題文 | 正答 |
+| --- | --- | --- | --- |
+| `3526` | `typing` | `特別な、特殊な` | `special` |
+| `3405` | `sentenceTyping` | `I want to play freely in a [field].` | `I want to play freely in a field.` |
+| `9696` | `sentenceTyping` | `Organic [oil] is expensive.` | `Organic oil is expensive.` |
+| `100012` | `typing` | `両方の` | `both` |
+| `100088` | `sentenceTyping` | `This [study] is about the human brain.` | `This study is about the human brain.` |
 
 ## `tests/fixtures/ReadingTest`
 
