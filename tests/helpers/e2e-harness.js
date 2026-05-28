@@ -107,7 +107,7 @@ function createFixtureServer({ apiResponses = new Map(), fixtureDir, routes, ret
                 return;
             }
 
-            const relativeFile = routeMap.get(url.pathname);
+            const relativeFile = routeMap.get(url.pathname) || routeMap.get(decodeURIComponent(url.pathname));
             if (relativeFile) {
                 const filePath = path.join(fixtureDir, relativeFile);
                 response.writeHead(200, { 'content-type': contentTypeFor(filePath) });
@@ -138,7 +138,7 @@ async function listen(server) {
     return server.address().port;
 }
 
-async function runAutoSolve({ fixtureUrlPath = '/as/lplayer/index.cfm', pageReadySelector = '[class*="AppHeader__fixed-top"]', questionData, server, waitFor }) {
+async function runAutoSolve({ fixtureUrlPath = '/as/lplayer/index.cfm', pageReadySelector = '[class*="AppHeader__fixed-top"]', preparePage, questionData, server, waitFor }) {
     const port = await listen(server);
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
@@ -153,6 +153,9 @@ async function runAutoSolve({ fixtureUrlPath = '/as/lplayer/index.cfm', pageRead
         });
 
         await page.goto(`http://127.0.0.1:${port}${fixtureUrlPath}`, { waitUntil: 'domcontentloaded' });
+        if (preparePage) {
+            await preparePage(page);
+        }
         await page.waitForSelector(pageReadySelector, { timeout: 10_000 });
         await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
         await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });

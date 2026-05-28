@@ -16,7 +16,9 @@
 | fixture | 大分類 | 確認済みの問題形式・挙動 | 自動テスト |
 | --- | --- | --- | --- |
 | `tests/fixtures/ListeningTest` | Listening | `listeningComprehension`、重複する `questionText`、番号参照の選択肢、単問進行 | parser / E2E |
-| `tests/fixtures/ListeningTest2` | Listening | `listeningComprehension`、`trueFalse`、`multipleChoice`、`anaumeFilIn initialLetterShown="true"`、複数 blank の `ClozeTest` | parser |
+| `tests/fixtures/ListeningTest2` | Listening | `listeningComprehension`、`trueFalse`、`multipleChoice`、`anaumeFilIn initialLetterShown="true"`、複数 blank の `ClozeTest` | parser / E2E |
+| `tests/fixtures/Scanning` | Reading | 開始画面つき `scanning`、本文中の該当英文クリック、複数問同時保存 | parser / E2E |
+| `tests/fixtures/VocabraryMatching` | Reading | `matching`、本文中の複数 blank に候補語句を投入、複数 `<answer>` 保存 | parser / E2E |
 | `tests/authoring2.xml` | Reading | `readingComprehension`、進捗範囲 `1 - 2 / 5`、1画面複数問 | parser |
 | `tests/fixtures/ReadingTest` | Reading | `Insertion`、`readingComprehension`、`trueFalse`、`anaumeFilIn`、`multipleChoice` | parser / E2E |
 | `tests/question_authoring.xml` | Grammar / mixed | `shuffleQuestions="true"`、XML 順と画面順の不一致、アポストロフィつき選択肢 | parser |
@@ -77,7 +79,7 @@ fixture の期待正答:
 
 新しく確認したパターン:
 
-- 複数 blank の `ClozeTest`。既存 solver では typing 系として扱う想定だが、E2E fixture としての採点完走は未追加。
+- 複数 blank の `ClozeTest`。typing 系として扱い、10個の blank を入力して採点完走できることを E2E で確認済み。
 - `initialLetterShown="true"` つき `anaumeFilIn`。正答の先頭文字が画面に表示される可能性があるが、parser は完全な正答文字列を保持する。
 
 ## `tests/authoring2.xml`
@@ -235,3 +237,45 @@ E2E での確認:
 - 各 `question_no` に対して期待どおりの保存 `answer` が送信されること。Insertion は5つの正答文を画面上で選んだ結果、プレイヤーの保存値として `0` が送信される。
 - 各保存 payload の `correct_flag` が `1` であること。
 - 最終保存 payload の `totalscore` が `100`、`save_type` が `1` であること。
+
+## `tests/fixtures/Scanning`
+
+保存済みの Reading Bank / Scanning 画面と `authoring.cfc` payload を使う E2E fixture。
+
+特徴:
+
+- `return_url` は `/student/reading/unit/886?cat=11001`。
+- 通常の player 画面の前に開始画面があり、「スタート」を押してから `AppHeader` と問題画面が表示される。
+- `combinationQuestion type="scanning"` の中に3問が入り、各問は本文中の該当英文をクリックする。
+- 保存 API は各 `question_no` について選択した英文を `<answer>` に入れて送る。
+
+fixture の期待正答:
+
+| `question_no` | 正答 |
+| --- | --- |
+| `5914` | `In 1847 he was elected for two years to the House of Representatives.` |
+| `5916` | `Lincoln thought slavery was evil and joined the Republican Party, which opposed it.` |
+| `5918` | `Lincoln was re-elected president in 1864 and the Confederates surrendered shortly afterwards.` |
+
+E2E での確認:
+
+- 開始画面の「スタート」を押した後に自動入力を実行できること。
+- 3問分の保存 POST が送信されること。
+- 各保存 payload の `correct_flag` が `1`、`totalscore` が `100`、`save_type` が `1` であること。
+
+## `tests/fixtures/VocabraryMatching`
+
+保存済みの vocabulary matching 画面と `authoring.cfc` payload を使う E2E fixture。ディレクトリ名は追加時の `VocabraryMatching` をそのまま使っている。
+
+特徴:
+
+- `return_url` は `/student/reading/unit/970?cat=11001`。
+- XML type は `matching`。
+- 本文中の8つの blank に、候補語句 `nature`、`tended to`、`trend`、`ended up with`、`get lost`、`numerous`、`except`、`relatively` を順番に入れる。
+- 保存 API では1つの `question_no` に対して複数の `<answer>` が送られる。
+
+E2E での確認:
+
+- `question_no=16269` の保存 POST が送信されること。
+- 保存 payload の `<answer>` が `0` から `7` までの8件になること。
+- 保存 payload の `correct_flag` が `1`、`totalscore` が `100`、`save_type` が `1` であること。
