@@ -29,9 +29,11 @@
 - 失敗したときに原因を追いやすいよう、最初は小さな job に分けすぎず、`install`、`syntax check`、`test` の流れを明確にする。
 - GitHub Actions の action バージョンは、workflow を追加する時点で公式情報を確認し、major version を明示して使う。
 
+現在の workflow は `.github/workflows/ci.yml` に置き、Node.js 24 で `npm ci` と `npm test` を実行する。
+
 ## 最初に実装するテスト
 
-最初の CI では、`extension/background.js` にあるパース処理相当を Chrome API 依存から切り離し、Node.js から直接テストできる純粋関数として検証する。
+最初の CI では、`extension/parser.js` に分離したパース処理を、Chrome API 依存なしで Node.js から直接テストする。拡張機能の Service Worker である `extension/background.js` は同じ parser を `importScripts('parser.js')` で読み込む。
 
 - XML fixture のパース
   - `authoring.xml`、`authoring2.xml`、`question_authoring.xml` を読み込む。
@@ -57,6 +59,12 @@
   - `save_progress` は対象外にする。
 - fixture に対するスナップショットではなく、期待値を明示したアサーション。
   - 仕様変更に気づきやすくするため、巨大な丸ごと snapshot にはしない。
+
+ローカルでは次のコマンドで CI 相当のテストを実行する。
+
+```powershell
+npm test
+```
 
 ## CI にまだ入れないもの
 
