@@ -43,24 +43,6 @@ test('content script solves only the visible auto-advance question in the active
                 rawText: "Don't [repeat] that anymore.",
                 signature: 'dontrepeatthatanymore',
                 type: 'sentenceTyping'
-            },
-            {
-                answers: ['Unused four.'],
-                displayOrder: 4,
-                isAutoAdvance: true,
-                questionNo: '4',
-                rawText: 'Unused [four].',
-                signature: 'unusedfour',
-                type: 'sentenceTyping'
-            },
-            {
-                answers: ['Unused five.'],
-                displayOrder: 5,
-                isAutoAdvance: true,
-                questionNo: '5',
-                rawText: 'Unused [five].',
-                signature: 'unusedfive',
-                type: 'sentenceTyping'
             }
         ]
     };
@@ -75,10 +57,10 @@ test('content script solves only the visible auto-advance question in the active
                 <div class="QuestionBuilder__question___visible">
                     Pompadour, our new influence, has made great inroads in the hair care market.
                 </div>
-                <div class="QuestionBuilder__question___stale" style="position:absolute;width:0;height:0;overflow:hidden;">
+                <div class="QuestionBuilder__question___stale">
                     Tom found the cause of the computer problem.
                 </div>
-                <div class="QuestionBuilder__question___stale" style="position:absolute;width:0;height:0;overflow:hidden;">
+                <div class="QuestionBuilder__question___stale">
                     Don't repeat that anymore.
                 </div>
             </main>

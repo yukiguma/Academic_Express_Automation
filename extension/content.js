@@ -348,8 +348,13 @@
         const end = rangeMatch ? Number(match[2]) : start;
         const total = Number(match[rangeMatch ? 3 : 2]);
         if (!Number.isInteger(start) || !Number.isInteger(end) || !Number.isInteger(total)) return null;
-        if (start < 1 || end < start || total < end || total !== questionsList.length) return null;
-        return { start, end, total };
+        if (start < 1 || end < start || total < end) return null;
+        return {
+            start,
+            end,
+            total,
+            totalMatchesQuestionList: total === questionsList.length
+        };
     }
 
     function getVisibleQuestionNumber(el) {
@@ -386,7 +391,12 @@
     }
 
     function questionMatchesActiveOrder(question, activeQuestionRange, forceOrderMatch = false) {
-        if (activeQuestionRange === null || (!forceOrderMatch && !hasDuplicateSignature(question))) return true;
+        const shouldUseActiveOrder = activeQuestionRange !== null && (
+            forceOrderMatch ||
+            hasDuplicateSignature(question) ||
+            (question.isAutoAdvance && activeQuestionRange.totalMatchesQuestionList === false)
+        );
+        if (!shouldUseActiveOrder) return true;
         const order = Number(question.displayOrder);
         return order >= activeQuestionRange.start && order <= activeQuestionRange.end;
     }
