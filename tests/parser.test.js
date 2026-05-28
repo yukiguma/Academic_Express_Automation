@@ -84,6 +84,21 @@ test('parses listening cloze CFC fixture with mixed question types', () => {
     ]);
 });
 
+test('parses dictation CFC fixture as document-level keyboard input', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('Dictation', 'authoring.cfc'));
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 1);
+    assert.deepEqual(parsed.questions[0], {
+        type: 'dictation',
+        answers: ['We can stay home and study by computer.'],
+        rawText: 'We can stay home and study by computer.',
+        signature: 'wecanstayhomeandstudybycomputer',
+        displayOrder: 1,
+        questionNo: '20303814'
+    });
+});
+
 test('parses shuffled question authoring XML by question text and exact answers', () => {
     const { parsed } = parser.parseQuestionData(readFixture('question_authoring.xml'));
 

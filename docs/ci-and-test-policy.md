@@ -80,6 +80,7 @@ npm test
 - E2E テストは Node.js の `http` サーバーをテストプロセス内で起動し、fixture を `127.0.0.1` の一時ポートで配信する。
 - 実サイトに近いパスが必要な場合は、テスト用 HTTP サーバーで `/as/lplayer/index.cfm` や `/as/flash/data_manipulate.cfc` にマップする。
 - 画像やフォントなど、解答ロジックに不要な静的アセットは fixture に含めなくてよい。テスト用サーバーはそれらを 204 として扱える。
+- 音声アセットの読み込み失敗が画面進行を止める fixture では、テスト用サーバーが無音 WAV を返す。`materialSound.cfm` に加えて、Dictation の `sounds/typing/sprite.mp3` もこの扱いにする。
 - 解答結果の検証は、画面の見た目だけではなく、保存 API に送られる `question_no`、`answer`、`correct_flag`、`totalscore` を優先する。
 
 ## ドキュメント更新ルール

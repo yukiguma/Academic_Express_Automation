@@ -107,6 +107,15 @@ function createFixtureServer({ apiResponses = new Map(), fixtureDir, routes, ret
                 return;
             }
 
+            if (/\.mp3$/i.test(url.pathname)) {
+                response.writeHead(200, {
+                    'content-length': silentAudio.length,
+                    'content-type': 'audio/wav'
+                });
+                response.end(silentAudio);
+                return;
+            }
+
             const relativeFile = routeMap.get(url.pathname) || routeMap.get(decodeURIComponent(url.pathname));
             if (relativeFile) {
                 const filePath = path.join(fixtureDir, relativeFile);

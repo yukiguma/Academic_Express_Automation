@@ -33,12 +33,22 @@ function simulateType(element, value) {
     }
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function normalizeText(text) {
     return String(text || "")
         .replace(/[\u2018\u2019\u02bc]/g, "'")
         .replace(/\s+/g, ' ')
         .trim()
         .toLowerCase();
+}
+
+function findVisibleByText(selector, text) {
+    const normalizedText = normalizeText(text);
+    return Array.from(document.querySelectorAll(selector))
+        .find(el => isVisible(el) && normalizeText(el.textContent) === normalizedText);
 }
 
 function compactText(text) {
@@ -310,6 +320,98 @@ async function solveTyping(answers, scope) {
     return targets.length > 0;
 }
 
+function keyboardInfoForChar(char) {
+    const key = String(char);
+    const upper = key.toUpperCase();
+    const specialKeys = {
+        ' ': { code: 'Space', keyCode: 32 },
+        '.': { code: 'Period', keyCode: 190 },
+        ',': { code: 'Comma', keyCode: 188 },
+        '?': { code: 'Slash', keyCode: 191 },
+        '!': { code: 'Digit1', keyCode: 49, shiftKey: true },
+        "'": { code: 'Quote', keyCode: 222 },
+        '"': { code: 'Quote', keyCode: 222, shiftKey: true },
+        '-': { code: 'Minus', keyCode: 189 }
+    };
+
+    if (specialKeys[key]) {
+        return {
+            charCode: key.charCodeAt(0),
+            code: specialKeys[key].code,
+            keyCode: specialKeys[key].keyCode,
+            shiftKey: Boolean(specialKeys[key].shiftKey)
+        };
+    }
+
+    if (/^[a-z]$/i.test(key)) {
+        return {
+            charCode: key.charCodeAt(0),
+            code: `Key${upper}`,
+            keyCode: upper.charCodeAt(0),
+            shiftKey: key !== key.toLowerCase()
+        };
+    }
+
+    if (/^[0-9]$/.test(key)) {
+        return {
+            charCode: key.charCodeAt(0),
+            code: `Digit${key}`,
+            keyCode: key.charCodeAt(0),
+            shiftKey: false
+        };
+    }
+
+    return {
+        charCode: key.charCodeAt(0),
+        code: '',
+        keyCode: key.charCodeAt(0),
+        shiftKey: false
+    };
+}
+
+function dispatchKeyboardChar(char, target = document) {
+    const info = keyboardInfoForChar(char);
+    const base = {
+        bubbles: true,
+        cancelable: true,
+        charCode: 0,
+        code: info.code,
+        key: char,
+        keyCode: info.keyCode,
+        shiftKey: info.shiftKey,
+        which: info.keyCode
+    };
+
+    target.dispatchEvent(new KeyboardEvent('keydown', base));
+    target.dispatchEvent(new KeyboardEvent('keypress', {
+        ...base,
+        charCode: info.charCode
+    }));
+    target.dispatchEvent(new KeyboardEvent('keyup', base));
+}
+
+// Solver: Dictation player. This layout has no input element; it listens for
+// document-level keyboard events and opens character boxes as keys arrive.
+async function solveDictation(answers) {
+    const answer = answers.join(' ').trim();
+    if (!answer) return false;
+
+    const startButton = findVisibleByText('button, [role="button"], span', 'スタート');
+    if (startButton) {
+        simulateClick(startButton);
+        await sleep(250);
+    }
+
+    console.log(`Dictation Strategy: Typing ${answer.length} characters.`);
+    for (const char of answer) {
+        dispatchKeyboardChar(char, document);
+        await sleep(5);
+    }
+
+    await sleep(500);
+    return true;
+}
+
 // Solver: Sorting
 async function solveSorting(answers, scope) {
     console.log("Starting sorting solver...");
@@ -393,6 +495,9 @@ async function solve(answers, type, scope) {
 
     if (normalizedType === 'matching' || normalizedType === 'insertion') {
         return solveFillBlank(answers, scope);
+    }
+    if (normalizedType.includes('dictation') || normalizedType.includes('dectation')) {
+        return solveDictation(answers, scope);
     }
     if (normalizedType.includes('choice') || normalizedType.includes('true') || normalizedType.includes('select') || normalizedType.includes('quiz')) {
         return solveMultipleChoice(answers, scope);

@@ -261,10 +261,20 @@
     startObserving();
 
     function findQuestionContainer(el, type = "") {
+        const lowerType = String(type || "").toLowerCase();
+        if (lowerType.includes('dictation') || lowerType.includes('dectation')) {
+            return document.querySelector([
+                '[class*="AppPc__app_root"]',
+                '[class*="AppSp__app_root"]',
+                '[class*="dictationBox"]',
+                '[class*="DictationBox"]'
+            ].join(', ')) || document.body;
+        }
+
         // Scanning問題: 質問テキストに対応するpassageBox（combinationMain）を探す
         // 他の問題タイプ（True/False等）が同一画面にある場合でも、これらは自身の領域を使うべきなので
         // typeがScanningの場合のみスコープを変更する
-        if (type && type.toLowerCase() === 'scanning') {
+        if (lowerType === 'scanning') {
             const combinationQuestion = el.closest('[class*="CombinationQuestionView__combinationQuestion"]');
             if (combinationQuestion) {
                 // 兄弟要素としてcombinationMainを探す
@@ -356,6 +366,14 @@
         }
 
         return null;
+    }
+
+    function getConfiguredQuestionNo() {
+        return String(window.config?.question_no || "");
+    }
+
+    function isDictationLayoutVisible() {
+        return Boolean(document.querySelector('[class*="dictationBox"], [class*="DictationBox"]'));
     }
 
     function hasDuplicateSignature(question) {
@@ -570,6 +588,26 @@
             }
         }
 
+        // Dictation player has no visible question text; use the page config
+        // question number, or the single dictation question fallback.
+        if (matchedPairs.length === 0) {
+            const configuredQuestionNo = getConfiguredQuestionNo();
+            const idx = questionsList.findIndex((question, i) => {
+                const lowerType = String(question.type || "").toLowerCase();
+                return !usedIndices.has(i) && (
+                    (configuredQuestionNo && String(question.questionNo) === configuredQuestionNo) ||
+                    (questionsList.length === 1 && isDictationLayoutVisible() && (lowerType.includes('dictation') || lowerType.includes('dectation')))
+                );
+            });
+
+            if (idx !== -1) {
+                const question = questionsList[idx];
+                const container = findQuestionContainer(document.body, question.type);
+                usedIndices.add(idx);
+                matchedPairs.push({ element: container, data: question });
+            }
+        }
+
         return matchedPairs;
     }
 
@@ -687,6 +725,18 @@
         return parentContainer;
     }
 
+    function findControlsHeader() {
+        const standardHeader = document.querySelector('[class*="AppHeader__fixed-top"] > div');
+        if (standardHeader) return standardHeader;
+
+        return document.querySelector([
+            '[class*="AppPc__common_inner"]',
+            '[class*="AppSp__common_inner"]',
+            '[class*="common_header_inner"]',
+            '[class*="ControlBox__root"]'
+        ].join(', '));
+    }
+
     function updateUIStates() {
         const btn = document.getElementById('solve-btn');
         const control = document.getElementById('speed-control');
@@ -767,7 +817,7 @@
             return;
         }
 
-        const header = document.querySelector('[class*="AppHeader__fixed-top"] > div');
+        const header = findControlsHeader();
         if (!header) return;
 
         createControls(header);
@@ -837,14 +887,13 @@
                 return;
             }
 
-            const buttons = document.querySelectorAll('button');
-            const transitionKeywords = ["採点", "続ける", "判定"];
-            for (const b of buttons) {
-                const text = b.textContent;
-                const matched = transitionKeywords.find(kw => text.includes(kw));
-                if (matched) {
-                    console.log(`Transition: Clicking "${matched}" Button.`);
-                    simulateClick(b);
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const transitionKeywords = ["採点", "判定", "続ける", "終了"];
+            for (const keyword of transitionKeywords) {
+                const button = buttons.find(b => b.textContent.includes(keyword));
+                if (button) {
+                    console.log(`Transition: Clicking "${keyword}" Button.`);
+                    simulateClick(button);
                     return;
                 }
             }
