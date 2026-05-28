@@ -166,3 +166,33 @@ E2E での確認:
 - 各 `word_no` に対して期待正答の `answer` が送信されること。
 - 各保存 payload の `ok_flag` が `1` であること。
 - 最終保存 payload の `save_type` が `1` であること。
+
+## `tests/fixtures/ReadingTest`
+
+保存済みの Reading Test 画面と `authoring.cfc` payload を使う E2E fixture。
+
+特徴:
+
+- `return_url` は `/student/reading/unit/884?cat=11001`。
+- `save_answer_url` は `../flash/data_manipulate.cfc` で、テスト用 HTTP サーバーでは `/as/flash/data_manipulate.cfc` として受ける。
+- 最初に Insertion 問題が1問あり、その後に `readingComprehension` 内の True/False、穴埋め入力、multiple choice が続く。
+- Insertion の `<questionText>` 内に正答文が `[...]` で埋め込まれており、parser はこの bracket 部分を5つの正答として扱う。
+- multiple choice は `shuffleChoices="true"` のため、保存 API の `answer` は選択肢番号だが、画面操作は正答テキストで行う。
+
+fixture の期待正答:
+
+| `question_no` | 問題形式 | 正答 |
+| --- | --- | --- |
+| `6613` | `Insertion` | `0` |
+| `30165411` | `trueFalse` | `True` |
+| `30165511` | `trueFalse` | `False` |
+| `30257711` | `anaumeFilIn` | `refused` |
+| `30165711` | `multipleChoice` | `Michelangelo's nose` |
+| `30257911` | `multipleChoice` | `lead` |
+
+E2E での確認:
+
+- 6問分の保存 POST が送信されること。
+- 各 `question_no` に対して期待どおりの保存 `answer` が送信されること。Insertion は5つの正答文を画面上で選んだ結果、プレイヤーの保存値として `0` が送信される。
+- 各保存 payload の `correct_flag` が `1` であること。
+- 最終保存 payload の `totalscore` が `100`、`save_type` が `1` であること。

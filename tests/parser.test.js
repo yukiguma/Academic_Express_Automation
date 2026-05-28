@@ -11,11 +11,8 @@ function readFixture(name) {
     return fs.readFileSync(path.join(fixturesDir, name), 'utf8');
 }
 
-function readSavedBodyFixture(name) {
-    const html = readFixture(name);
-    const match = html.match(/<body>([\s\S]*)<\/body>/i);
-    assert.ok(match, `${name} should contain a saved body`);
-    return match[1].trim();
+function readNestedFixture(...parts) {
+    return fs.readFileSync(path.join(fixturesDir, ...parts), 'utf8');
 }
 
 test('parses listening XML answers through numbered choices', () => {
@@ -66,18 +63,18 @@ test('parses shuffled question authoring XML by question text and exact answers'
     assert.deepEqual(apostropheExample.answers, ["girls'"]);
 });
 
-test('parses saved tango payload as bidirectional wd_type 7 questions', () => {
-    const { parsed, dataType } = parser.parseQuestionData(readSavedBodyFixture('tango_data_manipulate.htm'));
+test('parses saved vocabulary bank payload as wd_type 5 questions', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabularyBank', 'tango_data_manipulate.cfc'));
 
     assert.equal(dataType, 'json');
-    assert.equal(parsed.questions.length, 20);
+    assert.equal(parsed.questions.length, 10);
     assert.deepEqual(parsed.questions.slice(0, 6).map(q => [q.rawText, q.answers[0]]), [
-        ['はがき', 'postcard'],
-        ['postcard', 'はがき'],
-        ['（手紙の冒頭で）親愛なる、いとしい、かわいい', 'dear'],
-        ['dear', '（手紙の冒頭で）親愛なる、いとしい、かわいい'],
-        ['可能にする', 'enable'],
-        ['enable', '可能にする']
+        ['broad', '（幅が）広い'],
+        ['aware', '気付いて、意識して、わかって'],
+        ['recorder', '録音機器、録画機器'],
+        ['since', '～して以来'],
+        ['butterfly', '蝶'],
+        ['rely', '頼る、あてにする（on ～で）']
     ]);
     assert.ok(parsed.questions.every(q => q.isAutoAdvance));
 });
