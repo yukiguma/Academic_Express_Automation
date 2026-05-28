@@ -334,20 +334,20 @@ function keyboardInfoForChar(char) {
     const upper = key.toUpperCase();
     const specialKeys = {
         ' ': { code: 'Space', keyCode: 32 },
-        '.': { code: 'Period', keyCode: 190 },
-        ',': { code: 'Comma', keyCode: 188 },
-        '?': { code: 'Slash', keyCode: 191 },
-        '!': { code: 'Digit1', keyCode: 49, shiftKey: true },
-        "'": { code: 'Quote', keyCode: 222 },
-        '"': { code: 'Quote', keyCode: 222, shiftKey: true },
-        '-': { code: 'Minus', keyCode: 189 }
+        '.': { code: 'Period' },
+        ',': { code: 'Comma' },
+        '?': { code: 'Slash', shiftKey: true },
+        '!': { code: 'Digit1', shiftKey: true },
+        "'": { code: 'Quote' },
+        '"': { code: 'Quote', shiftKey: true },
+        '-': { code: 'Minus' }
     };
 
     if (specialKeys[key]) {
         return {
             charCode: key.charCodeAt(0),
             code: specialKeys[key].code,
-            keyCode: specialKeys[key].keyCode,
+            keyCode: key.charCodeAt(0),
             shiftKey: Boolean(specialKeys[key].shiftKey)
         };
     }
@@ -356,7 +356,7 @@ function keyboardInfoForChar(char) {
         return {
             charCode: key.charCodeAt(0),
             code: `Key${upper}`,
-            keyCode: upper.charCodeAt(0),
+            keyCode: key.charCodeAt(0),
             shiftKey: key !== key.toLowerCase()
         };
     }
