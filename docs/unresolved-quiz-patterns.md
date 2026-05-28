@@ -132,3 +132,37 @@ fixture から確認した例:
 - `はがき` の正答は `postcard`。
 - `（手紙の冒頭で）親愛なる、いとしい、かわいい` の正答は `dear`。
 - `可能にする` の正答は `enable`。
+
+## `tests/fixtures/VocabularyBank`
+
+保存済みの Vocabulary Bank 画面と `tango_data_manipulate.cfc` payload を使う E2E fixture。
+
+特徴:
+
+- `wd_type=5` の英→日 multiple choice。
+- `get_xml_url` と `save_answer_url` はどちらも `./tango_data_manipulate.cfc`。
+- 選択後はプレイヤー側が自動で次問へ進むため、拡張側は manual transition click を行わない。
+- 問題順は `shuffleQuestions=true` で画面側が入れ替えるため、保存 API の送信順ではなく `word_no` と `answer` で検証する。
+- 保存 API は `save_progress_up` を使い、送信 body の JSON `data` に `word_no`、`answer`、`ok_flag`、`save_type` が入る。
+
+fixture の期待正答:
+
+| `word_no` | 問題文 | 正答 |
+| --- | --- | --- |
+| `551` | `broad` | `（幅が）広い` |
+| `6371` | `aware` | `気付いて、意識して、わかって` |
+| `118079` | `recorder` | `録音機器、録画機器` |
+| `105462` | `since` | `～して以来` |
+| `9343` | `butterfly` | `蝶` |
+| `7435` | `rely` | `頼る、あてにする（on ～で）` |
+| `80` | `reply` | `返事、返答` |
+| `601` | `colorful` | `カラフルな、変化に富んだ、面白い` |
+| `4493` | `weight` | `重さ、重量、体重` |
+| `4062` | `latest` | `最近の、最新の` |
+
+E2E での確認:
+
+- 10問分の `save_progress_up` が送信されること。
+- 各 `word_no` に対して期待正答の `answer` が送信されること。
+- 各保存 payload の `ok_flag` が `1` であること。
+- 最終保存 payload の `save_type` が `1` であること。
