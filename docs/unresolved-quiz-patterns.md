@@ -250,11 +250,12 @@ E2E での確認:
 - `tangolists_jan` と `tangolists_eng` は配列ではなく空文字になるため、tango payload 判定は `keyword.ja` / `keyword.en` を基準にする。
 - 通常の input / textarea はなく、`FontBox` 文字枠が document-level の keyboard event を受けて進む。
 - 単語 spelling では先頭など一部文字がヒント表示済みになることがあり、未入力の文字枠だけを送る。
-- `sentenceTyping` では画面上の英文から bracket 内の単語だけが空欄になり、保存 payload 上の正答は全文になる。solver は正答全文と表示済み英文の差分から空欄語を推定して入力する。
+- `sentenceTyping` では画面上の英文から bracket 内の単語だけが空欄になり、保存 payload 上の正答は全文になる。solver は parser が保持した bracket 付き `rawText` から空欄語を取り出して入力する。
 - 実環境ではキー入力が速すぎると React 側の文字枠更新が追いつかず誤答になることがあるため、solver は1文字ごとに `FontBox` の状態変化を待ってから次の文字を送る。
 - 保存 API は `save_progress_up` を使う。typing 系では送信 body の JSON `data.answer` は空文字で、`ok_flag=1` と `word_no` で完走を検証する。
 - 最終問題後は `isAutoAdvance` のまま解答一覧画面へ遷移するため、auto mode 中に `続ける` ボタンが表示されたら1回だけクリックして次の画面へ進める。
 - `続ける` 直後は次の XHR 反映前に古い問題データが残ることがあるため、自動進行の語彙問題では問題番号だけの fallback 解答を使わない。
+- 自動進行の語彙問題はプレイヤー側が保存後に進むため、解答後の固定待機は短くし、画面変化と XHR 反映を待つ。
 
 fixture の期待正答:
 

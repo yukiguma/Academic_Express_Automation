@@ -862,8 +862,13 @@
             for (let i = 0; i < matchedPairs.length; i++) {
                 const pair = matchedPairs[i];
                 if (pair.data.isAutoAdvance) autoAdvance = true;
-                await solve(pair.data.answers, pair.data.type, pair.element);
-                await new Promise(r => setTimeout(r, getWaitTime('SOLVE_INTERVAL')));
+                await solve(pair.data.answers, pair.data.type, pair.element, pair.data);
+                const postSolveWait = pair.data.isAutoAdvance
+                    ? Math.min(getWaitTime('SOLVE_INTERVAL'), 300)
+                    : getWaitTime('SOLVE_INTERVAL');
+                if (postSolveWait > 0) {
+                    await new Promise(r => setTimeout(r, postSolveWait));
+                }
             }
 
             if (isAutoMode) {
@@ -933,9 +938,20 @@
     }
 
     function findTransitionButton(keywords) {
-        const buttons = Array.from(document.querySelectorAll('button')).filter(isVisibleElement);
+        const buttons = Array.from(document.querySelectorAll([
+            'button',
+            'input[type="button"]',
+            'input[type="submit"]',
+            'a',
+            '[role="button"]'
+        ].join(', '))).filter(isVisibleElement);
         return buttons.find(button => {
-            const text = button.textContent || "";
+            const text = [
+                button.textContent,
+                button.value,
+                button.getAttribute('aria-label'),
+                button.getAttribute('title')
+            ].filter(Boolean).join(' ');
             return keywords.some(keyword => text.includes(keyword));
         });
     }
