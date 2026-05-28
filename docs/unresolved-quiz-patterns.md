@@ -11,6 +11,17 @@
 - `shuffleQuestions="true"` の場合、画面の `1 / 23` は XML 上の1問目とは限らない。問題文がユニークなら画面テキスト照合を優先し、同じ問題文が重複している場合だけ進捗番号で絞り込む。
 - `/student/` を含む選択画面では自動入力状態を必ず解除する。自動回答中の更新や中断後に選択画面へ戻った場合でも、次の教材を勝手に開始しないようにするため。
 
+## 確認済みパターン一覧
+
+| fixture | 大分類 | 確認済みの問題形式・挙動 | 自動テスト |
+| --- | --- | --- | --- |
+| `tests/fixtures/ListeningTest` | Listening | `listeningComprehension`、重複する `questionText`、番号参照の選択肢、単問進行 | parser / E2E |
+| `tests/fixtures/ListeningTest2` | Listening | `listeningComprehension`、`trueFalse`、`multipleChoice`、`anaumeFilIn initialLetterShown="true"`、複数 blank の `ClozeTest` | parser |
+| `tests/authoring2.xml` | Reading | `readingComprehension`、進捗範囲 `1 - 2 / 5`、1画面複数問 | parser |
+| `tests/fixtures/ReadingTest` | Reading | `Insertion`、`readingComprehension`、`trueFalse`、`anaumeFilIn`、`multipleChoice` | parser / E2E |
+| `tests/question_authoring.xml` | Grammar / mixed | `shuffleQuestions="true"`、XML 順と画面順の不一致、アポストロフィつき選択肢 | parser |
+| `tests/fixtures/VocabularyBank` | Vocabulary Bank | `wd_type=5` 英→日、`save_progress_up`、自動次問遷移 | parser / E2E |
+
 ## `tests/authoring.xml`
 
 `combinationQuestion type="listeningComprehension"` の中に `<question>` が入るリスニング系の payload。
@@ -40,6 +51,34 @@ fixture の期待正答:
 7. `Location`
 8. `By special phone.`
 9. `Sunny.`
+
+## `tests/fixtures/ListeningTest2`
+
+保存済みの Listening Test 画面と `authoring.cfc` payload を使う fixture。
+
+特徴:
+
+- `return_url` は `/student/listening/unit/675?cat=12002`。
+- `save_answer_url` は `../flash/data_manipulate.cfc`。
+- `combinationQuestion type="listeningComprehension"` の中に True/False、multiple choice、`initialLetterShown="true"` つきの `anaumeFilIn` が入る。
+- payload 末尾に、10個の blank を持つ `ClozeTest` が単独の `<question>` として入る。
+- `ClozeTest` は parser 上では `typing` として扱い、`questionText` 内の `[...]` を左から順に正答配列へ展開する。
+
+fixture の期待正答:
+
+| `question_no` | XML type | parser type | 正答 |
+| --- | --- | --- | --- |
+| `30308812` | `trueFalse` | `trueFalse` | `True` |
+| `30308912` | `trueFalse` | `trueFalse` | `True` |
+| `30309012` | `multipleChoice` | `multipleChoice` | `Japanese beer.` |
+| `30309112` | `multipleChoice` | `multipleChoice` | `on business and vacation.` |
+| `30309212` | `anaumeFilIn` | `typing` | `software` |
+| `30028710` | `ClozeTest` | `typing` | `everything`, `How`, `about`, `Here`, `appreciate`, `work`, `recommend`, `fantastic`, `close`, `to` |
+
+新しく確認したパターン:
+
+- 複数 blank の `ClozeTest`。既存 solver では typing 系として扱う想定だが、E2E fixture としての採点完走は未追加。
+- `initialLetterShown="true"` つき `anaumeFilIn`。正答の先頭文字が画面に表示される可能性があるが、parser は完全な正答文字列を保持する。
 
 ## `tests/authoring2.xml`
 

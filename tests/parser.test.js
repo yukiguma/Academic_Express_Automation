@@ -48,6 +48,42 @@ test('parses reading XML question range fixture', () => {
     assert.equal(parsed.questions[4].displayOrder, 5);
 });
 
+test('parses listening cloze CFC fixture with mixed question types', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('ListeningTest2', 'authoring.cfc'));
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 6);
+    assert.deepEqual(parsed.questions.map(q => q.type), [
+        'trueFalse',
+        'trueFalse',
+        'multipleChoice',
+        'multipleChoice',
+        'typing',
+        'typing'
+    ]);
+    assert.deepEqual(parsed.questions.map(q => q.questionNo), [
+        '30308812',
+        '30308912',
+        '30309012',
+        '30309112',
+        '30309212',
+        '30028710'
+    ]);
+    assert.deepEqual(parsed.questions[4].answers, ['software']);
+    assert.deepEqual(parsed.questions[5].answers, [
+        'everything',
+        'How',
+        'about',
+        'Here',
+        'appreciate',
+        'work',
+        'recommend',
+        'fantastic',
+        'close',
+        'to'
+    ]);
+});
+
 test('parses shuffled question authoring XML by question text and exact answers', () => {
     const { parsed } = parser.parseQuestionData(readFixture('question_authoring.xml'));
 
