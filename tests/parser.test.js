@@ -156,6 +156,20 @@ test('parses saved vocabulary spelling payload as wd_type 2 questions', () => {
     assert.ok(parsed.questions.every(q => q.isAutoAdvance));
 });
 
+test('parses second vocabulary spelling payload with longer blanks', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabrarySpelling2', 'tango_data_manipulate.cfc'));
+
+    assert.equal(dataType, 'json');
+    assert.equal(parsed.questions.length, 5);
+    assert.deepEqual(parsed.questions.map(q => [q.questionNo, q.type, q.answers[0]]), [
+        ['69', 'typing', 'journal'],
+        ['4173', 'sentenceTyping', 'Please wear gloves while the machine is in operation.'],
+        ['999', 'sentenceTyping', 'This rule does not apply to part-time employees.'],
+        ['9792', 'sentenceTyping', 'The waitress went to the restroom to check her makeup.'],
+        ['100118', 'sentenceTyping', 'His job is the import and export of things.']
+    ]);
+});
+
 test('parses tango direction and typing variants without using know_chk as an answer', () => {
     const baseQuestion = {
         keyword: { ja: 'はがき', en: 'postcard' },

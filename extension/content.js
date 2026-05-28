@@ -568,15 +568,16 @@
             matchedPairs.push({ element: container, data: question });
         }
 
-        // Phase 5: Progress/order fallback for vocabulary pages whose visible
-        // prompt text differs from the captured answer data. Only use this when
-        // text-based matching found nothing; otherwise it adds hidden/shuffled
-        // questions and produces noisy "not found" logs.
+        // Phase 5: Progress/order fallback for pages whose visible prompt text
+        // differs from the captured answer data. Auto-advance vocabulary pages
+        // reload data between screens, so solving them by order alone can reuse
+        // stale answers just after clicking "続ける".
         if (activeQuestionRange !== null && matchedPairs.length === 0) {
             for (let i = 0; i < questionsList.length; i++) {
                 if (usedIndices.has(i)) continue;
 
                 const question = questionsList[i];
+                if (question.isAutoAdvance) continue;
                 if (!questionMatchesActiveOrder(question, activeQuestionRange, true)) continue;
 
                 const questionNumber = Number(question.displayOrder);

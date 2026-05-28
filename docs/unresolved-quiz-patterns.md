@@ -24,7 +24,7 @@
 | `tests/fixtures/ReadingTest` | Reading | `Insertion`、`readingComprehension`、`trueFalse`、`anaumeFilIn`、`multipleChoice` | parser / E2E |
 | `tests/question_authoring.xml` | Grammar / mixed | `shuffleQuestions="true"`、XML 順と画面順の不一致、アポストロフィつき選択肢 | parser |
 | `tests/fixtures/VocabularyBank` | Vocabulary Bank | `wd_type=5` 英→日、`save_progress_up`、自動次問遷移 | parser / E2E |
-| `tests/fixtures/VocabrarySpelling` | Vocabulary Bank | `wd_type=2` spelling / sentenceTyping、文字枠への keyboard event 入力、`save_progress_up` | parser / E2E |
+| `tests/fixtures/VocabrarySpelling` / `VocabrarySpelling2` | Vocabulary Bank | `wd_type=2` spelling / sentenceTyping、文字枠への keyboard event 入力、`save_progress_up` | parser / E2E |
 
 ## `tests/authoring.xml`
 
@@ -240,9 +240,9 @@ E2E での確認:
 - 各保存 payload の `ok_flag` が `1` であること。
 - 最終保存 payload の `save_type` が `1` であること。
 
-## `tests/fixtures/VocabrarySpelling`
+## `tests/fixtures/VocabrarySpelling` / `tests/fixtures/VocabrarySpelling2`
 
-保存済みの Vocabulary Bank spelling 画面と `tango_data_manipulate.cfc` payload を使う E2E fixture。ディレクトリ名は追加時の `VocabrarySpelling` をそのまま使っている。
+保存済みの Vocabulary Bank spelling 画面と `tango_data_manipulate.cfc` payload を使う fixture。ディレクトリ名は追加時の `VocabrarySpelling` 表記をそのまま使っている。
 
 特徴:
 
@@ -251,8 +251,10 @@ E2E での確認:
 - 通常の input / textarea はなく、`FontBox` 文字枠が document-level の keyboard event を受けて進む。
 - 単語 spelling では先頭など一部文字がヒント表示済みになることがあり、未入力の文字枠だけを送る。
 - `sentenceTyping` では画面上の英文から bracket 内の単語だけが空欄になり、保存 payload 上の正答は全文になる。solver は正答全文と表示済み英文の差分から空欄語を推定して入力する。
+- 実環境ではキー入力が速すぎると React 側の文字枠更新が追いつかず誤答になることがあるため、solver は1文字ごとに `FontBox` の状態変化を待ってから次の文字を送る。
 - 保存 API は `save_progress_up` を使う。typing 系では送信 body の JSON `data.answer` は空文字で、`ok_flag=1` と `word_no` で完走を検証する。
 - 最終問題後は `isAutoAdvance` のまま解答一覧画面へ遷移するため、auto mode 中に `続ける` ボタンが表示されたら1回だけクリックして次の画面へ進める。
+- `続ける` 直後は次の XHR 反映前に古い問題データが残ることがあるため、自動進行の語彙問題では問題番号だけの fallback 解答を使わない。
 
 fixture の期待正答:
 

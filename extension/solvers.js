@@ -389,12 +389,33 @@ async function solveFontBoxTyping(answers, scope) {
 
     console.log(`FontBox Typing Strategy: Typing ${chars.length} remaining characters.`);
     for (const char of chars) {
+        const before = fontBoxSnapshot();
         dispatchKeyboardChar(char, document);
-        await sleep(5);
+        await waitForFontBoxUpdate(before);
     }
 
-    await sleep(500);
+    await sleep(800);
     return true;
+}
+
+function fontBoxSnapshot() {
+    return Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'))
+        .filter(isVisible)
+        .map(box => `${box.className}:${box.textContent}`)
+        .join('|');
+}
+
+async function waitForFontBoxUpdate(previousSnapshot) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < 400) {
+        await sleep(20);
+        if (fontBoxSnapshot() !== previousSnapshot) {
+            await sleep(60);
+            return;
+        }
+    }
+
+    await sleep(120);
 }
 
 function keyboardInfoForChar(char) {
