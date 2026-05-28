@@ -176,7 +176,7 @@ var AcademicExpressParser = (function () {
 
         return /<sound\b/i.test(questionContent) &&
             /<jpscript\b/i.test(questionContent) &&
-            /^\[[\s\S]+\]$/.test(String(questionText || "").trim());
+            /\[[\s\S]+\]/.test(String(questionText || "").trim());
     }
 
     function parseXML(xmlText) {

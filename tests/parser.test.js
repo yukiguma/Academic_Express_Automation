@@ -99,6 +99,17 @@ test('parses dictation CFC fixture as document-level keyboard input', () => {
     });
 });
 
+test('parses dictation CFC fixture with an already-open prefix', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('Dictation2', 'authoring.cfc'));
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 1);
+    assert.equal(parsed.questions[0].type, 'dictation');
+    assert.equal(parsed.questions[0].questionNo, '20274614');
+    assert.deepEqual(parsed.questions[0].answers, ['began studying for his English test early this morning.']);
+    assert.equal(parsed.questions[0].rawText, 'began studying for his English test early this morning.');
+});
+
 test('parses shuffled question authoring XML by question text and exact answers', () => {
     const { parsed } = parser.parseQuestionData(readFixture('question_authoring.xml'));
 

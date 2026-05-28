@@ -6,7 +6,6 @@ const test = require('node:test');
 const parser = require('../extension/parser.js');
 const { createFixtureServer, runAutoSolve } = require('./helpers/e2e-harness.js');
 
-const fixtureDir = path.join(__dirname, 'fixtures', 'Dictation');
 const saveSuccess = '{"success":true,"result":""}';
 
 function parseSavedAnswer(body) {
@@ -22,10 +21,11 @@ function parseSavedAnswer(body) {
     };
 }
 
-test('Dictation fixture is auto-solved with keyboard events and exited', { timeout: 60_000 }, async () => {
+async function runDictationFixture({ expectedAnswer, fixtureName, questionNo, startFirst = false }) {
+    const fixtureDir = path.join(__dirname, 'fixtures', fixtureName);
     const questionData = parser.parseQuestionData(fs.readFileSync(path.join(fixtureDir, 'authoring.cfc'), 'utf8')).parsed;
     assert.deepEqual(questionData.questions.map(question => [question.questionNo, question.type, question.answers[0]]), [
-        ['20303814', 'dictation', 'We can stay home and study by computer.']
+        [questionNo, 'dictation', expectedAnswer]
     ]);
 
     const { saveRequests, server } = createFixtureServer({
@@ -37,13 +37,19 @@ test('Dictation fixture is auto-solved with keyboard events and exited', { timeo
         routes: new Map([
             ['/as/lplayer/index.cfm', 'ディクタン _ Academic Express3.html'],
             ['/as/lplayer/bundle.js', 'bundle.js'],
-            ['/as/lplayer/.authoring.cfc', 'authoring.cfc']
+            ['/as/lplayer/.authoring.cfc', 'authoring.cfc'],
+            ['/as/lplayer/authoring.cfc', 'authoring.cfc']
         ])
     });
 
     await runAutoSolve({
         pageReadySelector: '[class*="AppPc__root"]',
-        preparePage: page => page.getByRole('button', { name: 'スタート' }).click(),
+        preparePage: startFirst
+            ? async page => {
+                await page.getByRole('button', { name: 'スタート' }).click();
+                await page.waitForSelector('text=スタート', { state: 'detached', timeout: 10_000 }).catch(() => { });
+            }
+            : undefined,
         questionData,
         server,
         waitFor: page => page.waitForURL(/\/student\/cw\/unit\/1322/, { timeout: 45_000 })
@@ -59,8 +65,26 @@ test('Dictation fixture is auto-solved with keyboard events and exited', { timeo
         correctFlag: '5',
         method: 'write_answer_au',
         missCount: '0',
-        questionNo: '20303814',
+        questionNo,
         saveType: '1',
         soundCount: '1'
     }]);
+}
+
+test('Dictation fixture is auto-solved with keyboard events and exited', { timeout: 60_000 }, async () => {
+    await runDictationFixture({
+        expectedAnswer: 'We can stay home and study by computer.',
+        fixtureName: 'Dictation',
+        questionNo: '20303814',
+        startFirst: true
+    });
+});
+
+test('Dictation2 fixture starts after an already-open prefix and exits', { timeout: 60_000 }, async () => {
+    await runDictationFixture({
+        expectedAnswer: 'began studying for his English test early this morning.',
+        fixtureName: 'Dictation2',
+        questionNo: '20274614',
+        startFirst: true
+    });
 });

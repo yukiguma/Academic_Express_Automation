@@ -17,7 +17,7 @@
 | --- | --- | --- | --- |
 | `tests/fixtures/ListeningTest` | Listening | `listeningComprehension`、重複する `questionText`、番号参照の選択肢、単問進行 | parser / E2E |
 | `tests/fixtures/ListeningTest2` | Listening | `listeningComprehension`、`trueFalse`、`multipleChoice`、`anaumeFilIn initialLetterShown="true"`、複数 blank の `ClozeTest` | parser / E2E |
-| `tests/fixtures/Dictation` | Listening | `typing` XML だが画面は Dictation 専用。input 要素なし、document の keyboard event で文字枠を開く | parser / E2E |
+| `tests/fixtures/Dictation` / `Dictation2` | Listening | `typing` XML だが画面は Dictation 専用。input 要素なし、document の keyboard event で文字枠を開く。一部 prefix が最初から開いている場合あり | parser / E2E |
 | `tests/fixtures/Scanning` | Reading | 開始画面つき `scanning`、本文中の該当英文クリック、複数問同時保存 | parser / E2E |
 | `tests/fixtures/VocabraryMatching` | Reading | `matching`、本文中の複数 blank に候補語句を投入、複数 `<answer>` 保存 | parser / E2E |
 | `tests/authoring2.xml` | Reading | `readingComprehension`、進捗範囲 `1 - 2 / 5`、1画面複数問 | parser |
@@ -83,13 +83,14 @@ fixture の期待正答:
 - 複数 blank の `ClozeTest`。typing 系として扱い、10個の blank を入力して採点完走できることを E2E で確認済み。
 - `initialLetterShown="true"` つき `anaumeFilIn`。正答の先頭文字が画面に表示される可能性があるが、parser は完全な正答文字列を保持する。
 
-## `tests/fixtures/Dictation`
+## `tests/fixtures/Dictation` / `tests/fixtures/Dictation2`
 
 保存済みのディクタン画面と `authoring.cfc` payload を使う fixture。
 
 特徴:
 
 - XML type は `typing` だが、`questionText` 全体が `[We can stay home and study by computer.]` のように正答で、画面側には通常の input / textarea / 採点ボタンがない。
+- `Dictation2` では `Gene [began studying for his English test early this morning.]` のように、bracket の外側が最初から開いている prefix になる。自動入力するのは bracket 内の未入力部分だけ。
 - 画面は `DictationBox` / `FontBox` の文字枠で構成され、document レベルの keyboard event を受けて1文字ずつ開く。
 - 初期表示には「スタート」オーバーレイがあり、開始後にキー入力を受け付ける。
 - `AppHeader__fixed-top` がなく、拡張の自動入力ボタンは `AppPc__common_inner` などの Dictation 用ヘッダーへ差し込む。
@@ -99,7 +100,9 @@ fixture の期待正答:
 実装上の対応:
 
 - parser は `<sound>` と `<jpscript>` を持ち、`questionText` 全体が bracket で囲まれた `typing` を `dictation` として扱う。
+- prefix つきの場合も同じく `dictation` として扱い、bracket 内だけを `answers` に保持する。
 - solver は input 要素探索ではなく、正答文字列を document へ `keydown` / `keypress` / `keyup` として送る。
+- 「スタート」ボタンは画面最前面で押せる状態のときだけ solver が押す。保存 HTML の E2E では開始オーバーレイが残るため、テスト側で開始後に拡張を注入する。
 - 画面テキストでは問題を照合できないため、`window.config.question_no` と `questionNo` の一致で active question を特定する。
 - 完答後の遷移では「採点」「続ける」「判定」を優先し、それらがなければ Dictation の「終了」ボタンを押す。
 
@@ -108,6 +111,7 @@ fixture の期待正答:
 | `question_no` | parser type | 正答 |
 | --- | --- | --- |
 | `20303814` | `dictation` | `We can stay home and study by computer.` |
+| `20274614` | `dictation` | `began studying for his English test early this morning.` |
 
 ## `tests/authoring2.xml`
 

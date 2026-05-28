@@ -51,6 +51,15 @@ function findVisibleByText(selector, text) {
         .find(el => isVisible(el) && normalizeText(el.textContent) === normalizedText);
 }
 
+function isElementTopmost(element) {
+    if (!element || !element.getBoundingClientRect) return false;
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + Math.min(rect.width / 2, Math.max(1, rect.width - 1));
+    const y = rect.top + Math.min(rect.height / 2, Math.max(1, rect.height - 1));
+    const top = document.elementFromPoint(x, y);
+    return top === element || element.contains(top);
+}
+
 function compactText(text) {
     return normalizeText(text).replace(/[^\p{L}\p{N}]/gu, '');
 }
@@ -398,8 +407,11 @@ async function solveDictation(answers) {
 
     const startButton = findVisibleByText('button, [role="button"], span', 'スタート');
     if (startButton) {
-        simulateClick(startButton);
-        await sleep(250);
+        const button = startButton.closest('button') || startButton;
+        if (isElementTopmost(button)) {
+            simulateClick(button);
+            await sleep(250);
+        }
     }
 
     console.log(`Dictation Strategy: Typing ${answer.length} characters.`);
