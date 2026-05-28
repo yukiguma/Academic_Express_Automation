@@ -323,7 +323,7 @@
         if (style.visibility === 'hidden' || style.display === 'none') return false;
 
         const rect = el.getBoundingClientRect();
-        return rect.width > 0 || rect.height > 0 || el.textContent.trim().length > 0;
+        return rect.width > 0 || rect.height > 0;
     }
 
     function matchesQuestionSignature(text, question) {
@@ -335,7 +335,10 @@
     }
 
     function getCurrentProgressQuestionRange() {
-        const text = document.body?.innerText || "";
+        const text = [
+            document.body?.innerText,
+            document.body?.textContent
+        ].filter(Boolean).join("\n");
         const rangeMatch = text.match(/(?:^|\s)(\d{1,3})\s*[-－ー]\s*(\d{1,3})\s*\/\s*(\d{1,3})(?:\s|$)/);
         const singleMatch = rangeMatch ? null : text.match(/(?:^|\s)(\d{1,3})\s*\/\s*(\d{1,3})(?:\s|$)/);
         const match = rangeMatch || singleMatch;
