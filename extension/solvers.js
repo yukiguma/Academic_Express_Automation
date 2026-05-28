@@ -33,12 +33,31 @@ function simulateType(element, value) {
     }
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function normalizeText(text) {
     return String(text || "")
         .replace(/[\u2018\u2019\u02bc]/g, "'")
         .replace(/\s+/g, ' ')
         .trim()
         .toLowerCase();
+}
+
+function findVisibleByText(selector, text) {
+    const normalizedText = normalizeText(text);
+    return Array.from(document.querySelectorAll(selector))
+        .find(el => isVisible(el) && normalizeText(el.textContent) === normalizedText);
+}
+
+function isElementTopmost(element) {
+    if (!element || !element.getBoundingClientRect) return false;
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + Math.min(rect.width / 2, Math.max(1, rect.width - 1));
+    const y = rect.top + Math.min(rect.height / 2, Math.max(1, rect.height - 1));
+    const top = document.elementFromPoint(x, y);
+    return top === element || element.contains(top);
 }
 
 function compactText(text) {
@@ -310,6 +329,101 @@ async function solveTyping(answers, scope) {
     return targets.length > 0;
 }
 
+function keyboardInfoForChar(char) {
+    const key = String(char);
+    const upper = key.toUpperCase();
+    const specialKeys = {
+        ' ': { code: 'Space', keyCode: 32 },
+        '.': { code: 'Period' },
+        ',': { code: 'Comma' },
+        '?': { code: 'Slash', shiftKey: true },
+        '!': { code: 'Digit1', shiftKey: true },
+        "'": { code: 'Quote' },
+        '"': { code: 'Quote', shiftKey: true },
+        '-': { code: 'Minus' }
+    };
+
+    if (specialKeys[key]) {
+        return {
+            charCode: key.charCodeAt(0),
+            code: specialKeys[key].code,
+            keyCode: key.charCodeAt(0),
+            shiftKey: Boolean(specialKeys[key].shiftKey)
+        };
+    }
+
+    if (/^[a-z]$/i.test(key)) {
+        return {
+            charCode: key.charCodeAt(0),
+            code: `Key${upper}`,
+            keyCode: key.charCodeAt(0),
+            shiftKey: key !== key.toLowerCase()
+        };
+    }
+
+    if (/^[0-9]$/.test(key)) {
+        return {
+            charCode: key.charCodeAt(0),
+            code: `Digit${key}`,
+            keyCode: key.charCodeAt(0),
+            shiftKey: false
+        };
+    }
+
+    return {
+        charCode: key.charCodeAt(0),
+        code: '',
+        keyCode: key.charCodeAt(0),
+        shiftKey: false
+    };
+}
+
+function dispatchKeyboardChar(char, target = document) {
+    const info = keyboardInfoForChar(char);
+    const base = {
+        bubbles: true,
+        cancelable: true,
+        charCode: 0,
+        code: info.code,
+        key: char,
+        keyCode: info.keyCode,
+        shiftKey: info.shiftKey,
+        which: info.keyCode
+    };
+
+    target.dispatchEvent(new KeyboardEvent('keydown', base));
+    target.dispatchEvent(new KeyboardEvent('keypress', {
+        ...base,
+        charCode: info.charCode
+    }));
+    target.dispatchEvent(new KeyboardEvent('keyup', base));
+}
+
+// Solver: Dictation player. This layout has no input element; it listens for
+// document-level keyboard events and opens character boxes as keys arrive.
+async function solveDictation(answers) {
+    const answer = answers.join(' ').trim();
+    if (!answer) return false;
+
+    const startButton = findVisibleByText('button, [role="button"], span', 'スタート');
+    if (startButton) {
+        const button = startButton.closest('button') || startButton;
+        if (isElementTopmost(button)) {
+            simulateClick(button);
+            await sleep(250);
+        }
+    }
+
+    console.log(`Dictation Strategy: Typing ${answer.length} characters.`);
+    for (const char of answer) {
+        dispatchKeyboardChar(char, document);
+        await sleep(5);
+    }
+
+    await sleep(500);
+    return true;
+}
+
 // Solver: Sorting
 async function solveSorting(answers, scope) {
     console.log("Starting sorting solver...");
@@ -393,6 +507,9 @@ async function solve(answers, type, scope) {
 
     if (normalizedType === 'matching' || normalizedType === 'insertion') {
         return solveFillBlank(answers, scope);
+    }
+    if (normalizedType.includes('dictation') || normalizedType.includes('dectation')) {
+        return solveDictation(answers, scope);
     }
     if (normalizedType.includes('choice') || normalizedType.includes('true') || normalizedType.includes('select') || normalizedType.includes('quiz')) {
         return solveMultipleChoice(answers, scope);

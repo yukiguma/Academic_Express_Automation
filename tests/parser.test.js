@@ -84,6 +84,32 @@ test('parses listening cloze CFC fixture with mixed question types', () => {
     ]);
 });
 
+test('parses dictation CFC fixture as document-level keyboard input', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('Dictation', 'authoring.cfc'));
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 1);
+    assert.deepEqual(parsed.questions[0], {
+        type: 'dictation',
+        answers: ['We can stay home and study by computer.'],
+        rawText: 'We can stay home and study by computer.',
+        signature: 'wecanstayhomeandstudybycomputer',
+        displayOrder: 1,
+        questionNo: '20303814'
+    });
+});
+
+test('parses dictation CFC fixture with an already-open prefix', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('Dictation2', 'authoring.cfc'));
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 1);
+    assert.equal(parsed.questions[0].type, 'dictation');
+    assert.equal(parsed.questions[0].questionNo, '20274614');
+    assert.deepEqual(parsed.questions[0].answers, ['began studying for his English test early this morning.']);
+    assert.equal(parsed.questions[0].rawText, 'began studying for his English test early this morning.');
+});
+
 test('parses shuffled question authoring XML by question text and exact answers', () => {
     const { parsed } = parser.parseQuestionData(readFixture('question_authoring.xml'));
 

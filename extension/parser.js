@@ -159,6 +159,7 @@ var AcademicExpressParser = (function () {
 
     function inferType(type, questionContent) {
         const lowerType = String(type || "").toLowerCase();
+        if (lowerType.includes('dictation') || lowerType.includes('dectation')) return 'dictation';
         if (lowerType.includes('sort')) return 'sorting';
         if (lowerType.includes('true')) return 'trueFalse';
         if (lowerType.includes('choice') || lowerType.includes('select') || lowerType.includes('quiz')) return 'multipleChoice';
@@ -168,6 +169,16 @@ var AcademicExpressParser = (function () {
         return 'multipleChoice';
     }
 
+    function isDictationQuestion(type, questionContent, questionText) {
+        const normalizedType = String(type || "").toLowerCase();
+        if (normalizedType.includes('dictation') || normalizedType.includes('dectation')) return true;
+        if (normalizedType !== 'typing') return false;
+
+        return /<sound\b/i.test(questionContent) &&
+            /<jpscript\b/i.test(questionContent) &&
+            /\[[\s\S]+\]/.test(String(questionText || "").trim());
+    }
+
     function parseXML(xmlText) {
         const questionsList = [];
         const questionRegex = /<question\b([^>]*)>([\s\S]*?)<\/question>/gi;
@@ -175,7 +186,7 @@ var AcademicExpressParser = (function () {
         let displayOrder = 0;
 
         function pushQuestion(attrs, questionContent) {
-            const type = inferType(attrs.type || attrs.questiontype || attrs.kind, questionContent);
+            let type = inferType(attrs.type || attrs.questiontype || attrs.kind, questionContent);
             const questionText = unwrapText(firstTagText(questionContent, [
                 'questionText',
                 'question_text',
@@ -197,14 +208,18 @@ var AcademicExpressParser = (function () {
                 'eng'
             ]));
             const answers = collectXMLAnswers(questionContent, questionText);
+            if (isDictationQuestion(type, questionContent, questionText)) {
+                type = 'dictation';
+            }
+            const rawText = type === 'dictation' && answers.length > 0 ? answers[0] : questionText;
 
-            if (questionText || answers.length > 0) {
+            if (rawText || answers.length > 0) {
                 displayOrder += 1;
                 questionsList.push({
                     type: type,
                     answers: answers,
-                    rawText: questionText,
-                    signature: makeSignature(questionText),
+                    rawText: rawText,
+                    signature: makeSignature(rawText),
                     displayOrder: displayOrder,
                     questionNo: attrs.no || ""
                 });

@@ -1,0 +1,2013 @@
+<!doctype html>
+<!-- saved from url=(0175)https://supereigo.campus.kit.ac.jp/as/lplayer/index.cfm?tic=1506&ano=0&cw=1322&uno=7088&qno=20274614&backurl=%2Fstudent%2Fcw%2Funit%2F1322%3Funit%3D3929%26cat%3D15002%23uc7088 -->
+<html lang="ja">
+  <div
+    id="global-lock"
+    style="
+      position: fixed;
+      top: 0px;
+      left: 0px;
+      width: 100vw;
+      height: 100vh;
+      z-index: 99999;
+      display: none;
+      cursor: wait;
+      pointer-events: auto;
+      background: rgba(0, 0, 0, 0);
+    "
+  ></div>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <!--<base href="https://supereigo.campus.kit.ac.jp/as/playerjs_dictation/">-->
+    <base href="." />
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <link
+      rel="shortcut icon"
+      href="https://supereigo.campus.kit.ac.jp/as/custom/images/favicon.ico"
+      type="image/vnd.microsoft.icon"
+    />
+
+    <title>ディクタン | Academic Express3</title>
+
+    <script type="text/javascript">
+      (function () {
+        window.isDebug = false;
+        if (typeof console === "undefined") {
+          //IEはログはを出力しない
+          console = {
+            log: function () {},
+            error: function () {},
+          };
+        } else {
+          //
+        }
+
+        var config = {
+          /* サーバーから問題集を取得するためのキー */
+
+          au_token: "au_token558F1A60FECB5E96FF5B2724183BD6E2",
+          unit_contents_no: "7088",
+          question_no: "20274614",
+          material_no: "",
+          assign_no: "0",
+          st_no: "",
+          schm: "SE",
+          /* プレビューモードかどうか */
+          isPreview: false,
+          /*
+           * 	[previewType]
+           *　受講者・管理者画面両方で指定
+           *  single 				Listening Bank ディクタンタスク以外
+           *  assign 	 			Listening Bank ディクタンタスクの場合
+           *
+           */
+
+          previewType: "assign",
+
+          /*続ける・再挑戦ボタン表示非表示フラグ*/
+          trybtn_disp_flag: true,
+
+          get_xml_url: "./authoring.cfc",
+
+          save_answer_url: "../flash/data_manipulate.cfc",
+          /*戻るボタン表示[true]非表示[false]*/
+          prebtn_disp_flag: false,
+          /*「終了」ボタンを押した時の戻り先url */
+
+          closebtn_disp_flag: true,
+
+          return_url: "/student/cw/unit/1322?unit=3929&cat=15002#uc7088",
+
+          /*複数タブエラーのURL*/
+          multi_tab_error_url: "/student/error/multi_tab",
+
+          /*セッションなしの場合ログアウト 管理者の場合エラーメッセージを表示*/
+
+          /* セッションエラー時の戻り先url */
+          logout_url: "/student/cw/unit/1322?unit=3929&cat=15002#uc7088",
+          /**
+           * プレビュー呼び出しモード [index_waku.cfm]を経由した場合引数が変わる
+           * 'pc'
+           * 'mobile' スマートフォン
+           * 'tablet' タブレット
+           */
+          callMode: "pc",
+        };
+        window.config = config;
+
+        var require = {
+          urlArgs: "bust=v4.0.0",
+        };
+        window.require = require;
+      })();
+    </script>
+
+    <style type="text/css">
+      article,
+      aside,
+      figure,
+      footer,
+      header,
+      nav,
+      section {
+        display: block;
+      }
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        background-color: #e1e1e1;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+      }
+      @media print {
+        body * {
+          display: none;
+        }
+        #printContainer {
+          display: block;
+        }
+      }
+    </style>
+    <style type="text/css">
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      :after,
+      :before {
+        box-sizing: inherit;
+      }
+      .AppPc__root___2Yyj0 {
+        height: 100%;
+        width: 100%;
+      }
+      .AppPc__common_container___30OoQ {
+        margin: 0 auto;
+        width: 100%;
+        height: 100%;
+        background-color: #e8f0ff;
+        padding: 0;
+        display: table;
+      }
+      .AppPc__common_container_inner___1QPiy {
+        padding: 30px;
+      }
+      .AppPc__common_header___3rAL5 {
+        position: relative;
+        padding: 0;
+        background-color: #00bcd4;
+        color: #fff;
+        text-align: left;
+        white-space: nowrap;
+      }
+      .AppPc__common_header_inner___3T19i {
+        padding: 8px;
+      }
+      .AppPc__common_main___2Gcm0 {
+        padding: 30px;
+      }
+      .AppPc__common_inner___P2d_k {
+        text-align: center;
+      }
+      .AppPc__app_header___25wIg {
+        border-bottom: 2px solid #00bcd4;
+        margin-bottom: 10px;
+        padding: 10px;
+      }
+      .AppPc__app_root___2LCmK {
+        padding: 30px;
+        margin-right: auto;
+        margin-left: auto;
+        font-family:
+          Georgia,
+          lucida grande,
+          tahoma,
+          verdana,
+          arial,
+          \\30D2\30E9\30AE\30CE\89D2\30B4 Pro W3,
+          Hiragino Kaku Gothic Pro,
+          \\30E1\30A4\30EA\30AA,
+          Meiryo,
+          "\FF2D\FF33   \FF30\30B4\30B7\30C3\30AF",
+          MS PGothic,
+          sans-serif;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        line-height: 1.42857143;
+        max-width: 970px;
+      }
+      .AppPc__container___14hJv {
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .AppPc__container___14hJv:after {
+        clear: both;
+        content: "";
+        display: table;
+      }
+      .AppPc__soundButton___36TL8 {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 14.70196%;
+      }
+      .AppPc__soundButton___36TL8:last-child {
+        margin-right: 0;
+      }
+      .AppPc__dictationBox___1XK9s {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 82.94039%;
+      }
+      .AppPc__dictationBox___1XK9s:last-child {
+        margin-right: 0;
+      }
+      .AppPc__direction___1hSpc {
+        font-size: 18px;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+      }
+      .AppPc__japaneseText___2K8i5 {
+        margin-bottom: 30px;
+      }
+      .AppPc__japaneseText___2K8i5 p {
+        background-color: #ccc;
+        padding: 2px;
+        text-align: center;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .AppPc__japaneseTextOpen___sJjcc p {
+        background-color: #fff;
+        text-align: left;
+      }
+      .AppPc__buttonBox___x-4tm {
+        position: relative;
+      }
+      .AppPc__spanButtonBox___24AxC {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        text-align: right;
+      }
+      .AppPc__description___3LUWI {
+        padding: 5px;
+      }
+    </style>
+    <style type="text/css">
+      .NowLoading__root___OeLru {
+        padding-top: 200px;
+        text-align: center;
+      }
+      .NowLoading__circularProgress___YD9Pl {
+        vertical-align: middle;
+      }
+      .NowLoading__text___3odFz {
+        font-size: 2em;
+        padding: 10px;
+        vertical-align: middle;
+      }
+    </style>
+    <style type="text/css">
+      .Judgement__root___3x-OR {
+        width: 100%;
+      }
+    </style>
+    <style type="text/css">
+      .DictationBox__line___xoT8a {
+        min-height: 32px;
+      }
+      .DictationBox__line___xoT8a:after {
+        content: "";
+        display: block;
+        clear: both;
+      }
+    </style>
+    <style type="text/css">
+      .WordBox__root___2chbV {
+        display: block;
+        white-space: nowrap;
+        float: left;
+      }
+    </style>
+    <style type="text/css">
+      .FontBox__root___10556 {
+        float: left;
+        height: 27px;
+        width: 18px;
+        margin-right: 2px;
+        margin-bottom: 5px;
+        text-align: center;
+      }
+      .FontBox__underlinedRoot___1Sli5 {
+        border-bottom: solid;
+        color: #00f;
+      }
+      .FontBox__text___JV3zv {
+        font-size: 18px;
+      }
+      .FontBox__open___2YFS7 {
+        color: #000;
+      }
+      .FontBox__hint___32T4Q {
+        color: silver;
+      }
+      .FontBox__hide___3p4y- {
+        height: 24px;
+        width: 18px;
+        border-radius: 50%;
+        background-color: #ffab00;
+      }
+    </style>
+    <style type="text/css">
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      :after,
+      :before {
+        box-sizing: inherit;
+      }
+      .ControlBox__root___2Iw29 {
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        padding: 5px;
+      }
+      .ControlBox__root___2Iw29:after {
+        clear: both;
+        content: "";
+        display: table;
+      }
+      .ControlBox__buttonBox___HOXWp {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 100%;
+      }
+      .ControlBox__buttonBox___HOXWp:last-child {
+        margin-right: 0;
+      }
+      .ControlBox__button_1___3xdl0 {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 31.76157%;
+      }
+      .ControlBox__button_1___3xdl0:last-child {
+        margin-right: 0;
+      }
+      .ControlBox__button_2___SXx-d {
+        margin-left: 34.11922%;
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 31.76157%;
+      }
+      .ControlBox__button_2___SXx-d:last-child {
+        margin-right: 0;
+      }
+    </style>
+    <style type="text/css">
+      .SoundButton__root___IbH36 {
+        display: inline-block;
+        background-color: #000;
+        border-radius: 4px;
+        text-align: center;
+        padding: 5px 8px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .SoundButton__text___1Pwul {
+        font-size: 12px;
+        color: #fff;
+        margin: 0;
+      }
+      .SoundButton__icon___QZchY {
+        color: #fff;
+      }
+    </style>
+    <style type="text/css">
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      :after,
+      :before {
+        box-sizing: inherit;
+      }
+      .HintBox__root___245mY {
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        border: 1px solid #00bcd4;
+        padding: 10px;
+      }
+      .HintBox__root___245mY:after {
+        clear: both;
+        content: "";
+        display: table;
+      }
+      .HintBox__text___34doI {
+        max-width: 1200px;
+        margin: 0 auto 5px;
+      }
+      .HintBox__text___34doI:after {
+        clear: both;
+        content: "";
+        display: table;
+      }
+      .HintBox__hintText___1JiVr {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 31.76157%;
+        margin-left: 34.11922%;
+        text-align: center;
+      }
+      .HintBox__hintText___1JiVr:last-child {
+        margin-right: 0;
+      }
+      .HintBox__hasUsedHintText___3U-lG {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 31.76157%;
+        text-align: right;
+      }
+      .HintBox__hasUsedHintText___3U-lG:last-child {
+        margin-right: 0;
+      }
+      .HintBox__hasUsedHintText___3U-lG span {
+        background-color: #f0f;
+        font-size: 0.75em;
+        color: #fff;
+        padding: 3px;
+        border-radius: 5px;
+      }
+      @media screen and (max-width: 767px) {
+        .HintBox__hasUsedHintText___3U-lG span {
+          font-size: 0.6em;
+        }
+      }
+      .HintBox__button___1jSGn {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 23.23176%;
+        margin-bottom: 10px;
+      }
+      .HintBox__button___1jSGn:last-child {
+        margin-right: 0;
+      }
+      .HintBox__littleSlowButton___3cePU {
+        margin-left: 25.58941%;
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 23.23176%;
+      }
+      .HintBox__littleSlowButton___3cePU:last-child {
+        margin-right: 0;
+      }
+      .HintBox__slowButton___2gxud {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 23.23176%;
+      }
+      .HintBox__slowButton___2gxud:last-child {
+        margin-right: 0;
+      }
+      .HintBox__littleSlowButtonSp___2nNMQ {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 48.82117%;
+      }
+      .HintBox__littleSlowButtonSp___2nNMQ:last-child {
+        margin-right: 0;
+      }
+      .HintBox__slowButtonSp___18vrq {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 48.82117%;
+      }
+      .HintBox__slowButtonSp___18vrq:last-child {
+        margin-right: 0;
+      }
+    </style>
+    <style type="text/css">
+      .TabletKeyboard__keyboard___3HpaM {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        overflow: auto;
+      }
+      .TabletKeyboard__keyboard___3HpaM li {
+        float: left;
+        margin: 0 5px 5px 0;
+        width: 60px;
+        height: 60px;
+        line-height: 60px;
+        text-align: center;
+        background: #fff;
+        border: 1px solid #888;
+      }
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__capslock___2raQ2,
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__firstitem___3OsXT,
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__left-shift___3PhAT {
+        clear: left;
+      }
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__lastitem___1sBgI {
+        margin-right: 0;
+      }
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__uppercase___3dVvN {
+        text-transform: uppercase;
+      }
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__capslock___2raQ2 {
+        width: 80px;
+      }
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__return___1Ht1H {
+        width: 77px;
+      }
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__left-shift___3PhAT {
+        width: 95px;
+      }
+      .TabletKeyboard__keyboard___3HpaM
+        .TabletKeyboard__rightright-shift___1Im21 {
+        width: 109px;
+      }
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__on___1Pe9i {
+        display: none;
+      }
+      .TabletKeyboard__keyboard___3HpaM .TabletKeyboard__space___2wx13 {
+        clear: left;
+        width: 621px;
+      }
+      .TabletKeyboard__keyboard___3HpaM li:hover {
+        position: relative;
+        top: 1px;
+        left: 1px;
+        border-color: #e5e5e5;
+        cursor: pointer;
+      }
+    </style>
+    <style type="text/css">
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      :after,
+      :before {
+        box-sizing: inherit;
+      }
+      .AppSp__root___1HvfJ {
+        height: 100%;
+        width: 100%;
+      }
+      .AppSp__common_container___2Hpss {
+        margin: 0 auto;
+        width: 100%;
+        height: 100%;
+        background-color: #e8f0ff;
+        padding: 0;
+        display: table;
+      }
+      .AppSp__common_container_inner___2_iop {
+        padding: 10px;
+      }
+      .AppSp__common_header___1fupU {
+        position: relative;
+        padding: 0;
+        background-color: #00bcd4;
+        color: #fff;
+        text-align: left;
+        white-space: nowrap;
+      }
+      .AppSp__common_header_inner___1RoZ1 {
+        padding: 8px;
+      }
+      .AppSp__common_main___tsMT8 {
+        padding: 10px;
+      }
+      .AppSp__common_inner___2brkM {
+        text-align: center;
+      }
+      .AppSp__app_header___PxSl8 {
+        border-bottom: 2px solid #00bcd4;
+        margin-bottom: 10px;
+        padding: 10px;
+      }
+      .AppSp__app_root___d3kXF {
+        padding: 10px;
+        margin-right: auto;
+        margin-left: auto;
+        font-family:
+          Georgia,
+          lucida grande,
+          tahoma,
+          verdana,
+          arial,
+          \\30D2\30E9\30AE\30CE\89D2\30B4 Pro W3,
+          Hiragino Kaku Gothic Pro,
+          \\30E1\30A4\30EA\30AA,
+          Meiryo,
+          "\FF2D\FF33   \FF30\30B4\30B7\30C3\30AF",
+          MS PGothic,
+          sans-serif;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+      .AppSp__container___2UeJ1 {
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .AppSp__container___2UeJ1:after {
+        clear: both;
+        content: "";
+        display: table;
+      }
+      .AppSp__soundButton___3dTIa {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 14.70196%;
+      }
+      .AppSp__soundButton___3dTIa:last-child {
+        margin-right: 0;
+      }
+      .AppSp__dictationBox___2XXFl {
+        float: left;
+        display: block;
+        margin-right: 2.35765%;
+        width: 82.94039%;
+      }
+      .AppSp__dictationBox___2XXFl:last-child {
+        margin-right: 0;
+      }
+      .AppSp__direction___1w0dr {
+        font-size: 14px;
+        margin: 0;
+        padding: 0;
+      }
+      .AppSp__japaneseText___cYzUu {
+        margin-bottom: 10px;
+      }
+      .AppSp__japaneseText___cYzUu p {
+        background-color: #ccc;
+        padding: 2px;
+        text-align: center;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .AppSp__japaneseTextOpen___13yM2 p {
+        background-color: #fff;
+        text-align: left;
+      }
+      .AppSp__buttonBox___FU28q {
+        position: relative;
+      }
+      .AppSp__spanButtonBox___2HRyp {
+        padding-top: 10px;
+        bottom: 0;
+        right: 0;
+        text-align: right;
+      }
+      .AppSp__description___3x9iU {
+        padding-left: 10px;
+      }
+    </style>
+    <style type="text/css">
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      :after,
+      :before {
+        box-sizing: inherit;
+      }
+      .SpellButtonBox__root___2YkmS {
+        text-align: center;
+        padding: 5px;
+      }
+    </style>
+    <style type="text/css">
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      :after,
+      :before {
+        box-sizing: inherit;
+      }
+      .SpanButton__common___1NIlg {
+        display: inline-block;
+        padding: 6px 12px;
+        margin-bottom: 0;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.42857143;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: middle;
+        -ms-touch-action: manipulation;
+        touch-action: manipulation;
+        cursor: pointer;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        background-image: none;
+        border: 1px solid transparent;
+        border-radius: 4px;
+      }
+      .SpanButton__default___2m1y0 {
+        color: #333;
+        background-color: #fff;
+        text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+        box-shadow:
+          inset 0 1px 0 hsla(0, 0%, 100%, 0.15),
+          0 1px 1px rgba(0, 0, 0, 0.075);
+        text-shadow: 0 1px 0 #fff;
+        background-image: -webkit-linear-gradient(top, #fff, #e0e0e0);
+        background-image: -webkit-gradient(
+          linear,
+          left top,
+          left bottom,
+          from(#fff),
+          to(#e0e0e0)
+        );
+        background-image: linear-gradient(180deg, #fff 0, #e0e0e0);
+        filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff',endColorstr='#ffe0e0e0',GradientType=0);
+        filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
+        background-repeat: repeat-x;
+        border-color: #dbdbdb;
+        border-color: #ccc;
+        margin-right: 5px;
+      }
+      .SpanButton__default___2m1y0:last-child {
+        margin-right: 0;
+      }
+    </style>
+    <style id="toggle-style">
+      .segmented-control {
+        display: flex;
+        background-color: #f0f0f0;
+        padding: 2px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        overflow: hidden;
+      }
+      .segment {
+        padding: 4px 12px;
+        font-size: 11px;
+        font-weight: bold;
+        color: #666;
+        cursor: pointer;
+        border-radius: 2px;
+        transition: all 0.2s;
+        text-align: center;
+        user-select: none;
+        font-family: inherit;
+      }
+      .segment.active {
+        background-color: #fff;
+        color: #ff0000;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .segment:hover:not(.active) {
+        background-color: #e8e8e8;
+      }
+    </style>
+  </head>
+  <body class="notranslate" style="">
+    <div id="root">
+      <div data-reactroot="">
+        <div class="AppPc__root___2Yyj0">
+          <div class="AppPc__common_container___30OoQ">
+            <div class="AppPc__common_container_inner___1QPiy">
+              <div
+                style="
+                  color: rgba(0, 0, 0, 0.87);
+                  background-color: rgb(255, 255, 255);
+                  transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                  box-sizing: border-box;
+                  font-family:
+                    Georgia, &quot;lucida grande&quot;, tahoma, verdana, arial,
+                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                    &quot;Hiragino Kaku Gothic Pro&quot;, メイリオ, Meiryo,
+                    &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                    sans-serif;
+                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                  box-shadow:
+                    rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                    rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                  border-radius: 2px;
+                "
+              >
+                <div class="AppPc__common_header___3rAL5">
+                  <div
+                    class="AppPc__common_header_inner___3T19i"
+                    style="
+                      color: rgba(0, 0, 0, 0.87);
+                      background-color: transparent;
+                      transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                      box-sizing: border-box;
+                      font-family:
+                        Georgia, &quot;lucida grande&quot;, tahoma, verdana,
+                        arial, &quot;ヒラギノ角ゴ Pro W3&quot;,
+                        &quot;Hiragino Kaku Gothic Pro&quot;, メイリオ, Meiryo,
+                        &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                        sans-serif;
+                      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                      box-shadow:
+                        rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                        rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                      border-radius: 2px;
+                    "
+                  >
+                    <div>
+                      <div class="AppPc__common_inner___P2d_k">
+                        <div class="ControlBox__root___2Iw29">
+                          <div class="ControlBox__buttonBox___HOXWp">
+                            <div class="ControlBox__button_1___3xdl0">
+                              <div
+                                style="
+                                  color: rgba(0, 0, 0, 0.87);
+                                  background-color: rgb(255, 255, 255);
+                                  transition: 450ms
+                                    cubic-bezier(0.23, 1, 0.32, 1);
+                                  box-sizing: border-box;
+                                  font-family:
+                                    Georgia, &quot;lucida grande&quot;, tahoma,
+                                    verdana, arial,
+                                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                    &quot;Hiragino Kaku Gothic Pro&quot;,
+                                    メイリオ, Meiryo,
+                                    &quot;ＭＳ Ｐゴシック&quot;,
+                                    &quot;MS PGothic&quot;, sans-serif;
+                                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                  box-shadow:
+                                    rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                                    rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                                  border-radius: 2px;
+                                  display: inline-block;
+                                  width: 100%;
+                                "
+                              >
+                                <button
+                                  tabindex="0"
+                                  type="button"
+                                  style="
+                                    border: 10px;
+                                    box-sizing: border-box;
+                                    display: inline-block;
+                                    font-family:
+                                      Georgia, &quot;lucida grande&quot;,
+                                      tahoma, verdana, arial,
+                                      &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                      &quot;Hiragino Kaku Gothic Pro&quot;,
+                                      メイリオ, Meiryo,
+                                      &quot;ＭＳ Ｐゴシック&quot;,
+                                      &quot;MS PGothic&quot;, sans-serif;
+                                    -webkit-tap-highlight-color: rgba(
+                                      0,
+                                      0,
+                                      0,
+                                      0
+                                    );
+                                    cursor: pointer;
+                                    text-decoration: none;
+                                    outline: none;
+                                    font-size: inherit;
+                                    font-weight: inherit;
+                                    transform: translate3d(0px, 0px, 0px);
+                                    position: relative;
+                                    min-width: 100%;
+                                    height: 36px;
+                                    line-height: 36px;
+                                    width: 100%;
+                                    padding: 0px;
+                                    border-radius: 2px;
+                                    transition: 450ms
+                                      cubic-bezier(0.23, 1, 0.32, 1);
+                                    background-color: rgb(255, 255, 255);
+                                    text-align: center;
+                                  "
+                                >
+                                  <div>
+                                    <div
+                                      style="
+                                        height: 36px;
+                                        border-radius: 2px;
+                                        transition: 450ms
+                                          cubic-bezier(0.23, 1, 0.32, 1);
+                                        top: 0px;
+                                      "
+                                    >
+                                      <span
+                                        style="
+                                          position: relative;
+                                          opacity: 1;
+                                          font-size: 14px;
+                                          letter-spacing: 0px;
+                                          text-transform: uppercase;
+                                          font-weight: 500;
+                                          margin: 0px;
+                                          user-select: none;
+                                          padding-left: 16px;
+                                          padding-right: 16px;
+                                          color: rgba(0, 0, 0, 0.87);
+                                        "
+                                        >終了</span
+                                      >
+                                    </div>
+                                  </div>
+                                </button>
+                              </div>
+                            </div>
+                            <div class="ControlBox__button_2___SXx-d">
+                              <div
+                                style="
+                                  color: rgba(0, 0, 0, 0.87);
+                                  background-color: rgb(255, 255, 255);
+                                  transition: 450ms
+                                    cubic-bezier(0.23, 1, 0.32, 1);
+                                  box-sizing: border-box;
+                                  font-family:
+                                    Georgia, &quot;lucida grande&quot;, tahoma,
+                                    verdana, arial,
+                                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                    &quot;Hiragino Kaku Gothic Pro&quot;,
+                                    メイリオ, Meiryo,
+                                    &quot;ＭＳ Ｐゴシック&quot;,
+                                    &quot;MS PGothic&quot;, sans-serif;
+                                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                  box-shadow:
+                                    rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                                    rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                                  border-radius: 2px;
+                                  display: inline-block;
+                                  width: 100%;
+                                "
+                              >
+                                <button
+                                  tabindex="0"
+                                  type="button"
+                                  style="
+                                    border: 10px;
+                                    box-sizing: border-box;
+                                    display: inline-block;
+                                    font-family:
+                                      Georgia, &quot;lucida grande&quot;,
+                                      tahoma, verdana, arial,
+                                      &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                      &quot;Hiragino Kaku Gothic Pro&quot;,
+                                      メイリオ, Meiryo,
+                                      &quot;ＭＳ Ｐゴシック&quot;,
+                                      &quot;MS PGothic&quot;, sans-serif;
+                                    -webkit-tap-highlight-color: rgba(
+                                      0,
+                                      0,
+                                      0,
+                                      0
+                                    );
+                                    cursor: pointer;
+                                    text-decoration: none;
+                                    outline: none;
+                                    font-size: inherit;
+                                    font-weight: inherit;
+                                    transform: translate3d(0px, 0px, 0px);
+                                    position: relative;
+                                    min-width: 100%;
+                                    height: 36px;
+                                    line-height: 36px;
+                                    width: 100%;
+                                    padding: 0px;
+                                    border-radius: 2px;
+                                    transition: 450ms
+                                      cubic-bezier(0.23, 1, 0.32, 1);
+                                    background-color: rgb(255, 255, 255);
+                                    text-align: center;
+                                  "
+                                >
+                                  <div>
+                                    <div
+                                      style="
+                                        height: 36px;
+                                        border-radius: 2px;
+                                        transition: 450ms
+                                          cubic-bezier(0.23, 1, 0.32, 1);
+                                        top: 0px;
+                                      "
+                                    >
+                                      <span
+                                        style="
+                                          position: relative;
+                                          opacity: 1;
+                                          font-size: 14px;
+                                          letter-spacing: 0px;
+                                          text-transform: uppercase;
+                                          font-weight: 500;
+                                          margin: 0px;
+                                          user-select: none;
+                                          padding-left: 16px;
+                                          padding-right: 16px;
+                                          color: rgba(0, 0, 0, 0.87);
+                                        "
+                                        >もう一度</span
+                                      >
+                                    </div>
+                                  </div>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      id="controls-container"
+                      style="
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        margin-left: 8px;
+                        margin-right: 8px;
+                      "
+                    >
+                      <button
+                        id="solve-btn"
+                        style="
+                          height: 36px;
+                          padding: 0px 16px;
+                          background-color: rgb(255, 0, 0);
+                          color: white;
+                          border-width: medium;
+                          border-style: none;
+                          border-color: currentcolor;
+                          border-image: initial;
+                          border-radius: 2px;
+                          font-size: 14px;
+                          font-family: inherit;
+                          cursor: pointer;
+                          box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 6px;
+                          transition: 0.2s;
+                        "
+                      >
+                        自動入力
+                      </button>
+                      <div
+                        id="speed-control"
+                        class="segmented-control"
+                        style="display: flex"
+                      >
+                        <div id="slow-seg" class="segment">低速</div>
+                        <div id="fast-seg" class="segment active">高速</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="AppPc__common_main___2Gcm0">
+                  <div
+                    class="AppPc__app_header___25wIg"
+                    style="
+                      color: rgba(0, 0, 0, 0.87);
+                      background-color: rgb(255, 255, 255);
+                      transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                      box-sizing: border-box;
+                      font-family:
+                        Georgia, &quot;lucida grande&quot;, tahoma, verdana,
+                        arial, &quot;ヒラギノ角ゴ Pro W3&quot;,
+                        &quot;Hiragino Kaku Gothic Pro&quot;, メイリオ, Meiryo,
+                        &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                        sans-serif;
+                      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                      box-shadow:
+                        rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                        rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                      border-radius: 2px;
+                    "
+                  >
+                    <p class="AppPc__direction___1hSpc">
+                      流れた音声をタイピングしてください。音声ボタンかエンターキーを押すと、音声が再生されます。
+                    </p>
+                  </div>
+                  <div
+                    style="
+                      color: rgba(0, 0, 0, 0.87);
+                      background-color: rgb(255, 255, 255);
+                      transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                      box-sizing: border-box;
+                      font-family:
+                        Georgia, &quot;lucida grande&quot;, tahoma, verdana,
+                        arial, &quot;ヒラギノ角ゴ Pro W3&quot;,
+                        &quot;Hiragino Kaku Gothic Pro&quot;, メイリオ, Meiryo,
+                        &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                        sans-serif;
+                      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                      box-shadow:
+                        rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                        rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                      border-radius: 2px;
+                    "
+                  >
+                    <div class="AppPc__app_root___2LCmK">
+                      <div class="AppPc__container___14hJv">
+                        <div class="AppPc__soundButton___36TL8">
+                          <span class="SoundButton__root___IbH36"
+                            ><svg
+                              viewBox="0 0 24 24"
+                              style="
+                                display: inline-block;
+                                fill: rgb(255, 255, 255);
+                                height: 24px;
+                                width: 24px;
+                                user-select: none;
+                                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                              "
+                            >
+                              <path
+                                d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"
+                              ></path>
+                            </svg>
+                            <p class="SoundButton__text___1Pwul">音声</p></span
+                          >
+                        </div>
+                        <div class="AppPc__dictationBox___1XK9s">
+                          <div>
+                            <div class="DictationBox__line___xoT8a">
+                              <span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__open___2YFS7 FontBox__text___JV3zv"
+                                  >
+                                    G
+                                  </div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__open___2YFS7 FontBox__text___JV3zv"
+                                  >
+                                    e
+                                  </div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__open___2YFS7 FontBox__text___JV3zv"
+                                  >
+                                    n
+                                  </div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__open___2YFS7 FontBox__text___JV3zv"
+                                  >
+                                    e
+                                  </div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__open___2YFS7 FontBox__text___JV3zv"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div
+                                  class="FontBox__underlinedRoot___1Sli5 FontBox__root___10556"
+                                >
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__hide___3p4y-"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__hide___3p4y-"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__hide___3p4y-"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__hide___3p4y-"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__hide___3p4y-"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__hide___3p4y-"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__hide___3p4y-"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div
+                                    class="FontBox__hide___3p4y-"
+                                  ></div></div></span
+                              ><span class="WordBox__root___2chbV"
+                                ><div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div>
+                                </div>
+                                <div class="FontBox__root___10556">
+                                  <div class="FontBox__hide___3p4y-"></div></div
+                              ></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="AppPc__container___14hJv">
+                        <div class="AppPc__soundButton___36TL8">&nbsp;</div>
+                        <div class="AppPc__dictationBox___1XK9s">
+                          <div class="AppPc__japaneseText___2K8i5">
+                            <p>日本語訳</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        class="HintBox__root___245mY"
+                        style="
+                          color: rgba(0, 0, 0, 0.87);
+                          background-color: rgb(255, 255, 255);
+                          transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                          box-sizing: border-box;
+                          font-family:
+                            Georgia, &quot;lucida grande&quot;, tahoma, verdana,
+                            arial, &quot;ヒラギノ角ゴ Pro W3&quot;,
+                            &quot;Hiragino Kaku Gothic Pro&quot;, メイリオ,
+                            Meiryo, &quot;ＭＳ Ｐゴシック&quot;,
+                            &quot;MS PGothic&quot;, sans-serif;
+                          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                          box-shadow:
+                            rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                            rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                          border-radius: 2px;
+                        "
+                      >
+                        <div class="HintBox__text___34doI">
+                          <div class="HintBox__hintText___1JiVr">ヒント</div>
+                        </div>
+                        <div>
+                          <div class="HintBox__button___1jSGn">
+                            <div
+                              style="
+                                color: rgba(0, 0, 0, 0.87);
+                                background-color: rgb(255, 255, 255);
+                                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                                box-sizing: border-box;
+                                font-family:
+                                  Georgia, &quot;lucida grande&quot;, tahoma,
+                                  verdana, arial,
+                                  &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                  &quot;Hiragino Kaku Gothic Pro&quot;,
+                                  メイリオ, Meiryo, &quot;ＭＳ Ｐゴシック&quot;,
+                                  &quot;MS PGothic&quot;, sans-serif;
+                                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                box-shadow:
+                                  rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                                  rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                                border-radius: 2px;
+                                display: inline-block;
+                                width: 100%;
+                              "
+                            >
+                              <button
+                                tabindex="0"
+                                type="button"
+                                style="
+                                  border: 10px;
+                                  box-sizing: border-box;
+                                  display: inline-block;
+                                  font-family:
+                                    Georgia, &quot;lucida grande&quot;, tahoma,
+                                    verdana, arial,
+                                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                    &quot;Hiragino Kaku Gothic Pro&quot;,
+                                    メイリオ, Meiryo,
+                                    &quot;ＭＳ Ｐゴシック&quot;,
+                                    &quot;MS PGothic&quot;, sans-serif;
+                                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                  cursor: pointer;
+                                  text-decoration: none;
+                                  outline: none;
+                                  font-size: inherit;
+                                  font-weight: inherit;
+                                  transform: translate3d(0px, 0px, 0px);
+                                  position: relative;
+                                  min-width: 100%;
+                                  height: 36px;
+                                  line-height: 36px;
+                                  width: 100%;
+                                  padding: 0px;
+                                  border-radius: 2px;
+                                  transition: 450ms
+                                    cubic-bezier(0.23, 1, 0.32, 1);
+                                  background-color: rgb(0, 188, 212);
+                                  text-align: center;
+                                "
+                              >
+                                <div>
+                                  <div
+                                    style="
+                                      height: 36px;
+                                      border-radius: 2px;
+                                      transition: 450ms
+                                        cubic-bezier(0.23, 1, 0.32, 1);
+                                      top: 0px;
+                                    "
+                                  >
+                                    <span
+                                      style="
+                                        position: relative;
+                                        opacity: 1;
+                                        font-size: 14px;
+                                        letter-spacing: 0px;
+                                        text-transform: uppercase;
+                                        font-weight: 500;
+                                        margin: 0px;
+                                        user-select: none;
+                                        padding-left: 16px;
+                                        padding-right: 16px;
+                                        color: rgb(255, 255, 255);
+                                      "
+                                      >スペル</span
+                                    >
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="HintBox__button___1jSGn">
+                            <div
+                              style="
+                                color: rgba(0, 0, 0, 0.87);
+                                background-color: rgb(255, 255, 255);
+                                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                                box-sizing: border-box;
+                                font-family:
+                                  Georgia, &quot;lucida grande&quot;, tahoma,
+                                  verdana, arial,
+                                  &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                  &quot;Hiragino Kaku Gothic Pro&quot;,
+                                  メイリオ, Meiryo, &quot;ＭＳ Ｐゴシック&quot;,
+                                  &quot;MS PGothic&quot;, sans-serif;
+                                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                box-shadow:
+                                  rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                                  rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                                border-radius: 2px;
+                                display: inline-block;
+                                width: 100%;
+                              "
+                            >
+                              <button
+                                tabindex="0"
+                                type="button"
+                                style="
+                                  border: 10px;
+                                  box-sizing: border-box;
+                                  display: inline-block;
+                                  font-family:
+                                    Georgia, &quot;lucida grande&quot;, tahoma,
+                                    verdana, arial,
+                                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                    &quot;Hiragino Kaku Gothic Pro&quot;,
+                                    メイリオ, Meiryo,
+                                    &quot;ＭＳ Ｐゴシック&quot;,
+                                    &quot;MS PGothic&quot;, sans-serif;
+                                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                  cursor: pointer;
+                                  text-decoration: none;
+                                  outline: none;
+                                  font-size: inherit;
+                                  font-weight: inherit;
+                                  transform: translate3d(0px, 0px, 0px);
+                                  position: relative;
+                                  min-width: 100%;
+                                  height: 36px;
+                                  line-height: 36px;
+                                  width: 100%;
+                                  padding: 0px;
+                                  border-radius: 2px;
+                                  transition: 450ms
+                                    cubic-bezier(0.23, 1, 0.32, 1);
+                                  background-color: rgb(0, 188, 212);
+                                  text-align: center;
+                                "
+                              >
+                                <div>
+                                  <div
+                                    style="
+                                      height: 36px;
+                                      border-radius: 2px;
+                                      transition: 450ms
+                                        cubic-bezier(0.23, 1, 0.32, 1);
+                                      top: 0px;
+                                    "
+                                  >
+                                    <span
+                                      style="
+                                        position: relative;
+                                        opacity: 1;
+                                        font-size: 14px;
+                                        letter-spacing: 0px;
+                                        text-transform: uppercase;
+                                        font-weight: 500;
+                                        margin: 0px;
+                                        user-select: none;
+                                        padding-left: 16px;
+                                        padding-right: 16px;
+                                        color: rgb(255, 255, 255);
+                                      "
+                                      >単語</span
+                                    >
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="HintBox__button___1jSGn">
+                            <div
+                              style="
+                                color: rgba(0, 0, 0, 0.87);
+                                background-color: rgb(255, 255, 255);
+                                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                                box-sizing: border-box;
+                                font-family:
+                                  Georgia, &quot;lucida grande&quot;, tahoma,
+                                  verdana, arial,
+                                  &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                  &quot;Hiragino Kaku Gothic Pro&quot;,
+                                  メイリオ, Meiryo, &quot;ＭＳ Ｐゴシック&quot;,
+                                  &quot;MS PGothic&quot;, sans-serif;
+                                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                box-shadow:
+                                  rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                                  rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                                border-radius: 2px;
+                                display: inline-block;
+                                width: 100%;
+                              "
+                            >
+                              <button
+                                tabindex="0"
+                                type="button"
+                                style="
+                                  border: 10px;
+                                  box-sizing: border-box;
+                                  display: inline-block;
+                                  font-family:
+                                    Georgia, &quot;lucida grande&quot;, tahoma,
+                                    verdana, arial,
+                                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                    &quot;Hiragino Kaku Gothic Pro&quot;,
+                                    メイリオ, Meiryo,
+                                    &quot;ＭＳ Ｐゴシック&quot;,
+                                    &quot;MS PGothic&quot;, sans-serif;
+                                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                  cursor: pointer;
+                                  text-decoration: none;
+                                  outline: none;
+                                  font-size: inherit;
+                                  font-weight: inherit;
+                                  transform: translate3d(0px, 0px, 0px);
+                                  position: relative;
+                                  min-width: 100%;
+                                  height: 36px;
+                                  line-height: 36px;
+                                  width: 100%;
+                                  padding: 0px;
+                                  border-radius: 2px;
+                                  transition: 450ms
+                                    cubic-bezier(0.23, 1, 0.32, 1);
+                                  background-color: rgb(0, 188, 212);
+                                  text-align: center;
+                                "
+                              >
+                                <div>
+                                  <div
+                                    style="
+                                      height: 36px;
+                                      border-radius: 2px;
+                                      transition: 450ms
+                                        cubic-bezier(0.23, 1, 0.32, 1);
+                                      top: 0px;
+                                    "
+                                  >
+                                    <span
+                                      style="
+                                        position: relative;
+                                        opacity: 1;
+                                        font-size: 14px;
+                                        letter-spacing: 0px;
+                                        text-transform: uppercase;
+                                        font-weight: 500;
+                                        margin: 0px;
+                                        user-select: none;
+                                        padding-left: 16px;
+                                        padding-right: 16px;
+                                        color: rgb(255, 255, 255);
+                                      "
+                                      >全文</span
+                                    >
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="HintBox__button___1jSGn">
+                            <div
+                              style="
+                                color: rgba(0, 0, 0, 0.87);
+                                background-color: rgb(255, 255, 255);
+                                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                                box-sizing: border-box;
+                                font-family:
+                                  Georgia, &quot;lucida grande&quot;, tahoma,
+                                  verdana, arial,
+                                  &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                  &quot;Hiragino Kaku Gothic Pro&quot;,
+                                  メイリオ, Meiryo, &quot;ＭＳ Ｐゴシック&quot;,
+                                  &quot;MS PGothic&quot;, sans-serif;
+                                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                box-shadow:
+                                  rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                                  rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                                border-radius: 2px;
+                                display: inline-block;
+                                width: 100%;
+                              "
+                            >
+                              <button
+                                tabindex="0"
+                                type="button"
+                                style="
+                                  border: 10px;
+                                  box-sizing: border-box;
+                                  display: inline-block;
+                                  font-family:
+                                    Georgia, &quot;lucida grande&quot;, tahoma,
+                                    verdana, arial,
+                                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                    &quot;Hiragino Kaku Gothic Pro&quot;,
+                                    メイリオ, Meiryo,
+                                    &quot;ＭＳ Ｐゴシック&quot;,
+                                    &quot;MS PGothic&quot;, sans-serif;
+                                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                  cursor: pointer;
+                                  text-decoration: none;
+                                  outline: none;
+                                  font-size: inherit;
+                                  font-weight: inherit;
+                                  transform: translate3d(0px, 0px, 0px);
+                                  position: relative;
+                                  min-width: 100%;
+                                  height: 36px;
+                                  line-height: 36px;
+                                  width: 100%;
+                                  padding: 0px;
+                                  border-radius: 2px;
+                                  transition: 450ms
+                                    cubic-bezier(0.23, 1, 0.32, 1);
+                                  background-color: rgb(0, 188, 212);
+                                  text-align: center;
+                                "
+                              >
+                                <div>
+                                  <div
+                                    style="
+                                      height: 36px;
+                                      border-radius: 2px;
+                                      transition: 450ms
+                                        cubic-bezier(0.23, 1, 0.32, 1);
+                                      top: 0px;
+                                    "
+                                  >
+                                    <span
+                                      style="
+                                        position: relative;
+                                        opacity: 1;
+                                        font-size: 14px;
+                                        letter-spacing: 0px;
+                                        text-transform: uppercase;
+                                        font-weight: 500;
+                                        margin: 0px;
+                                        user-select: none;
+                                        padding-left: 16px;
+                                        padding-right: 16px;
+                                        color: rgb(255, 255, 255);
+                                      "
+                                      >日本語訳</span
+                                    >
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <div class="HintBox__littleSlowButton___3cePU">
+                            <div
+                              style="
+                                color: rgba(0, 0, 0, 0.87);
+                                background-color: rgb(255, 255, 255);
+                                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                                box-sizing: border-box;
+                                font-family:
+                                  Georgia, &quot;lucida grande&quot;, tahoma,
+                                  verdana, arial,
+                                  &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                  &quot;Hiragino Kaku Gothic Pro&quot;,
+                                  メイリオ, Meiryo, &quot;ＭＳ Ｐゴシック&quot;,
+                                  &quot;MS PGothic&quot;, sans-serif;
+                                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                box-shadow:
+                                  rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                                  rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                                border-radius: 2px;
+                                display: inline-block;
+                                width: 100%;
+                              "
+                            >
+                              <button
+                                tabindex="0"
+                                type="button"
+                                style="
+                                  border: 10px;
+                                  box-sizing: border-box;
+                                  display: inline-block;
+                                  font-family:
+                                    Georgia, &quot;lucida grande&quot;, tahoma,
+                                    verdana, arial,
+                                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                    &quot;Hiragino Kaku Gothic Pro&quot;,
+                                    メイリオ, Meiryo,
+                                    &quot;ＭＳ Ｐゴシック&quot;,
+                                    &quot;MS PGothic&quot;, sans-serif;
+                                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                  cursor: pointer;
+                                  text-decoration: none;
+                                  outline: none;
+                                  font-size: inherit;
+                                  font-weight: inherit;
+                                  transform: translate3d(0px, 0px, 0px);
+                                  position: relative;
+                                  min-width: 100%;
+                                  height: 36px;
+                                  line-height: 36px;
+                                  width: 100%;
+                                  padding: 0px;
+                                  border-radius: 2px;
+                                  transition: 450ms
+                                    cubic-bezier(0.23, 1, 0.32, 1);
+                                  background-color: rgb(0, 188, 212);
+                                  text-align: center;
+                                "
+                              >
+                                <div>
+                                  <div
+                                    style="
+                                      height: 36px;
+                                      border-radius: 2px;
+                                      transition: 450ms
+                                        cubic-bezier(0.23, 1, 0.32, 1);
+                                      top: 0px;
+                                    "
+                                  >
+                                    <span
+                                      style="
+                                        position: relative;
+                                        opacity: 1;
+                                        font-size: 14px;
+                                        letter-spacing: 0px;
+                                        text-transform: uppercase;
+                                        font-weight: 500;
+                                        margin: 0px;
+                                        user-select: none;
+                                        padding: 0px;
+                                        color: rgb(255, 255, 255);
+                                      "
+                                      >少しゆっくり再生</span
+                                    >
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="HintBox__slowButton___2gxud">
+                            <div
+                              style="
+                                color: rgba(0, 0, 0, 0.87);
+                                background-color: rgb(255, 255, 255);
+                                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                                box-sizing: border-box;
+                                font-family:
+                                  Georgia, &quot;lucida grande&quot;, tahoma,
+                                  verdana, arial,
+                                  &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                  &quot;Hiragino Kaku Gothic Pro&quot;,
+                                  メイリオ, Meiryo, &quot;ＭＳ Ｐゴシック&quot;,
+                                  &quot;MS PGothic&quot;, sans-serif;
+                                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                box-shadow:
+                                  rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                                  rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                                border-radius: 2px;
+                                display: inline-block;
+                                width: 100%;
+                              "
+                            >
+                              <button
+                                tabindex="0"
+                                type="button"
+                                style="
+                                  border: 10px;
+                                  box-sizing: border-box;
+                                  display: inline-block;
+                                  font-family:
+                                    Georgia, &quot;lucida grande&quot;, tahoma,
+                                    verdana, arial,
+                                    &quot;ヒラギノ角ゴ Pro W3&quot;,
+                                    &quot;Hiragino Kaku Gothic Pro&quot;,
+                                    メイリオ, Meiryo,
+                                    &quot;ＭＳ Ｐゴシック&quot;,
+                                    &quot;MS PGothic&quot;, sans-serif;
+                                  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                                  cursor: pointer;
+                                  text-decoration: none;
+                                  outline: none;
+                                  font-size: inherit;
+                                  font-weight: inherit;
+                                  transform: translate3d(0px, 0px, 0px);
+                                  position: relative;
+                                  min-width: 100%;
+                                  height: 36px;
+                                  line-height: 36px;
+                                  width: 100%;
+                                  padding: 0px;
+                                  border-radius: 2px;
+                                  transition: 450ms
+                                    cubic-bezier(0.23, 1, 0.32, 1);
+                                  background-color: rgb(0, 188, 212);
+                                  text-align: center;
+                                "
+                              >
+                                <div>
+                                  <div
+                                    style="
+                                      height: 36px;
+                                      border-radius: 2px;
+                                      transition: 450ms
+                                        cubic-bezier(0.23, 1, 0.32, 1);
+                                      top: 0px;
+                                    "
+                                  >
+                                    <span
+                                      style="
+                                        position: relative;
+                                        opacity: 1;
+                                        font-size: 14px;
+                                        letter-spacing: 0px;
+                                        text-transform: uppercase;
+                                        font-weight: 500;
+                                        margin: 0px;
+                                        user-select: none;
+                                        padding: 0px;
+                                        color: rgb(255, 255, 255);
+                                      "
+                                      >ゆっくり再生</span
+                                    >
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- react-empty: 220 -->
+      </div>
+    </div>
+    <script src="./bundle.js"></script>
+
+    <style>
+      button::-moz-focus-inner,
+      input::-moz-focus-inner {
+        border: 0;
+        padding: 0;
+      }
+    </style>
+    <div>
+      <div
+        data-reactroot=""
+        style="
+          position: fixed;
+          box-sizing: border-box;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+          z-index: 1500;
+          top: 0px;
+          left: -10000px;
+          width: 100%;
+          height: 100%;
+          transition: left cubic-bezier(0.23, 1, 0.32, 1) 450ms;
+          padding-top: 334px;
+        "
+      >
+        <div></div>
+        <div
+          style="
+            position: fixed;
+            height: 100%;
+            width: 100%;
+            top: 0px;
+            left: -100%;
+            opacity: 0;
+            background-color: rgba(0, 0, 0, 0.54);
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            will-change: opacity;
+            transform: translateZ(0px);
+            transition:
+              left cubic-bezier(0.23, 1, 0.32, 1) 400ms,
+              opacity 400ms cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 1400;
+          "
+        >
+          <!-- react-empty: 14 -->
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
