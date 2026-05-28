@@ -14,12 +14,12 @@
   - 既存のテスト用 XML / JSON / HTML / JS 保存データを置く。
   - 新しい fixture は、どの API・画面・問題形式から取ったものか分かる名前にする。
   - fixture の期待正答や特殊な挙動は、必要に応じて `docs/unresolved-quiz-patterns.md` に追記する。
-- `test/`
+- `tests/`
   - 自動テストコードを置く。
   - fixture を読み込み、パーサや純粋関数の戻り値を検証する。
   - 実サイトへの通信、Chrome 拡張の手動インストール、ユーザー操作が必要な検証は置かない。
 
-現在 `tests/` 直下にある既存データは fixture として扱い、テスト導入時に `tests/fixtures/` へ移す。新規データは最初から `tests/fixtures/` に追加する。
+既存および新規のテスト用データは fixture として扱い、`tests/fixtures/` に置く。テストコードも `tests/` に置き、fixture と同じ親ディレクトリで管理する。
 
 ## CI の基本方針
 

@@ -5,7 +5,7 @@ const test = require('node:test');
 
 const parser = require('../extension/parser.js');
 
-const fixturesDir = path.join(__dirname, '..', 'tests', 'fixtures');
+const fixturesDir = path.join(__dirname, 'fixtures');
 
 function readFixture(name) {
     return fs.readFileSync(path.join(fixturesDir, name), 'utf8');
