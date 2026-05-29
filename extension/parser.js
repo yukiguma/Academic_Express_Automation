@@ -351,7 +351,8 @@ var AcademicExpressParser = (function () {
                 signature: makeSignature(sentenceEnglish),
                 displayOrder: index + 1,
                 questionNo: String(q.word_no ?? q.level_no ?? ""),
-                isAutoAdvance: true
+                isAutoAdvance: true,
+                shuffleQuestions: q.shuffleQuestions === true
             };
         }
 
@@ -362,7 +363,8 @@ var AcademicExpressParser = (function () {
             signature: makeSignature(japanese),
             displayOrder: index + 1,
             questionNo: String(q.word_no ?? q.level_no ?? ""),
-            isAutoAdvance: true
+            isAutoAdvance: true,
+            shuffleQuestions: q.shuffleQuestions === true
         };
     }
 
@@ -377,6 +379,7 @@ var AcademicExpressParser = (function () {
 
         data.questions.forEach((q, index) => {
             if (!isTangoQuestion(q)) return;
+            q.shuffleQuestions = data.shuffleQuestions === true;
 
             if (wdType === "2") {
                 const question = buildTangoTypingQuestion(q, index);
@@ -396,7 +399,8 @@ var AcademicExpressParser = (function () {
                     signature: makeSignature(prompt),
                     displayOrder: index + 1,
                     questionNo: String(q.word_no ?? q.level_no ?? ""),
-                    isAutoAdvance: true
+                    isAutoAdvance: true,
+                    shuffleQuestions: data.shuffleQuestions === true
                 });
             });
         });

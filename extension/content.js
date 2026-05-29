@@ -377,6 +377,44 @@
         return null;
     }
 
+    function findAutoAdvanceQuestionScope(activeQuestionRange) {
+        if (
+            !activeQuestionRange ||
+            activeQuestionRange.start !== activeQuestionRange.end ||
+            !questionsList.some(question => question.isAutoAdvance)
+        ) {
+            return document.body;
+        }
+
+        const questionBoxes = Array.from(document.body?.querySelectorAll([
+            '[class*="TangoTypingQuestionBuilder__questionBox"]',
+            '[class*="TangoSentenceTypingQuestionBuilder__questionBox"]',
+            '[class*="TypingQuestionBuilder__questionBox"]',
+            '[class*="SentenceTypingQuestionBuilder__questionBox"]',
+            '[class*="QuestionBuilder__questionBox"]',
+            '[class*="QuestionView__questionBox"]'
+        ].join(', ')) || []).filter(isVisibleElement);
+
+        const currentNumberBoxes = questionBoxes.filter(box => {
+            return getVisibleQuestionNumber(box) === activeQuestionRange.start;
+        });
+        if (currentNumberBoxes.length === 1) return currentNumberBoxes[0];
+        if (questionBoxes.length === 1) return questionBoxes[0];
+
+        return document.body;
+    }
+
+    function getQuestionTextSelector() {
+        return [
+            '[class*="QuestionBuilder__question___"]',
+            '[class*="QuestionView__question___"]',
+            '[class*="TypingQuestionBuilder__question___"]',
+            '[class*="SentenceTypingQuestionBuilder__question___"]',
+            '[class*="TangoTypingQuestionBuilder__question___"]',
+            '[class*="TangoSentenceTypingQuestionBuilder__question___"]'
+        ].join(', ');
+    }
+
     function getConfiguredQuestionNo() {
         return String(window.config?.question_no || "");
     }
@@ -431,8 +469,8 @@
         });
     }
 
-    function findQuestionElementByText(question, usedElements) {
-        const candidates = Array.from(document.body?.querySelectorAll([
+    function findQuestionElementByText(question, usedElements, root = document.body) {
+        const candidates = Array.from(root?.querySelectorAll([
             '[class*="Question"]',
             '[class*="question"]',
             '[class*="Quiz"]',
@@ -471,8 +509,8 @@
         return best;
     }
 
-    function findQuestionElementByNumber(questionNumber, usedElements) {
-        const candidates = Array.from(document.body?.querySelectorAll([
+    function findQuestionElementByNumber(questionNumber, usedElements, root = document.body) {
+        const candidates = Array.from(root?.querySelectorAll([
             '[class*="Question"]',
             '[class*="question"]',
             '[class*="Quiz"]',
@@ -517,13 +555,20 @@
             return pairs;
         }
 
+        const hasShuffledQuestions = pairs.some(pair => pair.data?.shuffleQuestions === true);
+        if (hasShuffledQuestions && activeQuestionRange.totalMatchesQuestionList) {
+            console.warn("Auto-advance: multiple shuffled candidates detected; waiting for a single scoped question.");
+            return [];
+        }
+
         const currentPair = pairs.find(pair => Number(pair.data.displayOrder) === activeQuestionRange.start);
         return currentPair ? [currentPair] : pairs;
     }
 
     function findActiveQuestions() {
         const activeQuestionRange = getCurrentProgressQuestionRange();
-        const textElements = document.querySelectorAll('[class*="QuestionBuilder__question___"], [class*="QuestionView__question___"]');
+        const searchRoot = findAutoAdvanceQuestionScope(activeQuestionRange);
+        const textElements = searchRoot.querySelectorAll(getQuestionTextSelector());
         const visibleElements = Array.from(textElements).filter(el => {
             return isVisibleElement(el);
         });
@@ -586,7 +631,7 @@
 
             const question = questionsList[i];
             if (!questionMatchesActiveOrder(question, activeQuestionRange)) continue;
-            const el = findQuestionElementByText(question, usedElements);
+            const el = findQuestionElementByText(question, usedElements, searchRoot);
             if (!el) continue;
 
             usedIndices.add(i);
@@ -608,7 +653,7 @@
                 if (!questionMatchesActiveOrder(question, activeQuestionRange, true)) continue;
 
                 const questionNumber = Number(question.displayOrder);
-                const el = findQuestionElementByNumber(questionNumber, usedElements);
+                const el = findQuestionElementByNumber(questionNumber, usedElements, searchRoot);
                 const container = el ? findQuestionContainer(el, question.type) : document.body;
 
                 usedIndices.add(i);

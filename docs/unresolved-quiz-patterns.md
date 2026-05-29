@@ -259,6 +259,7 @@ E2E での確認:
 - `1/5` のような単問画面では、ゼロサイズで残った古い問題 DOM を可視扱いせず、現在画面に表示されている問題だけを照合対象にする。
 - 画面の総数表示が `1/5` でも XHR payload が3問だけ返ることがあるため、自動進行では総数不一致でも進捗番号を使い、現在の `displayOrder` だけを解く。
 - XHR payload が5問全部でも DOM 上に複数問のテキストが残ることがあるため、自動進行の単問表示では複数候補を現在の進捗番号1問へ最後に絞る。
+- `shuffleQuestions=true` の spelling では payload 順の `displayOrder` と画面の `3/5` が一致しない。出題中の `Tango...QuestionBuilder__questionBox` を現在番号で特定し、その箱の中だけを照合する。
 
 fixture の期待正答:
 

@@ -132,3 +132,135 @@ test('content script solves only the visible auto-advance question in the active
         await new Promise(resolve => server.close(resolve));
     }
 });
+
+test('content script scopes shuffled auto-advance typing to the current visible question box', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['The tax burden has increased since last year.'],
+                displayOrder: 1,
+                isAutoAdvance: true,
+                questionNo: '101',
+                rawText: 'The tax [burden] has increased since last year.',
+                signature: 'thetaxburdenhasincreasedsincelastyear',
+                shuffleQuestions: true,
+                type: 'sentenceTyping'
+            },
+            {
+                answers: ['To know more about this, you can ask at the sales division.'],
+                displayOrder: 2,
+                isAutoAdvance: true,
+                questionNo: '102',
+                rawText: 'To know more about this, you can ask at the sales [division].',
+                signature: 'toknowmoreaboutthisyoucanaskatthesalesdivision',
+                shuffleQuestions: true,
+                type: 'sentenceTyping'
+            },
+            {
+                answers: ['unused third'],
+                displayOrder: 3,
+                isAutoAdvance: true,
+                questionNo: '103',
+                rawText: 'unused third',
+                signature: 'unusedthird',
+                shuffleQuestions: true,
+                type: 'typing'
+            },
+            {
+                answers: ['unused fourth'],
+                displayOrder: 4,
+                isAutoAdvance: true,
+                questionNo: '104',
+                rawText: 'unused fourth',
+                signature: 'unusedfourth',
+                shuffleQuestions: true,
+                type: 'typing'
+            },
+            {
+                answers: ['confident'],
+                displayOrder: 5,
+                isAutoAdvance: true,
+                questionNo: '105',
+                rawText: '自信がある、確信して、自信に満ちた',
+                signature: '自信がある確信して自信に満ちた',
+                shuffleQuestions: true,
+                type: 'typing'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div><span>3 / 5</span></div></div>
+            <main>
+                <div class="TangoSentenceTypingQuestionBuilder__questionBox___old" style="position:absolute; left:-10000px; top:0; width:600px; height:160px;">
+                    <div class="QuestionTitleText__root___dJe1E"><span>1</span></div>:
+                    <div class="TangoSentenceTypingQuestionBuilder__question___old">
+                        The tax burden has increased since last year.
+                    </div>
+                </div>
+                <div class="TangoSentenceTypingQuestionBuilder__questionBox___old" style="position:absolute; left:-10000px; top:180px; width:600px; height:160px;">
+                    <div class="QuestionTitleText__root___dJe1E"><span>2</span></div>:
+                    <div class="TangoSentenceTypingQuestionBuilder__question___old">
+                        To know more about this, you can ask at the sales division.
+                    </div>
+                </div>
+                <div class="TangoTypingQuestionBuilder__questionBox___current">
+                    <div class="QuestionTitleText__root___dJe1E"><span>3</span></div>:
+                    <div class="TypingQuestionBuilder__question___1szKn">
+                        <span>自信がある、確信して、自信に満ちた</span>
+                    </div>
+                </div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.rawText);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
+        const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
+        assert.deepEqual(solvedQuestions, [
+            '自信がある、確信して、自信に満ちた'
+        ]);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
