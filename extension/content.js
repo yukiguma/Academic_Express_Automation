@@ -14,6 +14,8 @@
     let isTransitioning = false;
     let debounceTimer = null;
     let isAutoMode = false;
+    let autoAdvanceHold = null;
+    const AUTO_ADVANCE_HOLD_MS = 6000;
 
     function isQuizPlayerPage() {
         return window.location.pathname.includes('/as/lplayer/');
@@ -101,6 +103,40 @@
 
     function getCompositeRunKey(pairs) {
         return pairs.map(p => getQuestionRunKey(p.data)).join('|');
+    }
+
+    function getProgressKey(range = getCurrentProgressQuestionRange()) {
+        return range ? `${range.start}-${range.end}/${range.total}` : "";
+    }
+
+    function createAutoAdvanceHold(pairs) {
+        return {
+            progressKey: getProgressKey(),
+            compositeSig: getCompositeRunKey(pairs),
+            startedAt: Date.now()
+        };
+    }
+
+    function clearAutoAdvanceHold() {
+        autoAdvanceHold = null;
+    }
+
+    function isAutoAdvanceHoldActive() {
+        if (!autoAdvanceHold) return false;
+
+        const elapsed = Date.now() - autoAdvanceHold.startedAt;
+        if (elapsed > AUTO_ADVANCE_HOLD_MS) {
+            clearAutoAdvanceHold();
+            return false;
+        }
+
+        const progressKey = getProgressKey();
+        if (autoAdvanceHold.progressKey && progressKey && progressKey !== autoAdvanceHold.progressKey) {
+            clearAutoAdvanceHold();
+            return false;
+        }
+
+        return true;
     }
 
 
@@ -788,6 +824,14 @@
 
         const activePairs = findActiveQuestions();
 
+        if (isAutoAdvanceHoldActive()) {
+            btn.textContent = "遷移待ち...";
+            btn.style.backgroundColor = '#666';
+            btn.onclick = null;
+            btn.style.cursor = 'wait';
+            return;
+        }
+
         if (!activePairs || activePairs.length === 0) {
             btn.textContent = "検索中...";
             btn.style.backgroundColor = '#999';
@@ -820,6 +864,7 @@
     function ensureSolveButton() {
         const finishLink = document.querySelector('a.btn');
         if (finishLink) {
+            clearAutoAdvanceHold();
             const speedCtrl = document.getElementById('speed-control');
             const solveBtn = document.getElementById('solve-btn');
             if (speedCtrl) speedCtrl.style.display = 'none';
@@ -835,6 +880,7 @@
 
         const continueButton = findTransitionButton(["続ける"]);
         if (continueButton && isAutoMode && !isSolving && !isTransitioning) {
+            clearAutoAdvanceHold();
             console.log('Auto-Mode: Continue page detected. Clicking "続ける".');
             isTransitioning = true;
             simulateClick(continueButton);
@@ -846,6 +892,7 @@
 
         const isGradedPage = document.querySelector('[class*="ScoreView__scoreViewContainer"]');
         if (isGradedPage) {
+            clearAutoAdvanceHold();
             const speedCtrl = document.getElementById('speed-control');
             const solveBtn = document.getElementById('solve-btn');
             if (speedCtrl) speedCtrl.style.display = 'none';
@@ -901,9 +948,7 @@
             if (isAutoMode) {
                 if (autoAdvance) {
                     console.log("Detecting auto-advance question, skipping manual transition click.");
-                    isSolving = false;
-                    resetHeaderProgress();
-                    setGlobalLock(false);
+                    autoAdvanceHold = createAutoAdvanceHold(matchedPairs);
                     setTimeout(ensureSolveButton, Math.max(getWaitTime('TRANSITION_WAIT'), 500));
                     return;
                 }
