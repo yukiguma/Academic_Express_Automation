@@ -170,6 +170,33 @@ test('parses second vocabulary spelling payload with longer blanks', () => {
     ]);
 });
 
+test('parses current vocabulary spelling question payload', () => {
+    const response = JSON.stringify({
+        wd_type: 2,
+        shuffleQuestions: true,
+        question: {
+            word_no: 22258,
+            keyword: {
+                ja: '利子、金利、関心',
+                en: 'interest'
+            },
+            sentence: {
+                ja: '今月は、どの銀行の金利が一番良いですか？',
+                en: 'Which bank offers the best [interest] this month?'
+            },
+            tangolists_jan: '',
+            tangolists_eng: ''
+        }
+    });
+
+    const { parsed, dataType } = parser.parseQuestionData(response);
+
+    assert.equal(dataType, 'json');
+    assert.deepEqual(parsed.questions.map(q => [q.type, q.rawText, q.answers[0], q.questionNo, q.shuffleQuestions]), [
+        ['sentenceTyping', 'Which bank offers the best [interest] this month?', 'Which bank offers the best interest this month?', '22258', true]
+    ]);
+});
+
 test('parses tango direction and typing variants without using know_chk as an answer', () => {
     const baseQuestion = {
         keyword: { ja: 'はがき', en: 'postcard' },

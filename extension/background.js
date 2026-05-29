@@ -34,7 +34,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.type === 'XHR_CAPTURED') {
         const tabId = sender.tab?.id;
-        processXHRData(message.url, message.responseText, tabId);
-        sendResponse({ success: true });
+        processXHRData(message.url, message.responseText, tabId)
+            .then(() => {
+                sendResponse({ success: true });
+            })
+            .catch(error => {
+                console.error('Failed to process captured XHR data:', error);
+                sendResponse({ success: false, error: String(error) });
+            });
+        return true;
     }
 });
