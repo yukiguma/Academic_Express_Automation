@@ -422,7 +422,7 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
         await waitForFontBoxUpdate(before);
     }
 
-    await sleep(800);
+    await sleep(250);
     return true;
 }
 
@@ -435,15 +435,15 @@ function fontBoxSnapshot() {
 
 async function waitForFontBoxUpdate(previousSnapshot) {
     const startedAt = Date.now();
-    while (Date.now() - startedAt < 400) {
-        await sleep(20);
+    while (Date.now() - startedAt < 250) {
+        await sleep(10);
         if (fontBoxSnapshot() !== previousSnapshot) {
-            await sleep(60);
+            await sleep(15);
             return;
         }
     }
 
-    await sleep(120);
+    await sleep(50);
 }
 
 function keyboardInfoForChar(char) {
