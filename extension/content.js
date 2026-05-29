@@ -507,6 +507,20 @@
         return best;
     }
 
+    function narrowAutoAdvancePairsToCurrentProgress(pairs, activeQuestionRange) {
+        if (
+            !activeQuestionRange ||
+            activeQuestionRange.start !== activeQuestionRange.end ||
+            pairs.length <= 1 ||
+            !pairs.every(pair => pair.data?.isAutoAdvance)
+        ) {
+            return pairs;
+        }
+
+        const currentPair = pairs.find(pair => Number(pair.data.displayOrder) === activeQuestionRange.start);
+        return currentPair ? [currentPair] : pairs;
+    }
+
     function findActiveQuestions() {
         const activeQuestionRange = getCurrentProgressQuestionRange();
         const textElements = document.querySelectorAll('[class*="QuestionBuilder__question___"], [class*="QuestionView__question___"]');
@@ -623,7 +637,7 @@
             }
         }
 
-        return matchedPairs;
+        return narrowAutoAdvancePairsToCurrentProgress(matchedPairs, activeQuestionRange);
     }
 
     function injectStyles() {

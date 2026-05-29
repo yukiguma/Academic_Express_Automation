@@ -43,6 +43,24 @@ test('content script solves only the visible auto-advance question in the active
                 rawText: "Don't [repeat] that anymore.",
                 signature: 'dontrepeatthatanymore',
                 type: 'sentenceTyping'
+            },
+            {
+                answers: ['Unused four.'],
+                displayOrder: 4,
+                isAutoAdvance: true,
+                questionNo: '4',
+                rawText: 'Unused [four].',
+                signature: 'unusedfour',
+                type: 'sentenceTyping'
+            },
+            {
+                answers: ['Unused five.'],
+                displayOrder: 5,
+                isAutoAdvance: true,
+                questionNo: '5',
+                rawText: 'Unused [five].',
+                signature: 'unusedfive',
+                type: 'sentenceTyping'
             }
         ]
     };
