@@ -320,10 +320,18 @@
         if (tagName === 'SCRIPT' || tagName === 'STYLE' || tagName === 'NOSCRIPT') return false;
 
         const style = window.getComputedStyle(el);
-        if (style.visibility === 'hidden' || style.display === 'none') return false;
+        if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) return false;
 
         const rect = el.getBoundingClientRect();
         return rect.width > 0 || rect.height > 0;
+    }
+
+    function isInViewport(el) {
+        if (!isVisibleElement(el)) return false;
+        const rect = el.getBoundingClientRect();
+        const width = window.innerWidth || document.documentElement.clientWidth;
+        const height = window.innerHeight || document.documentElement.clientHeight;
+        return rect.bottom > 0 && rect.right > 0 && rect.top < height && rect.left < width;
     }
 
     function matchesQuestionSignature(text, question) {
@@ -393,13 +401,19 @@
             '[class*="SentenceTypingQuestionBuilder__questionBox"]',
             '[class*="QuestionBuilder__questionBox"]',
             '[class*="QuestionView__questionBox"]'
-        ].join(', ')) || []).filter(isVisibleElement);
+        ].join(', ')) || []).filter(isInViewport);
 
-        const currentNumberBoxes = questionBoxes.filter(box => {
+        const activeQuestionBoxes = questionBoxes.filter(box => {
+            return box.textContent.includes("知らない") ||
+                Boolean(box.querySelector('[class*="FontBox__fontBox"]'));
+        });
+        const scopedBoxes = activeQuestionBoxes.length > 0 ? activeQuestionBoxes : questionBoxes;
+
+        const currentNumberBoxes = scopedBoxes.filter(box => {
             return getVisibleQuestionNumber(box) === activeQuestionRange.start;
         });
-        if (currentNumberBoxes.length === 1) return currentNumberBoxes[0];
-        if (questionBoxes.length === 1) return questionBoxes[0];
+        if (currentNumberBoxes.length > 0) return currentNumberBoxes[0];
+        if (scopedBoxes.length === 1) return scopedBoxes[0];
 
         return document.body;
     }
@@ -557,7 +571,6 @@
 
         const hasShuffledQuestions = pairs.some(pair => pair.data?.shuffleQuestions === true);
         if (hasShuffledQuestions && activeQuestionRange.totalMatchesQuestionList) {
-            console.warn("Auto-advance: multiple shuffled candidates detected; waiting for a single scoped question.");
             return [];
         }
 
