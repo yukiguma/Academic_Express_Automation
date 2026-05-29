@@ -104,3 +104,60 @@ test('FontBox sentence typing uses bracket text instead of the full sentence', {
         await browser.close();
     }
 });
+
+test('FontBox sentence typing joins multiple bracket blanks with spaces', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <style>
+                .FontBox__fontBox___1uhRR {
+                    display: inline-block;
+                    width: 12px;
+                    height: 18px;
+                }
+            </style>
+            <main id="scope">
+                ${Array.from('Bothof').map(() => `
+                    <div class="FontBox__fontBox___1uhRR FontBox__hide___1R5sG"></div>
+                `).join('')}
+            </main>
+            <script>
+                window.acceptedKeys = [];
+                let index = 0;
+                const boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'));
+
+                document.addEventListener('keydown', event => {
+                    const expected = 'Both of'[index];
+                    if (event.key !== expected) return;
+
+                    window.acceptedKeys.push(event.key);
+                    if (event.key !== ' ') {
+                        const boxIndex = window.acceptedKeys.filter(key => key !== ' ').length - 1;
+                        boxes[boxIndex].className += ' FontBox__fontBox_ok___VnRUk';
+                        boxes[boxIndex].textContent = event.key;
+                    } else {
+                        boxes[0].className += ' FontBox__space_accepted___test';
+                    }
+                    index += 1;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        await page.evaluate(async () => {
+            await solve(
+                ['Both of us were invited to the party'],
+                'sentenceTyping',
+                document.getElementById('scope'),
+                { rawText: '[Both] [of] us were invited to the party' }
+            );
+        });
+
+        const acceptedKeys = await page.evaluate(() => window.acceptedKeys.join(''));
+        assert.equal(acceptedKeys, 'Both of');
+    } finally {
+        await browser.close();
+    }
+});

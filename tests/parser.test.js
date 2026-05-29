@@ -170,6 +170,18 @@ test('parses second vocabulary spelling payload with longer blanks', () => {
     ]);
 });
 
+test('parses third vocabulary spelling payload with multi-word blanks', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabrarySpelling3', 'tango_data_manipulate.cfc'));
+
+    assert.equal(dataType, 'json');
+    assert.equal(parsed.questions.length, 3);
+    assert.deepEqual(parsed.questions.map(q => [q.questionNo, q.type, q.rawText, q.answers[0]]), [
+        ['1257912', 'sentenceTyping', '[Both] [of] us were invited to the party', 'Both of us were invited to the party'],
+        ['1258098', 'sentenceTyping', 'Lisa swims over a mile [a] [day].', 'Lisa swims over a mile a day.'],
+        ['1255892', 'sentenceTyping', 'Sam is [said] [to] be much more intelligent than his younger brother.', 'Sam is said to be much more intelligent than his younger brother.']
+    ]);
+});
+
 test('parses current vocabulary spelling question payload', () => {
     const response = JSON.stringify({
         wd_type: 2,

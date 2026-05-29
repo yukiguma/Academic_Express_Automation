@@ -338,8 +338,8 @@ function compactAnswerChars(text) {
 }
 
 function extractBracketText(text) {
-    const match = String(text || "").match(/\[([^\]]+)\]/);
-    return match ? match[1].trim() : "";
+    const matches = Array.from(String(text || "").matchAll(/\[([^\]]+)\]/g));
+    return matches.map(match => match[1].trim()).filter(Boolean).join(' ');
 }
 
 function inferMissingByHiddenBoxCount(answer, hiddenBoxCount) {
