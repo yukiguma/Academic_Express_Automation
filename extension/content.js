@@ -443,6 +443,8 @@
     }
 
     function questionMatchesActiveOrder(question, activeQuestionRange, forceOrderMatch = false) {
+        if (question.isAutoAdvance && questionsList.length === 1) return true;
+
         const shouldUseActiveOrder = activeQuestionRange !== null && (
             forceOrderMatch ||
             hasDuplicateSignature(question) ||

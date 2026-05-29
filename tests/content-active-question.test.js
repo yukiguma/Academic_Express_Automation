@@ -264,3 +264,83 @@ test('content script scopes shuffled auto-advance typing to the current visible 
         await new Promise(resolve => server.close(resolve));
     }
 });
+
+test('content script solves single current auto-advance payload regardless of progress number', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['David was badly injured in the accident.'],
+                displayOrder: 1,
+                isAutoAdvance: true,
+                questionNo: '202',
+                rawText: 'David was badly [injured] in the accident.',
+                signature: 'davidwasbadlyinjuredintheaccident',
+                shuffleQuestions: true,
+                type: 'sentenceTyping'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div><span>2 / 5</span></div></div>
+            <main>
+                <div class="TangoSentenceTypingQuestionBuilder__questionBox___current">
+                    <div class="QuestionTitleText__root___dJe1E"><span>2</span></div>:
+                    <div class="TangoSentenceTypingQuestionBuilder__question___current">
+                        David was badly injured in the accident.
+                    </div>
+                </div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.rawText);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
+        const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
+        assert.deepEqual(solvedQuestions, [
+            'David was badly [injured] in the accident.'
+        ]);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});

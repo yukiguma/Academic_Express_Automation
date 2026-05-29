@@ -262,6 +262,7 @@ E2E での確認:
 - XHR payload が5問全部でも DOM 上に複数問のテキストが残ることがあるため、自動進行の単問表示では複数候補を現在の進捗番号1問へ最後に絞る。
 - `shuffleQuestions=true` の spelling では payload 順の `displayOrder` と画面の `3/5` が一致しない。出題中の `Tango...QuestionBuilder__questionBox` を現在番号で特定し、その箱の中だけを照合する。
 - `get_question` の XHR は5問全体ではなく現在問だけの `question` オブジェクトを返す場合がある。最新 XHR をパースできないと storage に古い回答データが残るため、`questions` 配列だけでなく現在問単体の payload も `wd_type=2` として取り込む。
+- 現在問だけの payload では parser 側の `displayOrder` が常に `1` になるため、画面表示が `2/5` 以降でも進捗番号だけでは弾かない。単問 payload は表示文面との照合を優先する。
 - XHR 取得後は background 側の storage 更新完了を待ってから content 側に success を返す。これにより、次の自動解答が古い `questionData` を読み直す競合を避ける。
 
 fixture の期待正答:
