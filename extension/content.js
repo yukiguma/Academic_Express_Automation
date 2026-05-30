@@ -338,8 +338,15 @@
         const domSig = normalizeSignature(text, 120);
         const questionSig = question.signature || normalizeSignature(question.rawText);
         if (!domSig || !questionSig) return false;
-        return domSig.includes(questionSig) ||
-            questionSig.includes(domSig.slice(0, Math.min(20, domSig.length)));
+        if (domSig.includes(questionSig) ||
+            questionSig.includes(domSig.slice(0, Math.min(20, domSig.length)))) {
+            return true;
+        }
+
+        const skeleton = String(question.rawText || "").replace(/\[[^\]]+\]/g, "");
+        const skeletonSig = normalizeSignature(skeleton, 120);
+        return skeletonSig.length >= 8 &&
+            (domSig.includes(skeletonSig) || skeletonSig.includes(domSig));
     }
 
     function getCurrentProgressQuestionRange() {
