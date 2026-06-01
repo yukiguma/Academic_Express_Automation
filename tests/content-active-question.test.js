@@ -1,8 +1,10 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const test = require('node:test');
 const { chromium } = require('@playwright/test');
+const parser = require('../extension/parser.js');
 
 const extensionDir = path.join(__dirname, '..', 'extension');
 
@@ -418,6 +420,84 @@ test('content script matches sentence typing when the hidden word is absent from
         const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
         assert.deepEqual(solvedQuestions, [
             'David was badly [injured] in the accident.'
+        ]);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
+test('content script matches shuffled spelling sentence typing by Japanese prompt text', { timeout: 20_000 }, async () => {
+    const payload = fs.readFileSync(
+        path.join(__dirname, 'fixtures', 'VocabrarySpelling4', 'tango_data_manipulate.cfc'),
+        'utf8'
+    );
+    const questionData = parser.parseQuestionData(payload).parsed;
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div><span>2 / 10</span></div></div>
+            <main>
+                <div class="TangoSentenceTypingQuestionBuilder__questionBox___current">
+                    <div class="QuestionTitleText__root___dJe1E"><span>2</span></div>:
+                    <div class="QuestionDirectionText__root___3WtnC">
+                        <p>次の意味の英語をタイピングしてください。わからない場合は「知らない」ボタンを選択してください。</p>
+                    </div>
+                    <div class="TangoSentenceTypingQuestionBuilder__sentenceJa___current">
+                        その銀行の支店は、比較的、知られていない。
+                    </div>
+                    <div class="WordBox__root___1FmIC">
+                        <div class="FontBox__fontBox___JZThN FontBox__notInput___1tE-e">T</div>
+                        <div class="FontBox__fontBox___JZThN FontBox__hide___3tfQU"></div>
+                    </div>
+                </div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.rawText);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
+        const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
+        assert.deepEqual(solvedQuestions, [
+            'The [branches] of the bank are less known.'
         ]);
     } finally {
         await browser.close();

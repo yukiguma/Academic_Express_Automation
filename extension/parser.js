@@ -368,11 +368,16 @@ var AcademicExpressParser = (function () {
         const sentenceJapanese = unwrapText(q.sentence?.ja);
         if (sentenceEnglish && sentenceJapanese) {
             const answer = sentenceEnglish.replace(/[\[\]]/g, '');
+            const signature = makeSignature(sentenceEnglish);
+            const matchSignatures = [signature, makeSignature(sentenceJapanese)]
+                .filter(Boolean)
+                .filter((value, idx, values) => values.indexOf(value) === idx);
             return {
                 type: 'sentenceTyping',
                 answers: [answer],
                 rawText: sentenceEnglish,
-                signature: makeSignature(sentenceEnglish),
+                signature,
+                matchSignatures,
                 displayOrder: index + 1,
                 questionNo: String(q.word_no ?? q.level_no ?? ""),
                 isAutoAdvance: true,

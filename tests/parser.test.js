@@ -182,6 +182,28 @@ test('parses third vocabulary spelling payload with multi-word blanks', () => {
     ]);
 });
 
+test('parses fourth vocabulary spelling payload with Japanese sentence match signatures', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabrarySpelling4', 'tango_data_manipulate.cfc'));
+
+    assert.equal(dataType, 'json');
+    assert.equal(parsed.questions.length, 10);
+
+    const branches = parsed.questions.find(question => question.questionNo === '392');
+    assert.ok(branches);
+    assert.deepEqual(
+        [branches.type, branches.rawText, branches.answers[0]],
+        [
+            'sentenceTyping',
+            'The [branches] of the bank are less known.',
+            'The branches of the bank are less known.'
+        ]
+    );
+    assert.deepEqual(branches.matchSignatures, [
+        parser.makeSignature('The [branches] of the bank are less known.'),
+        parser.makeSignature('その銀行の支店は、比較的、知られていない。')
+    ]);
+});
+
 test('parses current vocabulary spelling question payload', () => {
     const response = JSON.stringify({
         wd_type: 2,

@@ -314,6 +314,17 @@
             .slice(0, limit);
     }
 
+    function getQuestionSignatures(question) {
+        const signatures = [
+            question?.signature || normalizeSignature(question?.rawText),
+            ...(Array.isArray(question?.matchSignatures) ? question.matchSignatures : [])
+        ];
+        return signatures
+            .map(signature => String(signature || "").trim())
+            .filter(Boolean)
+            .filter((signature, idx, values) => values.indexOf(signature) === idx);
+    }
+
     function isVisibleElement(el) {
         if (!el || !el.isConnected) return false;
         const tagName = el.tagName;
@@ -336,10 +347,12 @@
 
     function matchesQuestionSignature(text, question) {
         const domSig = normalizeSignature(text, 120);
-        const questionSig = question.signature || normalizeSignature(question.rawText);
-        if (!domSig || !questionSig) return false;
-        if (domSig.includes(questionSig) ||
-            questionSig.includes(domSig.slice(0, Math.min(20, domSig.length)))) {
+        const questionSigs = getQuestionSignatures(question);
+        if (!domSig || questionSigs.length === 0) return false;
+        if (questionSigs.some(questionSig => {
+            return domSig.includes(questionSig) ||
+                questionSig.includes(domSig.slice(0, Math.min(20, domSig.length)));
+        })) {
             return true;
         }
 
@@ -432,7 +445,8 @@
             '[class*="TypingQuestionBuilder__question___"]',
             '[class*="SentenceTypingQuestionBuilder__question___"]',
             '[class*="TangoTypingQuestionBuilder__question___"]',
-            '[class*="TangoSentenceTypingQuestionBuilder__question___"]'
+            '[class*="TangoSentenceTypingQuestionBuilder__question___"]',
+            '[class*="TangoSentenceTypingQuestionBuilder__sentenceJa"]'
         ].join(', ');
     }
 
@@ -578,7 +592,31 @@
             return pairs;
         }
 
+        const currentPromptSignatures = Array.from(document.querySelectorAll(getQuestionTextSelector()))
+            .filter(isInViewport)
+            .map(el => normalizeSignature(el.textContent, 120))
+            .filter(Boolean);
+        const promptMatchedPairs = pairs.filter(pair => {
+            const signatures = getQuestionSignatures(pair.data);
+            return signatures.some(signature => {
+                return currentPromptSignatures.some(promptSig => {
+                    return promptSig === signature ||
+                        promptSig.includes(signature) ||
+                        signature.includes(promptSig);
+                });
+            });
+        });
+        if (promptMatchedPairs.length === 1) return promptMatchedPairs;
+
         const hasShuffledQuestions = pairs.some(pair => pair.data?.shuffleQuestions === true);
+        const viewportPairs = pairs.filter(pair => isInViewport(pair.element));
+        if (viewportPairs.length === 1) return viewportPairs;
+
+        const currentNumberViewportPairs = viewportPairs.filter(pair => {
+            return getVisibleQuestionNumber(pair.element) === activeQuestionRange.start;
+        });
+        if (currentNumberViewportPairs.length === 1) return currentNumberViewportPairs;
+
         if (hasShuffledQuestions && activeQuestionRange.totalMatchesQuestionList) {
             return [];
         }
@@ -602,7 +640,9 @@
         // Phase 1: Exact Signature Match
         for (const el of visibleElements) {
             const domSig = normalizeSignature(el.textContent);
-            const idx = findQuestionIndexForElement(el, usedIndices, q => q.signature === domSig, activeQuestionRange);
+            const idx = findQuestionIndexForElement(el, usedIndices, q => {
+                return getQuestionSignatures(q).some(signature => signature === domSig);
+            }, activeQuestionRange);
 
             if (idx !== -1) {
                 usedIndices.add(idx);
@@ -618,7 +658,9 @@
 
             const domSig = normalizeSignature(el.textContent);
             const idx = findQuestionIndexForElement(el, usedIndices, q => {
-                return domSig.includes(q.signature) || q.signature.includes(domSig);
+                return getQuestionSignatures(q).some(signature => {
+                    return domSig.includes(signature) || signature.includes(domSig);
+                });
             }, activeQuestionRange);
 
             if (idx !== -1) {
@@ -635,8 +677,10 @@
 
             const domSig = normalizeSignature(el.textContent);
             const idx = findQuestionIndexForElement(el, usedIndices, q => {
-                const cleanXml = q.signature.slice(0, 20);
-                return domSig.includes(cleanXml);
+                return getQuestionSignatures(q).some(signature => {
+                    const cleanXml = signature.slice(0, 20);
+                    return cleanXml && domSig.includes(cleanXml);
+                });
             }, activeQuestionRange);
 
             if (idx !== -1) {
