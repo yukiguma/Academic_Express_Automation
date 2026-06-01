@@ -23,6 +23,7 @@
 | `tests/authoring2.xml` | Reading | `readingComprehension`、進捗範囲 `1 - 2 / 5`、1画面複数問 | parser |
 | `tests/fixtures/ReadingTest` | Reading | `Insertion`、`readingComprehension`、`trueFalse`、`anaumeFilIn`、`multipleChoice` | parser / E2E |
 | `tests/question_authoring.xml` | Grammar / mixed | `shuffleQuestions="true"`、XML 順と画面順の不一致、アポストロフィつき選択肢 | parser |
+| `tests/fixtures/GrammarBank` | Grammar Bank | `sortingA`、slash 区切りの語句並べ替え、`multipleChoice` 混在、確定ボタン「完了」 | parser / E2E |
 | `tests/fixtures/VocabularyBank` | Vocabulary Bank | `wd_type=5` 英→日、`save_progress_up`、自動次問遷移 | parser / E2E |
 | `tests/fixtures/VocabrarySpelling` / `VocabrarySpelling2` / `VocabrarySpelling3` / `VocabrarySpelling4` | Vocabulary Bank | `wd_type=2` spelling / sentenceTyping、文字枠への keyboard event 入力、`save_progress_up` | parser / E2E |
 
@@ -162,6 +163,34 @@ fixture から確認した例:
 - `I was very late because I took the ------- bus.` は XML 上では8問目だが、画面では `1 / 23` として出ることがある。
 - この問題の正答は `wrong`。
 - 所有格・複数所有格のようにアポストロフィ位置だけが違う選択肢がある。`girl's` と `girls'` は記号を落とすとどちらも `girls` になるため、exact 判定ではアポストロフィを保持して比較する。
+
+## `tests/fixtures/GrammarBank`
+
+保存済みの Grammar Bank 画面と `question_authoring.cfc` payload を使う fixture。
+
+特徴:
+
+- `question_authoring.cfc` には `sortingA` が15問、`multipleChoice` が8問含まれる。
+- `sortingA` の正答は `<questionText>` 内の `[That's/all/for/today]` のような slash 区切りで表現される。
+- slash 区切りの各要素は1語とは限らず、`to apply`、`lot first`、`your mother`、`the top` のような空白を含む語句もある。
+- `shuffleQuestions="true"` のため、画面の `1 / 23` は XML 上の1問目とは限らない。
+- Grammar Bank の確定ボタンは「完了」で、保存 API は `/as/flash/data_manipulate.cfc` の `save_answer_s` を使う。
+
+実装上の対応:
+
+- `sortingA` は parser 上では `sorting` として扱い、bracket 内の slash 区切りを左から順に `answers` 配列へ展開する。
+- Sorting solver は問題文中の `to` などを誤クリックしないよう、`sortStringList` 配下の `li` を中心に表示テキストの完全一致でクリックする。
+- 自動遷移の候補に「完了」を含め、Grammar Bank の単問確定を進める。
+
+fixture から確認した例:
+
+| `question_no` | parser type | 正答トークン |
+| --- | --- | --- |
+| `20014237` | `sorting` | `That's`, `all`, `for`, `today` |
+| `20014317` | `sorting` | `In`, `order`, `to apply`, `to`, `the`, `college` |
+| `20013487` | `sorting` | `drive`, `to`, `a`, `parking`, `lot first` |
+| `20014486` | `multipleChoice` | `singing` |
+| `20013456` | `multipleChoice` | `with` |
 
 ## `tests/tango_data_manipulate.htm`
 
