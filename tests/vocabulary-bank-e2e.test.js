@@ -7,6 +7,8 @@ const parser = require('../extension/parser.js');
 const { createFixtureServer, runAutoSolve } = require('./helpers/e2e-harness.js');
 
 const fixtureDir = path.join(__dirname, 'fixtures', 'VocabularyBank');
+const spellingFixtureDir = path.join(__dirname, 'fixtures', 'VocabrarySpelling');
+const spelling3FixtureDir = path.join(__dirname, 'fixtures', 'VocabrarySpelling3');
 
 const expectedProgress = [
     ['551', '（幅が）広い'],
@@ -20,6 +22,9 @@ const expectedProgress = [
     ['4493', '重さ、重量、体重'],
     ['4062', '最近の、最新の']
 ];
+
+const expectedSpellingWordNos = ['3526', '3405', '9696', '100012', '100088'];
+const expectedSpelling3WordNos = ['1257912', '1258098', '1255892'];
 
 function parseProgressSave(body) {
     const params = new URLSearchParams(body);
@@ -85,6 +90,104 @@ test('VocabularyBank wd_type 5 fixture is auto-solved with Japanese choices', { 
             .sort(([left], [right]) => Number(left) - Number(right)),
         expectedProgress.sort(([left], [right]) => Number(left) - Number(right))
     );
+    assert.ok(uniqueProgress.every(entry => entry.okFlag === '1'));
+    assert.equal(uniqueProgress.at(-1).saveType, '1');
+});
+
+test('VocabrarySpelling wd_type 2 fixture is auto-solved with keyboard input', { timeout: 60_000 }, async () => {
+    const payload = fs.readFileSync(path.join(spellingFixtureDir, 'tango_data_manipulate.cfc'), 'utf8');
+    const questionData = parser.parseQuestionData(payload).parsed;
+    assert.equal(questionData.questions.length, expectedSpellingWordNos.length);
+
+    const { saveRequests, server } = createFixtureServer({
+        apiResponses: new Map([
+            ['/as/flash/tango_data_manipulate.cfc', payload]
+        ]),
+        fixtureDir: spellingFixtureDir,
+        routes: new Map([
+            ['/as/lplayer/index.cfm', 'Vocabulary Bank _ Academic Express3.html'],
+            ['/as/lplayer/player-tango.js', 'player-tango.js'],
+            ['/as/flash/tango_data_manipulate.cfc', 'tango_data_manipulate.cfc']
+        ])
+    });
+
+    await runAutoSolve({
+        questionData,
+        server,
+        waitFor: async page => {
+            await waitForProgressSaves(saveRequests, expectedSpellingWordNos.length);
+            await page.waitForFunction(() => {
+                const visibleButtons = Array.from(document.querySelectorAll('button')).filter(button => {
+                    return button.offsetWidth || button.offsetHeight || button.getClientRects().length;
+                });
+                return visibleButtons.some(button => button.textContent.includes('前のページに戻る')) &&
+                    !visibleButtons.some(button => button.textContent.includes('続ける'));
+            }, { timeout: 10_000 });
+        }
+    });
+
+    const progress = saveRequests
+        .filter(request => request.method === 'POST')
+        .map(request => parseProgressSave(request.body))
+        .filter(Boolean);
+    const uniqueProgress = Array.from(
+        new Map(progress.map(entry => [entry.wordNo, entry])).values()
+    );
+
+    assert.deepEqual(
+        uniqueProgress.map(entry => entry.wordNo).sort((left, right) => Number(left) - Number(right)),
+        expectedSpellingWordNos.sort((left, right) => Number(left) - Number(right))
+    );
+    assert.ok(uniqueProgress.every(entry => entry.answer === ''));
+    assert.ok(uniqueProgress.every(entry => entry.okFlag === '1'));
+    assert.equal(uniqueProgress.at(-1).saveType, '1');
+});
+
+test('VocabrarySpelling3 wd_type 2 fixture is auto-solved with multi-word blanks', { timeout: 60_000 }, async () => {
+    const payload = fs.readFileSync(path.join(spelling3FixtureDir, 'tango_data_manipulate.cfc'), 'utf8');
+    const questionData = parser.parseQuestionData(payload).parsed;
+    assert.equal(questionData.questions.length, expectedSpelling3WordNos.length);
+
+    const { saveRequests, server } = createFixtureServer({
+        apiResponses: new Map([
+            ['/as/flash/tango_data_manipulate.cfc', payload]
+        ]),
+        fixtureDir: spelling3FixtureDir,
+        routes: new Map([
+            ['/as/lplayer/index.cfm', 'Vocabulary Bank _ Academic Express3.html'],
+            ['/as/lplayer/player-tango.js', 'player-tango.js'],
+            ['/as/flash/tango_data_manipulate.cfc', 'tango_data_manipulate.cfc']
+        ])
+    });
+
+    await runAutoSolve({
+        questionData,
+        server,
+        waitFor: async page => {
+            await waitForProgressSaves(saveRequests, expectedSpelling3WordNos.length);
+            await page.waitForFunction(() => {
+                const visibleButtons = Array.from(document.querySelectorAll('button')).filter(button => {
+                    return button.offsetWidth || button.offsetHeight || button.getClientRects().length;
+                });
+                return visibleButtons.some(button => button.textContent.includes('前のページに戻る')) &&
+                    !visibleButtons.some(button => button.textContent.includes('続ける'));
+            }, { timeout: 10_000 });
+        }
+    });
+
+    const progress = saveRequests
+        .filter(request => request.method === 'POST')
+        .map(request => parseProgressSave(request.body))
+        .filter(Boolean);
+    const uniqueProgress = Array.from(
+        new Map(progress.map(entry => [entry.wordNo, entry])).values()
+    );
+
+    assert.deepEqual(
+        uniqueProgress.map(entry => entry.wordNo).sort((left, right) => Number(left) - Number(right)),
+        expectedSpelling3WordNos.sort((left, right) => Number(left) - Number(right))
+    );
+    assert.ok(uniqueProgress.every(entry => entry.answer === ''));
     assert.ok(uniqueProgress.every(entry => entry.okFlag === '1'));
     assert.equal(uniqueProgress.at(-1).saveType, '1');
 });

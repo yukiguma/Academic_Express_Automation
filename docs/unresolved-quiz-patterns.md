@@ -24,6 +24,7 @@
 | `tests/fixtures/ReadingTest` | Reading | `Insertion`、`readingComprehension`、`trueFalse`、`anaumeFilIn`、`multipleChoice` | parser / E2E |
 | `tests/question_authoring.xml` | Grammar / mixed | `shuffleQuestions="true"`、XML 順と画面順の不一致、アポストロフィつき選択肢 | parser |
 | `tests/fixtures/VocabularyBank` | Vocabulary Bank | `wd_type=5` 英→日、`save_progress_up`、自動次問遷移 | parser / E2E |
+| `tests/fixtures/VocabrarySpelling` / `VocabrarySpelling2` / `VocabrarySpelling3` / `VocabrarySpelling4` | Vocabulary Bank | `wd_type=2` spelling / sentenceTyping、文字枠への keyboard event 入力、`save_progress_up` | parser / E2E |
 
 ## `tests/authoring.xml`
 
@@ -238,6 +239,58 @@ E2E での確認:
 - 各 `word_no` に対して期待正答の `answer` が送信されること。
 - 各保存 payload の `ok_flag` が `1` であること。
 - 最終保存 payload の `save_type` が `1` であること。
+
+## `tests/fixtures/VocabrarySpelling` / `tests/fixtures/VocabrarySpelling2` / `tests/fixtures/VocabrarySpelling3` / `tests/fixtures/VocabrarySpelling4`
+
+保存済みの Vocabulary Bank spelling 画面と `tango_data_manipulate.cfc` payload を使う fixture。ディレクトリ名は追加時の `VocabrarySpelling` 表記をそのまま使っている。
+
+特徴:
+
+- `wd_type=2` の typing / sentenceTyping。
+- `tangolists_jan` と `tangolists_eng` は配列ではなく空文字になるため、tango payload 判定は `keyword.ja` / `keyword.en` を基準にする。
+- 通常の input / textarea はなく、`FontBox` 文字枠が document-level の keyboard event を受けて進む。
+- 単語 spelling では先頭など一部文字がヒント表示済みになることがあり、未入力の文字枠だけを送る。
+- `sentenceTyping` では画面上の英文から bracket 内の単語だけが空欄になり、保存 payload 上の正答は全文になる。solver は parser が保持した bracket 付き `rawText` から空欄語を取り出して入力する。
+- `VocabrarySpelling3` では `[Both] [of]` のように複数 bracket が連続し、空欄入力にスペースが必要になる。solver は bracket 群をスペースで結合して `Both of` のように入力する。
+- 画面 DOM に空欄語の hidden label が含まれない場合があるため、`sentenceTyping` の照合では bracket 内を除いた文の骨格も使う。例: `David was badly [injured] in the accident.` は `David was badly in the accident.` とも一致させる。
+- `VocabrarySpelling4` のように `sentenceTyping` の画面テキストが日本語例文だけになる場合がある。parser は解答抽出用の bracket 付き英文 `rawText` を保持しつつ、content 側の現在問照合用に日本語例文の `matchSignatures` も保持する。
+- 実環境ではキー入力が速すぎると React 側の文字枠更新が追いつかず誤答になることがあるため、solver は1文字ごとに `FontBox` の状態変化を待ってから次の文字を送る。反映後の固定待機は短くし、状態変化の検知を主な同期条件にする。
+- 保存 API は `save_progress_up` を使う。typing 系では送信 body の JSON `data.answer` は空文字で、`ok_flag=1` と `word_no` で完走を検証する。
+- 最終問題後は `isAutoAdvance` のまま解答一覧画面へ遷移するため、auto mode 中に `続ける` ボタンが表示されたら1回だけクリックして次の画面へ進める。
+- `続ける` 直後は次の XHR 反映前に古い問題データが残ることがあるため、自動進行の語彙問題では問題番号だけの fallback 解答を使わない。
+- 自動進行の語彙問題はプレイヤー側が保存後に進むため、解答後の固定待機は短くし、画面変化と XHR 反映を待つ。
+- `1/5` のような単問画面では、ゼロサイズで残った古い問題 DOM を可視扱いせず、現在画面に表示されている問題だけを照合対象にする。
+- 画面の総数表示が `1/5` でも XHR payload が3問だけ返ることがあるため、自動進行では総数不一致でも進捗番号を使い、現在の `displayOrder` だけを解く。
+- XHR payload が5問全部でも DOM 上に複数問のテキストが残ることがあるため、自動進行の単問表示では複数候補を現在の進捗番号1問へ最後に絞る。
+- `shuffleQuestions=true` の spelling では payload 順の `displayOrder` と画面の `3/5` が一致しない。出題中の `Tango...QuestionBuilder__questionBox` を現在番号で特定し、その箱の中だけを照合する。
+- `get_question` の XHR は5問全体ではなく現在問だけの `question` オブジェクトを返す場合がある。最新 XHR をパースできないと storage に古い回答データが残るため、`questions` 配列だけでなく現在問単体の payload も `wd_type=2` として取り込む。
+- 現在問だけの payload では parser 側の `displayOrder` が常に `1` になるため、画面表示が `2/5` 以降でも進捗番号だけでは弾かない。単問 payload は表示文面との照合を優先する。
+- XHR 取得後は background 側の storage 更新完了を待ってから content 側に success を返す。これにより、次の自動解答が古い `questionData` を読み直す競合を避ける。
+
+fixture の期待正答:
+
+| `word_no` | parser type | 問題文 | 正答 |
+| --- | --- | --- | --- |
+| `3526` | `typing` | `特別な、特殊な` | `special` |
+| `3405` | `sentenceTyping` | `I want to play freely in a [field].` | `I want to play freely in a field.` |
+| `9696` | `sentenceTyping` | `Organic [oil] is expensive.` | `Organic oil is expensive.` |
+| `100012` | `typing` | `両方の` | `both` |
+| `100088` | `sentenceTyping` | `This [study] is about the human brain.` | `This study is about the human brain.` |
+
+`VocabrarySpelling4` の期待正答:
+
+| `word_no` | parser type | 問題文 | 正答 |
+| --- | --- | --- | --- |
+| `9948` | `sentenceTyping` | `The suit is a classic [type].` | `The suit is a classic type.` |
+| `9787` | `sentenceTyping` | `The sales department [reported] that sales were far below expectations.` | `The sales department reported that sales were far below expectations.` |
+| `100118` | `sentenceTyping` | `His job is the [import] and export of things.` | `His job is the import and export of things.` |
+| `295` | `sentenceTyping` | `You should e-mail the [document].` | `You should e-mail the document.` |
+| `20` | `typing` | `実在の、現実の、実際の` | `actual` |
+| `904` | `sentenceTyping` | `He has the [ability] to motivate people.` | `He has the ability to motivate people.` |
+| `392` | `sentenceTyping` | `The [branches] of the bank are less known.` | `The branches of the bank are less known.` |
+| `912` | `sentenceTyping` | `I want you to [accept] my offer.` | `I want you to accept my offer.` |
+| `968` | `sentenceTyping` | `My father [allowed] me to use his car.` | `My father allowed me to use his car.` |
+| `1053` | `sentenceTyping` | `The new sofa was half off, so I consider the purchase a [bargain].` | `The new sofa was half off, so I consider the purchase a bargain.` |
 
 ## `tests/fixtures/ReadingTest`
 

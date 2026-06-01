@@ -282,8 +282,12 @@ async function solveMultipleChoice(answers, scope) {
 }
 
 // Solver: Typing / Fill-in
-async function solveTyping(answers, scope) {
+async function solveTyping(answers, scope, question = {}) {
     let targets = Array.from(scope.querySelectorAll('input[type="text"], textarea, [contenteditable="true"], [role="textbox"]')).filter(isVisible);
+
+    if (targets.length === 0 && await solveFontBoxTyping(answers, scope, question)) {
+        return true;
+    }
 
     if (targets.length === 0) {
         console.log("No inputs found, searching for interactable gaps...");
@@ -327,6 +331,119 @@ async function solveTyping(answers, scope) {
     }
 
     return targets.length > 0;
+}
+
+function compactAnswerChars(text) {
+    return String(text || "").replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+function extractBracketText(text) {
+    const matches = Array.from(String(text || "").matchAll(/\[([^\]]+)\]/g));
+    return matches.map(match => match[1].trim()).filter(Boolean).join(' ');
+}
+
+function inferMissingByHiddenBoxCount(answer, hiddenBoxCount) {
+    if (!answer || hiddenBoxCount <= 0) return "";
+    const tokens = String(answer).match(/[\p{L}\p{N}]+(?:['\u2019][\p{L}\p{N}]+)?|[^\s]/gu) || [];
+
+    for (let start = 0; start < tokens.length; start++) {
+        let segment = "";
+        for (let end = start; end < tokens.length; end++) {
+            segment += (segment && /^[\p{L}\p{N}]/u.test(tokens[end]) ? " " : "") + tokens[end];
+            const compactLength = compactAnswerChars(segment).length;
+            if (compactLength === hiddenBoxCount) return segment;
+            if (compactLength > hiddenBoxCount) break;
+        }
+    }
+
+    return "";
+}
+
+function inferMissingFontBoxText(answer, boxes) {
+    const visible = compactAnswerChars(boxes.map(box => box.textContent || "").join(''));
+    const full = compactAnswerChars(answer);
+    const visibleLower = visible.toLowerCase();
+    const fullLower = full.toLowerCase();
+
+    let prefix = 0;
+    while (
+        prefix < visibleLower.length &&
+        prefix < fullLower.length &&
+        visibleLower[prefix] === fullLower[prefix]
+    ) {
+        prefix++;
+    }
+
+    let suffix = 0;
+    while (
+        suffix < visibleLower.length - prefix &&
+        suffix < fullLower.length - prefix &&
+        visibleLower[visibleLower.length - 1 - suffix] === fullLower[fullLower.length - 1 - suffix]
+    ) {
+        suffix++;
+    }
+
+    return full.slice(prefix, full.length - suffix);
+}
+
+async function solveFontBoxTyping(answers, scope, question = {}) {
+    let boxes = Array.from(scope.querySelectorAll('[class*="FontBox__fontBox"]')).filter(isVisible);
+    if (!boxes.length && scope !== document) {
+        boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]')).filter(isVisible);
+    }
+    if (!boxes.length) return false;
+
+    const hasHiddenEmptyBoxes = boxes.some(box => {
+        const className = String(box.className || "");
+        return className.includes('FontBox__hide') && !String(box.textContent || "").trim();
+    });
+    const hiddenEmptyBoxCount = boxes.filter(box => {
+        const className = String(box.className || "");
+        return className.includes('FontBox__hide') && !String(box.textContent || "").trim();
+    }).length;
+    const chars = hasHiddenEmptyBoxes
+        ? extractBracketText(question.rawText) ||
+            inferMissingByHiddenBoxCount(answers?.[0], hiddenEmptyBoxCount) ||
+            inferMissingFontBoxText(answers?.[0], boxes)
+        : boxes
+            .filter(box => !String(box.className || "").includes('fontBox_ok'))
+            .map(box => {
+                const label = box.querySelector('[class*="FontBox__label_txt"]');
+                return String(label?.textContent || box.textContent || "").trim().slice(0, 1);
+            })
+            .join('');
+
+    if (!chars) return false;
+
+    console.log(`FontBox Typing Strategy: Typing ${chars.length} remaining characters.`);
+    for (const char of chars) {
+        const before = fontBoxSnapshot();
+        dispatchKeyboardChar(char, document);
+        await waitForFontBoxUpdate(before);
+    }
+
+    await sleep(250);
+    return true;
+}
+
+function fontBoxSnapshot() {
+    return Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'))
+        .filter(isVisible)
+        .map(box => `${box.className}:${box.textContent}`)
+        .join('|');
+}
+
+async function waitForFontBoxUpdate(previousSnapshot) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < 250) {
+        await sleep(10);
+        if (fontBoxSnapshot() !== previousSnapshot) {
+            await sleep(15);
+            return;
+        }
+    }
+
+    await sleep(50);
 }
 
 function keyboardInfoForChar(char) {
@@ -496,7 +613,7 @@ async function solveScanning(answers, scope) {
 }
 
 // Main solve dispatcher
-async function solve(answers, type, scope) {
+async function solve(answers, type, scope, question = {}) {
     if (!answers || answers.length === 0) {
         console.warn(`No answers for type ${type}`);
         return;
@@ -515,7 +632,7 @@ async function solve(answers, type, scope) {
         return solveMultipleChoice(answers, scope);
     }
     if (normalizedType.includes('anaume') || normalizedType.includes('typing') || normalizedType.includes('cloze') || normalizedType.includes('fill')) {
-        return solveTyping(answers, scope);
+        return solveTyping(answers, scope, question);
     }
     if (normalizedType.includes('scanning')) {
         return solveScanning(answers, scope);
@@ -525,7 +642,7 @@ async function solve(answers, type, scope) {
     }
 
     console.warn("Unknown question type, trying generic strategies:", type);
-    if (await solveTyping(answers, scope)) return;
+    if (await solveTyping(answers, scope, question)) return;
     if (await solveDropdown(answers, scope)) return;
     if (await solveFillBlank(answers, scope)) return;
     return solveMultipleChoice(answers, scope);

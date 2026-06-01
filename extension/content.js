@@ -11,6 +11,7 @@
     let isFastMode = localStorage.getItem('fast-mode') === 'true';
     let lastSolvedSignature = "";
     let isSolving = false;
+    let isTransitioning = false;
     let debounceTimer = null;
     let isAutoMode = false;
 
@@ -313,28 +314,59 @@
             .slice(0, limit);
     }
 
+    function getQuestionSignatures(question) {
+        const signatures = [
+            question?.signature || normalizeSignature(question?.rawText),
+            ...(Array.isArray(question?.matchSignatures) ? question.matchSignatures : [])
+        ];
+        return signatures
+            .map(signature => String(signature || "").trim())
+            .filter(Boolean)
+            .filter((signature, idx, values) => values.indexOf(signature) === idx);
+    }
+
     function isVisibleElement(el) {
         if (!el || !el.isConnected) return false;
         const tagName = el.tagName;
         if (tagName === 'SCRIPT' || tagName === 'STYLE' || tagName === 'NOSCRIPT') return false;
 
         const style = window.getComputedStyle(el);
-        if (style.visibility === 'hidden' || style.display === 'none') return false;
+        if (style.visibility === 'hidden' || style.display === 'none' || Number(style.opacity) === 0) return false;
 
         const rect = el.getBoundingClientRect();
-        return rect.width > 0 || rect.height > 0 || el.textContent.trim().length > 0;
+        return rect.width > 0 || rect.height > 0;
+    }
+
+    function isInViewport(el) {
+        if (!isVisibleElement(el)) return false;
+        const rect = el.getBoundingClientRect();
+        const width = window.innerWidth || document.documentElement.clientWidth;
+        const height = window.innerHeight || document.documentElement.clientHeight;
+        return rect.bottom > 0 && rect.right > 0 && rect.top < height && rect.left < width;
     }
 
     function matchesQuestionSignature(text, question) {
         const domSig = normalizeSignature(text, 120);
-        const questionSig = question.signature || normalizeSignature(question.rawText);
-        if (!domSig || !questionSig) return false;
-        return domSig.includes(questionSig) ||
-            questionSig.includes(domSig.slice(0, Math.min(20, domSig.length)));
+        const questionSigs = getQuestionSignatures(question);
+        if (!domSig || questionSigs.length === 0) return false;
+        if (questionSigs.some(questionSig => {
+            return domSig.includes(questionSig) ||
+                questionSig.includes(domSig.slice(0, Math.min(20, domSig.length)));
+        })) {
+            return true;
+        }
+
+        const skeleton = String(question.rawText || "").replace(/\[[^\]]+\]/g, "");
+        const skeletonSig = normalizeSignature(skeleton, 120);
+        return skeletonSig.length >= 8 &&
+            (domSig.includes(skeletonSig) || skeletonSig.includes(domSig));
     }
 
     function getCurrentProgressQuestionRange() {
-        const text = document.body?.innerText || "";
+        const text = [
+            document.body?.innerText,
+            document.body?.textContent
+        ].filter(Boolean).join("\n");
         const rangeMatch = text.match(/(?:^|\s)(\d{1,3})\s*[-－ー]\s*(\d{1,3})\s*\/\s*(\d{1,3})(?:\s|$)/);
         const singleMatch = rangeMatch ? null : text.match(/(?:^|\s)(\d{1,3})\s*\/\s*(\d{1,3})(?:\s|$)/);
         const match = rangeMatch || singleMatch;
@@ -344,8 +376,13 @@
         const end = rangeMatch ? Number(match[2]) : start;
         const total = Number(match[rangeMatch ? 3 : 2]);
         if (!Number.isInteger(start) || !Number.isInteger(end) || !Number.isInteger(total)) return null;
-        if (start < 1 || end < start || total < end || total !== questionsList.length) return null;
-        return { start, end, total };
+        if (start < 1 || end < start || total < end) return null;
+        return {
+            start,
+            end,
+            total,
+            totalMatchesQuestionList: total === questionsList.length
+        };
     }
 
     function getVisibleQuestionNumber(el) {
@@ -368,6 +405,51 @@
         return null;
     }
 
+    function findAutoAdvanceQuestionScope(activeQuestionRange) {
+        if (
+            !activeQuestionRange ||
+            activeQuestionRange.start !== activeQuestionRange.end ||
+            !questionsList.some(question => question.isAutoAdvance)
+        ) {
+            return document.body;
+        }
+
+        const questionBoxes = Array.from(document.body?.querySelectorAll([
+            '[class*="TangoTypingQuestionBuilder__questionBox"]',
+            '[class*="TangoSentenceTypingQuestionBuilder__questionBox"]',
+            '[class*="TypingQuestionBuilder__questionBox"]',
+            '[class*="SentenceTypingQuestionBuilder__questionBox"]',
+            '[class*="QuestionBuilder__questionBox"]',
+            '[class*="QuestionView__questionBox"]'
+        ].join(', ')) || []).filter(isInViewport);
+
+        const activeQuestionBoxes = questionBoxes.filter(box => {
+            return box.textContent.includes("知らない") ||
+                Boolean(box.querySelector('[class*="FontBox__fontBox"]'));
+        });
+        const scopedBoxes = activeQuestionBoxes.length > 0 ? activeQuestionBoxes : questionBoxes;
+
+        const currentNumberBoxes = scopedBoxes.filter(box => {
+            return getVisibleQuestionNumber(box) === activeQuestionRange.start;
+        });
+        if (currentNumberBoxes.length > 0) return currentNumberBoxes[0];
+        if (scopedBoxes.length === 1) return scopedBoxes[0];
+
+        return document.body;
+    }
+
+    function getQuestionTextSelector() {
+        return [
+            '[class*="QuestionBuilder__question___"]',
+            '[class*="QuestionView__question___"]',
+            '[class*="TypingQuestionBuilder__question___"]',
+            '[class*="SentenceTypingQuestionBuilder__question___"]',
+            '[class*="TangoTypingQuestionBuilder__question___"]',
+            '[class*="TangoSentenceTypingQuestionBuilder__question___"]',
+            '[class*="TangoSentenceTypingQuestionBuilder__sentenceJa"]'
+        ].join(', ');
+    }
+
     function getConfiguredQuestionNo() {
         return String(window.config?.question_no || "");
     }
@@ -382,7 +464,14 @@
     }
 
     function questionMatchesActiveOrder(question, activeQuestionRange, forceOrderMatch = false) {
-        if (activeQuestionRange === null || (!forceOrderMatch && !hasDuplicateSignature(question))) return true;
+        if (question.isAutoAdvance && questionsList.length === 1) return true;
+
+        const shouldUseActiveOrder = activeQuestionRange !== null && (
+            forceOrderMatch ||
+            hasDuplicateSignature(question) ||
+            (question.isAutoAdvance && activeQuestionRange.totalMatchesQuestionList === false)
+        );
+        if (!shouldUseActiveOrder) return true;
         const order = Number(question.displayOrder);
         return order >= activeQuestionRange.start && order <= activeQuestionRange.end;
     }
@@ -417,8 +506,8 @@
         });
     }
 
-    function findQuestionElementByText(question, usedElements) {
-        const candidates = Array.from(document.body?.querySelectorAll([
+    function findQuestionElementByText(question, usedElements, root = document.body) {
+        const candidates = Array.from(root?.querySelectorAll([
             '[class*="Question"]',
             '[class*="question"]',
             '[class*="Quiz"]',
@@ -457,8 +546,8 @@
         return best;
     }
 
-    function findQuestionElementByNumber(questionNumber, usedElements) {
-        const candidates = Array.from(document.body?.querySelectorAll([
+    function findQuestionElementByNumber(questionNumber, usedElements, root = document.body) {
+        const candidates = Array.from(root?.querySelectorAll([
             '[class*="Question"]',
             '[class*="question"]',
             '[class*="Quiz"]',
@@ -493,9 +582,53 @@
         return best;
     }
 
+    function narrowAutoAdvancePairsToCurrentProgress(pairs, activeQuestionRange) {
+        if (
+            !activeQuestionRange ||
+            activeQuestionRange.start !== activeQuestionRange.end ||
+            pairs.length <= 1 ||
+            !pairs.every(pair => pair.data?.isAutoAdvance)
+        ) {
+            return pairs;
+        }
+
+        const currentPromptSignatures = Array.from(document.querySelectorAll(getQuestionTextSelector()))
+            .filter(isInViewport)
+            .map(el => normalizeSignature(el.textContent, 120))
+            .filter(Boolean);
+        const promptMatchedPairs = pairs.filter(pair => {
+            const signatures = getQuestionSignatures(pair.data);
+            return signatures.some(signature => {
+                return currentPromptSignatures.some(promptSig => {
+                    return promptSig === signature ||
+                        promptSig.includes(signature) ||
+                        signature.includes(promptSig);
+                });
+            });
+        });
+        if (promptMatchedPairs.length === 1) return promptMatchedPairs;
+
+        const hasShuffledQuestions = pairs.some(pair => pair.data?.shuffleQuestions === true);
+        const viewportPairs = pairs.filter(pair => isInViewport(pair.element));
+        if (viewportPairs.length === 1) return viewportPairs;
+
+        const currentNumberViewportPairs = viewportPairs.filter(pair => {
+            return getVisibleQuestionNumber(pair.element) === activeQuestionRange.start;
+        });
+        if (currentNumberViewportPairs.length === 1) return currentNumberViewportPairs;
+
+        if (hasShuffledQuestions && activeQuestionRange.totalMatchesQuestionList) {
+            return [];
+        }
+
+        const currentPair = pairs.find(pair => Number(pair.data.displayOrder) === activeQuestionRange.start);
+        return currentPair ? [currentPair] : pairs;
+    }
+
     function findActiveQuestions() {
         const activeQuestionRange = getCurrentProgressQuestionRange();
-        const textElements = document.querySelectorAll('[class*="QuestionBuilder__question___"], [class*="QuestionView__question___"]');
+        const searchRoot = findAutoAdvanceQuestionScope(activeQuestionRange);
+        const textElements = searchRoot.querySelectorAll(getQuestionTextSelector());
         const visibleElements = Array.from(textElements).filter(el => {
             return isVisibleElement(el);
         });
@@ -507,7 +640,9 @@
         // Phase 1: Exact Signature Match
         for (const el of visibleElements) {
             const domSig = normalizeSignature(el.textContent);
-            const idx = findQuestionIndexForElement(el, usedIndices, q => q.signature === domSig, activeQuestionRange);
+            const idx = findQuestionIndexForElement(el, usedIndices, q => {
+                return getQuestionSignatures(q).some(signature => signature === domSig);
+            }, activeQuestionRange);
 
             if (idx !== -1) {
                 usedIndices.add(idx);
@@ -523,7 +658,9 @@
 
             const domSig = normalizeSignature(el.textContent);
             const idx = findQuestionIndexForElement(el, usedIndices, q => {
-                return domSig.includes(q.signature) || q.signature.includes(domSig);
+                return getQuestionSignatures(q).some(signature => {
+                    return domSig.includes(signature) || signature.includes(domSig);
+                });
             }, activeQuestionRange);
 
             if (idx !== -1) {
@@ -540,8 +677,10 @@
 
             const domSig = normalizeSignature(el.textContent);
             const idx = findQuestionIndexForElement(el, usedIndices, q => {
-                const cleanXml = q.signature.slice(0, 20);
-                return domSig.includes(cleanXml);
+                return getQuestionSignatures(q).some(signature => {
+                    const cleanXml = signature.slice(0, 20);
+                    return cleanXml && domSig.includes(cleanXml);
+                });
             }, activeQuestionRange);
 
             if (idx !== -1) {
@@ -558,7 +697,7 @@
 
             const question = questionsList[i];
             if (!questionMatchesActiveOrder(question, activeQuestionRange)) continue;
-            const el = findQuestionElementByText(question, usedElements);
+            const el = findQuestionElementByText(question, usedElements, searchRoot);
             if (!el) continue;
 
             usedIndices.add(i);
@@ -567,19 +706,20 @@
             matchedPairs.push({ element: container, data: question });
         }
 
-        // Phase 5: Progress/order fallback for vocabulary pages whose visible
-        // prompt text differs from the captured answer data. Only use this when
-        // text-based matching found nothing; otherwise it adds hidden/shuffled
-        // questions and produces noisy "not found" logs.
+        // Phase 5: Progress/order fallback for pages whose visible prompt text
+        // differs from the captured answer data. Auto-advance vocabulary pages
+        // reload data between screens, so solving them by order alone can reuse
+        // stale answers just after clicking "続ける".
         if (activeQuestionRange !== null && matchedPairs.length === 0) {
             for (let i = 0; i < questionsList.length; i++) {
                 if (usedIndices.has(i)) continue;
 
                 const question = questionsList[i];
+                if (question.isAutoAdvance) continue;
                 if (!questionMatchesActiveOrder(question, activeQuestionRange, true)) continue;
 
                 const questionNumber = Number(question.displayOrder);
-                const el = findQuestionElementByNumber(questionNumber, usedElements);
+                const el = findQuestionElementByNumber(questionNumber, usedElements, searchRoot);
                 const container = el ? findQuestionContainer(el, question.type) : document.body;
 
                 usedIndices.add(i);
@@ -608,7 +748,7 @@
             }
         }
 
-        return matchedPairs;
+        return narrowAutoAdvancePairsToCurrentProgress(matchedPairs, activeQuestionRange);
     }
 
     function injectStyles() {
@@ -804,6 +944,17 @@
             return;
         }
 
+        const continueButton = findTransitionButton(["続ける"]);
+        if (continueButton && isAutoMode && !isSolving && !isTransitioning) {
+            console.log('Auto-Mode: Continue page detected. Clicking "続ける".');
+            isTransitioning = true;
+            simulateClick(continueButton);
+            setTimeout(() => {
+                isTransitioning = false;
+            }, 3000);
+            return;
+        }
+
         const isGradedPage = document.querySelector('[class*="ScoreView__scoreViewContainer"]');
         if (isGradedPage) {
             const speedCtrl = document.getElementById('speed-control');
@@ -849,8 +1000,13 @@
             for (let i = 0; i < matchedPairs.length; i++) {
                 const pair = matchedPairs[i];
                 if (pair.data.isAutoAdvance) autoAdvance = true;
-                await solve(pair.data.answers, pair.data.type, pair.element);
-                await new Promise(r => setTimeout(r, getWaitTime('SOLVE_INTERVAL')));
+                await solve(pair.data.answers, pair.data.type, pair.element, pair.data);
+                const postSolveWait = pair.data.isAutoAdvance
+                    ? Math.min(getWaitTime('SOLVE_INTERVAL'), 300)
+                    : getWaitTime('SOLVE_INTERVAL');
+                if (postSolveWait > 0) {
+                    await new Promise(r => setTimeout(r, postSolveWait));
+                }
             }
 
             if (isAutoMode) {
@@ -859,6 +1015,7 @@
                     isSolving = false;
                     resetHeaderProgress();
                     setGlobalLock(false);
+                    setTimeout(ensureSolveButton, Math.max(getWaitTime('TRANSITION_WAIT'), 500));
                     return;
                 }
                 await handleTransition();
@@ -874,6 +1031,7 @@
     async function handleTransition() {
         const wasSolving = isSolving;
         isSolving = true;
+        isTransitioning = true;
 
         try {
             console.log("Attempting transition...");
@@ -887,15 +1045,11 @@
                 return;
             }
 
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const transitionKeywords = ["採点", "判定", "続ける", "終了"];
-            for (const keyword of transitionKeywords) {
-                const button = buttons.find(b => b.textContent.includes(keyword));
-                if (button) {
-                    console.log(`Transition: Clicking "${keyword}" Button.`);
-                    simulateClick(button);
-                    return;
-                }
+            const button = findTransitionButton(["採点", "判定", "続ける", "終了"]);
+            if (button) {
+                console.log(`Transition: Clicking "${button.textContent.trim()}" Button.`);
+                simulateClick(button);
+                return;
             }
 
             const quitBtn = document.getElementById('quitButton');
@@ -917,6 +1071,26 @@
             console.log("Transition: No suitable button found.");
         } finally {
             if (!wasSolving) isSolving = false;
+            isTransitioning = false;
         }
+    }
+
+    function findTransitionButton(keywords) {
+        const buttons = Array.from(document.querySelectorAll([
+            'button',
+            'input[type="button"]',
+            'input[type="submit"]',
+            'a',
+            '[role="button"]'
+        ].join(', '))).filter(isVisibleElement);
+        return buttons.find(button => {
+            const text = [
+                button.textContent,
+                button.value,
+                button.getAttribute('aria-label'),
+                button.getAttribute('title')
+            ].filter(Boolean).join(' ');
+            return keywords.some(keyword => text.includes(keyword));
+        });
     }
 })();

@@ -325,18 +325,41 @@ var AcademicExpressParser = (function () {
     function isTangoQuestion(item) {
         return item && typeof item === 'object' &&
             item.keyword && typeof item.keyword === 'object' &&
-            Array.isArray(item.tangolists_eng) &&
-            Array.isArray(item.tangolists_jan);
+            (typeof item.keyword.en === 'string' || typeof item.keyword.ja === 'string');
     }
 
-    function getTangoDirections(data) {
-        const wdType = String(data?.wd_type ?? data?.wdType ?? "");
+    function getTangoDirections(wdType) {
         if (wdType === "1") return [['ja', 'en']];
         if (wdType === "5") return [['en', 'ja']];
         return [['ja', 'en'], ['en', 'ja']];
     }
 
-    function buildTangoTypingQuestion(q, index) {
+    function findTangoPayload(data) {
+        const roots = [data, data?.data, data?.result, data?.payload];
+        for (const root of roots) {
+            if (!root || typeof root !== 'object') continue;
+            if (Array.isArray(root.questions) && root.questions.some(isTangoQuestion)) {
+                return { root, questions: root.questions };
+            }
+            if (isTangoQuestion(root.question)) {
+                return { root, questions: [root.question] };
+            }
+            if (isTangoQuestion(root)) {
+                return { root, questions: [root] };
+            }
+        }
+        return null;
+    }
+
+    function getTangoWdType(data, root) {
+        return String(root?.wd_type ?? root?.wdType ?? data?.wd_type ?? data?.wdType ?? "");
+    }
+
+    function isTangoShuffled(data, root) {
+        return root?.shuffleQuestions === true || data?.shuffleQuestions === true;
+    }
+
+    function buildTangoTypingQuestion(q, index, shuffleQuestions) {
         const japanese = unwrapText(q.keyword.ja);
         const english = unwrapText(q.keyword.en);
         if (!japanese || !english) return null;
@@ -345,14 +368,20 @@ var AcademicExpressParser = (function () {
         const sentenceJapanese = unwrapText(q.sentence?.ja);
         if (sentenceEnglish && sentenceJapanese) {
             const answer = sentenceEnglish.replace(/[\[\]]/g, '');
+            const signature = makeSignature(sentenceEnglish);
+            const matchSignatures = [signature, makeSignature(sentenceJapanese)]
+                .filter(Boolean)
+                .filter((value, idx, values) => values.indexOf(value) === idx);
             return {
                 type: 'sentenceTyping',
                 answers: [answer],
                 rawText: sentenceEnglish,
-                signature: makeSignature(sentenceEnglish),
+                signature,
+                matchSignatures,
                 displayOrder: index + 1,
                 questionNo: String(q.word_no ?? q.level_no ?? ""),
-                isAutoAdvance: true
+                isAutoAdvance: true,
+                shuffleQuestions
             };
         }
 
@@ -363,24 +392,28 @@ var AcademicExpressParser = (function () {
             signature: makeSignature(japanese),
             displayOrder: index + 1,
             questionNo: String(q.word_no ?? q.level_no ?? ""),
-            isAutoAdvance: true
+            isAutoAdvance: true,
+            shuffleQuestions
         };
     }
 
     function parseTangoData(data) {
-        if (!data || !Array.isArray(data.questions) || !data.questions.some(isTangoQuestion)) {
+        const tangoPayload = findTangoPayload(data);
+        if (!tangoPayload) {
             return null;
         }
 
         const questionsList = [];
-        const wdType = String(data?.wd_type ?? data?.wdType ?? "");
-        const directions = getTangoDirections(data);
+        const { root, questions } = tangoPayload;
+        const wdType = getTangoWdType(data, root);
+        const directions = getTangoDirections(wdType);
+        const shuffleQuestions = isTangoShuffled(data, root);
 
-        data.questions.forEach((q, index) => {
+        questions.forEach((q, index) => {
             if (!isTangoQuestion(q)) return;
 
             if (wdType === "2") {
-                const question = buildTangoTypingQuestion(q, index);
+                const question = buildTangoTypingQuestion(q, index, shuffleQuestions);
                 if (question) questionsList.push(question);
                 return;
             }
@@ -397,7 +430,8 @@ var AcademicExpressParser = (function () {
                     signature: makeSignature(prompt),
                     displayOrder: index + 1,
                     questionNo: String(q.word_no ?? q.level_no ?? ""),
-                    isAutoAdvance: true
+                    isAutoAdvance: true,
+                    shuffleQuestions
                 });
             });
         });

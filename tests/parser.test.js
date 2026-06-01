@@ -141,6 +141,96 @@ test('parses saved vocabulary bank payload as wd_type 5 questions', () => {
     assert.ok(parsed.questions.every(q => q.isAutoAdvance));
 });
 
+test('parses saved vocabulary spelling payload as wd_type 2 questions', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabrarySpelling', 'tango_data_manipulate.cfc'));
+
+    assert.equal(dataType, 'json');
+    assert.equal(parsed.questions.length, 5);
+    assert.deepEqual(parsed.questions.map(q => [q.type, q.rawText, q.answers[0]]), [
+        ['typing', '特別な、特殊な', 'special'],
+        ['sentenceTyping', 'I want to play freely in a [field].', 'I want to play freely in a field.'],
+        ['sentenceTyping', 'Organic [oil] is expensive.', 'Organic oil is expensive.'],
+        ['typing', '両方の', 'both'],
+        ['sentenceTyping', 'This [study] is about the human brain.', 'This study is about the human brain.']
+    ]);
+    assert.ok(parsed.questions.every(q => q.isAutoAdvance));
+});
+
+test('parses second vocabulary spelling payload with longer blanks', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabrarySpelling2', 'tango_data_manipulate.cfc'));
+
+    assert.equal(dataType, 'json');
+    assert.equal(parsed.questions.length, 5);
+    assert.deepEqual(parsed.questions.map(q => [q.questionNo, q.type, q.answers[0]]), [
+        ['69', 'typing', 'journal'],
+        ['4173', 'sentenceTyping', 'Please wear gloves while the machine is in operation.'],
+        ['999', 'sentenceTyping', 'This rule does not apply to part-time employees.'],
+        ['9792', 'sentenceTyping', 'The waitress went to the restroom to check her makeup.'],
+        ['100118', 'sentenceTyping', 'His job is the import and export of things.']
+    ]);
+});
+
+test('parses third vocabulary spelling payload with multi-word blanks', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabrarySpelling3', 'tango_data_manipulate.cfc'));
+
+    assert.equal(dataType, 'json');
+    assert.equal(parsed.questions.length, 3);
+    assert.deepEqual(parsed.questions.map(q => [q.questionNo, q.type, q.rawText, q.answers[0]]), [
+        ['1257912', 'sentenceTyping', '[Both] [of] us were invited to the party', 'Both of us were invited to the party'],
+        ['1258098', 'sentenceTyping', 'Lisa swims over a mile [a] [day].', 'Lisa swims over a mile a day.'],
+        ['1255892', 'sentenceTyping', 'Sam is [said] [to] be much more intelligent than his younger brother.', 'Sam is said to be much more intelligent than his younger brother.']
+    ]);
+});
+
+test('parses fourth vocabulary spelling payload with Japanese sentence match signatures', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabrarySpelling4', 'tango_data_manipulate.cfc'));
+
+    assert.equal(dataType, 'json');
+    assert.equal(parsed.questions.length, 10);
+
+    const branches = parsed.questions.find(question => question.questionNo === '392');
+    assert.ok(branches);
+    assert.deepEqual(
+        [branches.type, branches.rawText, branches.answers[0]],
+        [
+            'sentenceTyping',
+            'The [branches] of the bank are less known.',
+            'The branches of the bank are less known.'
+        ]
+    );
+    assert.deepEqual(branches.matchSignatures, [
+        parser.makeSignature('The [branches] of the bank are less known.'),
+        parser.makeSignature('その銀行の支店は、比較的、知られていない。')
+    ]);
+});
+
+test('parses current vocabulary spelling question payload', () => {
+    const response = JSON.stringify({
+        wd_type: 2,
+        shuffleQuestions: true,
+        question: {
+            word_no: 22258,
+            keyword: {
+                ja: '利子、金利、関心',
+                en: 'interest'
+            },
+            sentence: {
+                ja: '今月は、どの銀行の金利が一番良いですか？',
+                en: 'Which bank offers the best [interest] this month?'
+            },
+            tangolists_jan: '',
+            tangolists_eng: ''
+        }
+    });
+
+    const { parsed, dataType } = parser.parseQuestionData(response);
+
+    assert.equal(dataType, 'json');
+    assert.deepEqual(parsed.questions.map(q => [q.type, q.rawText, q.answers[0], q.questionNo, q.shuffleQuestions]), [
+        ['sentenceTyping', 'Which bank offers the best [interest] this month?', 'Which bank offers the best interest this month?', '22258', true]
+    ]);
+});
+
 test('parses tango direction and typing variants without using know_chk as an answer', () => {
     const baseQuestion = {
         keyword: { ja: 'はがき', en: 'postcard' },
