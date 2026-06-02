@@ -80,7 +80,7 @@
       OPTION_WAIT: 0,
       SOLVE_INTERVAL: 25,
       DEBOUNCE_WAIT: 30,
-      AUTO_ADVANCE_WAIT: 200,
+      AUTO_ADVANCE_WAIT: 100,
     },
   };
 
@@ -738,6 +738,23 @@
     );
   }
 
+  function questionMatchesVisibleSortingPrompt(question, searchRoot) {
+    const candidates = Array.from(
+      searchRoot?.querySelectorAll(
+        [
+          '[class*="SortingAQuestionBuilder__questionBox"]',
+          '[class*="QuestionBuilder__questionBox"]',
+          '[class*="QuestionView__questionBox"]',
+          '[class*="questionBox"]',
+        ].join(", "),
+      ) || [],
+    ).filter(isVisibleElement);
+
+    return candidates.some((candidate) =>
+      matchesQuestionSignature(candidate.textContent, question),
+    );
+  }
+
   function getVisibleSortingLists(searchRoot) {
     return Array.from(searchRoot.querySelectorAll('[class*="sortStringList"]'))
       .filter(isVisibleElement)
@@ -756,7 +773,7 @@
     );
   }
 
-  function findActiveSortingPair(searchRoot) {
+  function findActiveSortingPair(searchRoot, activeQuestionRange = null) {
     const lists = getVisibleSortingLists(searchRoot);
     if (lists.length !== 1) return null;
 
@@ -771,15 +788,28 @@
         String(question.type || "")
           .toLowerCase()
           .includes("sort") &&
+        questionMatchesActiveOrder(question, activeQuestionRange) &&
         Array.isArray(question.answers) &&
         sameSortingTokens(question.answers, visibleTokens)
       );
     });
-    if (questionIndex === -1) return null;
+    const fallbackIndex =
+      questionIndex !== -1
+        ? questionIndex
+        : questionsList.findIndex((question) => {
+            return (
+              String(question.type || "")
+                .toLowerCase()
+                .includes("sort") &&
+              questionMatchesActiveOrder(question, activeQuestionRange, true) &&
+              questionMatchesVisibleSortingPrompt(question, searchRoot)
+            );
+          });
+    if (fallbackIndex === -1) return null;
 
     return {
-      data: questionsList[questionIndex],
-      element: findQuestionContainer(list, questionsList[questionIndex].type),
+      data: questionsList[fallbackIndex],
+      element: findQuestionContainer(list, questionsList[fallbackIndex].type),
     };
   }
 
@@ -840,7 +870,10 @@
   function findActiveQuestions() {
     const activeQuestionRange = getCurrentProgressQuestionRange();
     const searchRoot = findAutoAdvanceQuestionScope(activeQuestionRange);
-    const activeSortingPair = findActiveSortingPair(searchRoot);
+    const activeSortingPair = findActiveSortingPair(
+      searchRoot,
+      activeQuestionRange,
+    );
     if (activeSortingPair) return [activeSortingPair];
     if (
       getVisibleSortingLists(searchRoot).length > 0 ||
@@ -1251,6 +1284,7 @@
 
     try {
       console.log(`Running solver for ${matchedPairs.length} questions...`);
+      window.__ACADEMIC_EXPRESS_FAST_MODE__ = isFastMode;
 
       const isVocabularyTest = matchedPairs.some((p) => p.data.isAutoAdvance);
       const totalEstimatedSeconds = getEstimatedTime(
@@ -1320,14 +1354,15 @@
     isTransitioning = true;
 
     async function waitForTransitionSettle() {
-      await new Promise((r) =>
-        setTimeout(r, Math.max(getWaitTime("TRANSITION_WAIT"), 1600)),
-      );
+      const settleWait = isFastMode
+        ? Math.max(getWaitTime("TRANSITION_WAIT"), 250)
+        : Math.max(getWaitTime("TRANSITION_WAIT"), 1600);
+      await sleep(settleWait);
     }
 
     try {
       console.log("Attempting transition...");
-      await new Promise((r) => setTimeout(r, getWaitTime("TRANSITION_WAIT")));
+      await sleep(getWaitTime("TRANSITION_WAIT"));
 
       const nextBtn = document.getElementById("nextButton");
 

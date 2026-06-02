@@ -180,6 +180,7 @@ fixture から確認した例:
 
 - `sortingA` は parser 上では `sorting` として扱い、bracket 内の slash 区切りを左から順に `answers` 配列へ展開する。
 - Sorting solver は問題文中の `to` などを誤クリックしないよう、`sortStringList` 配下の `li` を中心に表示テキストの完全一致でクリックする。
+- `sortStringList` が描画途中、または候補テキストが正答トークン集合と一致しない場合でも、表示中の `SortingAQuestionBuilder__questionBox` と進捗番号から現在問を fallback 判定する。
 - 自動遷移の候補に「完了」を含め、Grammar Bank の単問確定を進める。
 
 fixture から確認した例:
