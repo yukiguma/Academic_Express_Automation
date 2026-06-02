@@ -544,23 +544,48 @@ async function solveDictation(answers) {
 // Solver: Sorting
 async function solveSorting(answers, scope) {
     console.log("Starting sorting solver...");
-    for (const token of answers) {
-        const cleanToken = token.trim();
-        let xpath = `//*[contains(@class, "Sorting") and contains(@class, "Word") and contains(text(), "${cleanToken}")]`;
-        let btn = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    const tokens = answers.flatMap(answer => {
+        return String(answer || "").split('/').map(token => token.trim()).filter(Boolean);
+    });
 
-        if (!btn) {
-            xpath = `//*[contains(@class, "Sorting")]//*[contains(text(), "${cleanToken}")]`;
-            btn = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    let clickedAny = false;
+    for (const token of tokens) {
+        const cleanToken = token.trim();
+        let btn = null;
+
+        for (let attempt = 0; attempt < 8 && !btn; attempt++) {
+            btn = findSortingToken(cleanToken, scope) || findSortingToken(cleanToken, document);
+            if (!btn) await sleep(100);
         }
 
         if (btn) {
             console.log(`Clicking sorting word: ${cleanToken}`);
             simulateClick(btn);
+            clickedAny = true;
+            await sleep(100);
         } else {
             console.warn(`Sorting button not found for token: "${cleanToken}"`);
         }
     }
+
+    const expectedAnswer = compactText(tokens.join(''));
+    const currentPageText = compactText(document.body?.innerText || document.body?.textContent || "");
+    return clickedAny && expectedAnswer && currentPageText.includes(expectedAnswer);
+}
+
+function findSortingToken(token, root) {
+    if (!root?.querySelectorAll) return null;
+    if (root !== document && root.isConnected === false) return null;
+    const normalizedToken = normalizeText(token);
+    const candidates = Array.from(root.querySelectorAll([
+        '[class*="sortStringList"] li',
+        '[class*="Sorting"] li',
+        '[class*="sortingWord"]',
+        '[class*="Sorting"][role="button"]',
+        '[class*="Sorting"] button'
+    ].join(', '))).filter(isVisible);
+
+    return candidates.find(candidate => normalizeText(candidate.textContent) === normalizedToken) || null;
 }
 
 // Solver: Scanning

@@ -582,6 +582,57 @@
         return best;
     }
 
+    function normalizeSortingToken(text) {
+        return String(text || "")
+            .replace(/[\u2018\u2019\u02bc]/g, "'")
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+    }
+
+    function sameSortingTokens(left, right) {
+        if (left.length !== right.length) return false;
+        const sortedLeft = left.map(normalizeSortingToken).sort();
+        const sortedRight = right.map(normalizeSortingToken).sort();
+        return sortedLeft.every((value, index) => value && value === sortedRight[index]);
+    }
+
+    function getVisibleSortingLists(searchRoot) {
+        return Array.from(searchRoot.querySelectorAll('[class*="sortStringList"]'))
+            .filter(isVisibleElement)
+            .filter(list => list.querySelectorAll('li').length > 0);
+    }
+
+    function hasVisibleSortingPrompt(searchRoot) {
+        const text = searchRoot?.innerText || searchRoot?.textContent || "";
+        return text.includes('並べ替え') ||
+            Array.from(searchRoot.querySelectorAll('[class*="SortingAQuestionBuilder__questionBox"]'))
+                .some(isVisibleElement);
+    }
+
+    function findActiveSortingPair(searchRoot) {
+        const lists = getVisibleSortingLists(searchRoot);
+        if (lists.length !== 1) return null;
+
+        const list = lists[0];
+        const visibleTokens = Array.from(list.querySelectorAll('li'))
+            .filter(isVisibleElement)
+            .map(li => li.textContent);
+        if (visibleTokens.length === 0) return null;
+
+        const questionIndex = questionsList.findIndex(question => {
+            return String(question.type || "").toLowerCase().includes('sort') &&
+                Array.isArray(question.answers) &&
+                sameSortingTokens(question.answers, visibleTokens);
+        });
+        if (questionIndex === -1) return null;
+
+        return {
+            data: questionsList[questionIndex],
+            element: findQuestionContainer(list, questionsList[questionIndex].type)
+        };
+    }
+
     function narrowAutoAdvancePairsToCurrentProgress(pairs, activeQuestionRange) {
         if (
             !activeQuestionRange ||
@@ -628,6 +679,10 @@
     function findActiveQuestions() {
         const activeQuestionRange = getCurrentProgressQuestionRange();
         const searchRoot = findAutoAdvanceQuestionScope(activeQuestionRange);
+        const activeSortingPair = findActiveSortingPair(searchRoot);
+        if (activeSortingPair) return [activeSortingPair];
+        if (getVisibleSortingLists(searchRoot).length > 0 || hasVisibleSortingPrompt(searchRoot)) return [];
+
         const textElements = searchRoot.querySelectorAll(getQuestionTextSelector());
         const visibleElements = Array.from(textElements).filter(el => {
             return isVisibleElement(el);
@@ -955,7 +1010,9 @@
             return;
         }
 
-        const isGradedPage = document.querySelector('[class*="ScoreView__scoreViewContainer"]');
+        const resultText = document.body?.innerText || "";
+        const isGradedPage = document.querySelector('[class*="ScoreView__scoreViewContainer"]') ||
+            ((resultText.includes('点') || resultText.includes('正解数')) && findTransitionButton(["終了"]));
         if (isGradedPage) {
             const speedCtrl = document.getElementById('speed-control');
             const solveBtn = document.getElementById('solve-btn');
@@ -1033,6 +1090,10 @@
         isSolving = true;
         isTransitioning = true;
 
+        async function waitForTransitionSettle() {
+            await new Promise(r => setTimeout(r, Math.max(getWaitTime('TRANSITION_WAIT'), 1600)));
+        }
+
         try {
             console.log("Attempting transition...");
             await new Promise(r => setTimeout(r, getWaitTime('TRANSITION_WAIT')));
@@ -1042,13 +1103,26 @@
             if (nextBtn && !nextBtn.disabled) {
                 console.log("Transition: Clicking Next Button.");
                 simulateClick(nextBtn);
+                await waitForTransitionSettle();
                 return;
             }
 
-            const button = findTransitionButton(["採点", "判定", "続ける", "終了"]);
+            const button = findTransitionButton(["採点", "判定", "続ける", "終了", "完了"]);
             if (button) {
-                console.log(`Transition: Clicking "${button.textContent.trim()}" Button.`);
+                const buttonText = button.textContent.trim();
+                console.log(`Transition: Clicking "${buttonText}" Button.`);
                 simulateClick(button);
+                await waitForTransitionSettle();
+                const resultText = document.body?.innerText || "";
+                const finishButton = !buttonText.includes("終了") && (resultText.includes('点') || resultText.includes('正解数'))
+                    ? findTransitionButton(["終了"])
+                    : null;
+                if (finishButton) {
+                    console.log(`Transition: Clicking "${finishButton.textContent.trim()}" Button.`);
+                    simulateClick(finishButton);
+                    await waitForTransitionSettle();
+                    isAutoMode = false;
+                }
                 return;
             }
 
@@ -1056,6 +1130,7 @@
             if (quitBtn) {
                 console.log("Transition: Clicking Finish/Quit Button.");
                 simulateClick(quitBtn);
+                await waitForTransitionSettle();
                 isAutoMode = false;
                 return;
             }
@@ -1064,6 +1139,7 @@
             if (link) {
                 console.log("Transition: Clicking .btn Link (Finish).");
                 link.click();
+                await waitForTransitionSettle();
                 isAutoMode = false;
                 return;
             }

@@ -36,9 +36,10 @@
 最初の CI では、`extension/parser.js` に分離したパース処理を、Chrome API 依存なしで Node.js から直接テストする。拡張機能の Service Worker である `extension/background.js` は同じ parser を `importScripts('parser.js')` で読み込む。
 
 - XML fixture のパース
-  - `authoring.xml`、`authoring2.xml`、`question_authoring.xml` を読み込む。
+  - `authoring.xml`、`authoring2.xml`、`question_authoring.xml`、Grammar Bank の `question_authoring.cfc` を読み込む。
   - 問題数、`displayOrder`、`questionNo`、`type`、`rawText`、`answers`、`signature` が期待どおりか確認する。
   - `<answer>2</answer>` のような番号参照が `<choice no="2">...</choice>` の表示テキストへ解決されることを確認する。
+  - Grammar Bank の `sortingA` は、bracket 内の slash 区切りがクリック順の `answers` 配列へ展開されることを確認する。
 - Vocabulary Bank / tango payload のパース
   - `tango_data_manipulate` 形式を汎用 JSON より先に判定できることを確認する。
   - `wd_type=1`、`wd_type=5`、`wd_type=2`、`wd_type=7` の出題方向と `isAutoAdvance` を確認する。
@@ -82,6 +83,7 @@ npm test
 - 画像やフォントなど、解答ロジックに不要な静的アセットは fixture に含めなくてよい。テスト用サーバーはそれらを 204 として扱える。
 - 音声アセットの読み込み失敗が画面進行を止める fixture では、テスト用サーバーが無音 WAV を返す。`materialSound.cfm` に加えて、Dictation の `sounds/typing/sprite.mp3` もこの扱いにする。
 - 解答結果の検証は、画面の見た目だけではなく、保存 API に送られる `question_no`、`answer`、`correct_flag`、`totalscore` を優先する。
+- Grammar Bank のように問題順がシャッフルされる E2E fixture は、保存順ではなく送信された `question_no` の集合と `correct_flag` を検証する。
 
 ## ドキュメント更新ルール
 

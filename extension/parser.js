@@ -157,6 +157,18 @@ var AcademicExpressParser = (function () {
         return answers;
     }
 
+    function splitSortingAnswerTokens(answers) {
+        const tokens = [];
+
+        answers.forEach(answer => {
+            unwrapText(answer).split('/').forEach(token => {
+                pushUnique(tokens, token);
+            });
+        });
+
+        return tokens.length > 0 ? tokens : answers;
+    }
+
     function inferType(type, questionContent) {
         const lowerType = String(type || "").toLowerCase();
         if (lowerType.includes('dictation') || lowerType.includes('dectation')) return 'dictation';
@@ -207,9 +219,12 @@ var AcademicExpressParser = (function () {
                 'en',
                 'eng'
             ]));
-            const answers = collectXMLAnswers(questionContent, questionText);
+            let answers = collectXMLAnswers(questionContent, questionText);
             if (isDictationQuestion(type, questionContent, questionText)) {
                 type = 'dictation';
+            }
+            if (String(type || "").toLowerCase().includes('sort')) {
+                answers = splitSortingAnswerTokens(answers);
             }
             const rawText = type === 'dictation' && answers.length > 0 ? answers[0] : questionText;
 

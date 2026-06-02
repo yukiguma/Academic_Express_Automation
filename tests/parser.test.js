@@ -125,6 +125,24 @@ test('parses shuffled question authoring XML by question text and exact answers'
     assert.deepEqual(apostropheExample.answers, ["girls'"]);
 });
 
+test('parses grammar bank sorting questions as ordered tokens', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('GrammarBank', 'question_authoring.cfc'));
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 23);
+    assert.deepEqual(
+        parsed.questions.reduce((counts, question) => {
+            counts[question.type] = (counts[question.type] || 0) + 1;
+            return counts;
+        }, {}),
+        { sorting: 15, multipleChoice: 8 }
+    );
+    assert.deepEqual(parsed.questions[0].answers, ["That's", 'all', 'for', 'today']);
+    assert.deepEqual(parsed.questions[3].answers, ['In', 'order', 'to apply', 'to', 'the', 'college']);
+    assert.deepEqual(parsed.questions[11].answers, ['drive', 'to', 'a', 'parking', 'lot first']);
+    assert.deepEqual(parsed.questions[20].answers, ['Jason', 'lost', 'his', 'first', 'wife']);
+});
+
 test('parses saved vocabulary bank payload as wd_type 5 questions', () => {
     const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabularyBank', 'tango_data_manipulate.cfc'));
 
