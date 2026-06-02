@@ -738,6 +738,32 @@
     );
   }
 
+  function getSortingAnswerTokens(question) {
+    return (Array.isArray(question?.answers) ? question.answers : []).flatMap(
+      (answer) =>
+        String(answer || "")
+          .split("/")
+          .map((token) => token.trim())
+          .filter(Boolean),
+    );
+  }
+
+  function hasClickableSortingAnswerTokens(question, visibleTokens) {
+    const availableCounts = new Map();
+    visibleTokens.map(normalizeSortingToken).forEach((token) => {
+      if (!token) return;
+      availableCounts.set(token, (availableCounts.get(token) || 0) + 1);
+    });
+
+    return getSortingAnswerTokens(question).every((answerToken) => {
+      const token = normalizeSortingToken(answerToken);
+      const count = availableCounts.get(token) || 0;
+      if (count <= 0) return false;
+      availableCounts.set(token, count - 1);
+      return true;
+    });
+  }
+
   function questionMatchesVisibleSortingPrompt(question, searchRoot) {
     const candidates = Array.from(
       searchRoot?.querySelectorAll(
@@ -802,7 +828,8 @@
                 .toLowerCase()
                 .includes("sort") &&
               questionMatchesActiveOrder(question, activeQuestionRange, true) &&
-              questionMatchesVisibleSortingPrompt(question, searchRoot)
+              questionMatchesVisibleSortingPrompt(question, searchRoot) &&
+              hasClickableSortingAnswerTokens(question, visibleTokens)
             );
           });
     if (fallbackIndex === -1) return null;

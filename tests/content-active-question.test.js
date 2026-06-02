@@ -135,7 +135,7 @@ test('content script solves only the visible auto-advance question in the active
     }
 });
 
-test('content script falls back to the visible sorting prompt when tokens cannot identify sortingA', { timeout: 20_000 }, async () => {
+test('content script waits for clickable sorting tokens before using the visible prompt fallback', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
             {
@@ -212,7 +212,25 @@ test('content script falls back to the visible sorting prompt when tokens cannot
         });
         await page.waitForSelector('#solve-btn', { timeout: 10_000 });
         await page.click('#solve-btn');
+        await page.waitForTimeout(200);
+        assert.deepEqual(await page.evaluate(() => window.__solvedQuestions), []);
 
+        await page.evaluate(() => {
+            document.querySelector('[class*="sortStringList"]').innerHTML = [
+                '<li>extra-token</li>',
+                '<li>college</li>',
+                '<li>to apply</li>',
+                '<li>order</li>',
+                '<li>the</li>',
+                '<li>In</li>',
+                '<li>to</li>'
+            ].join('');
+        });
+        await page.waitForFunction(() => {
+            const button = document.getElementById('solve-btn');
+            return button && button.textContent.includes('自動入力');
+        }, { timeout: 10_000 });
+        await page.click('#solve-btn');
         await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
         const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
         assert.deepEqual(solvedQuestions, ['sort-2']);
