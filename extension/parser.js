@@ -162,7 +162,10 @@ var AcademicExpressParser = (function () {
 
         answers.forEach(answer => {
             unwrapText(answer).split('/').forEach(token => {
-                pushUnique(tokens, token);
+                const cleaned = unwrapText(token);
+                if (cleaned) {
+                    tokens.push(cleaned);
+                }
             });
         });
 
