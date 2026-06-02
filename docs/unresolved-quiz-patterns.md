@@ -181,6 +181,7 @@ fixture から確認した例:
 - `sortingA` は parser 上では `sorting` として扱い、bracket 内の slash 区切りを左から順に `answers` 配列へ展開する。
 - Sorting solver は問題文中の `to` などを誤クリックしないよう、`sortStringList` 配下の `li` を中心に表示テキストの完全一致でクリックする。
 - `sortStringList` の候補テキストが正答トークン集合と一致しない場合でも、正答トークンがクリック可能になっていれば、表示中の `SortingAQuestionBuilder__questionBox` と進捗番号から現在問を fallback 判定する。描画途中の placeholder では解答を開始しない。
+- 単問表示の Grammar Bank では `multipleChoice` 選択直後に次問へ進むことがあるため、進捗が変わったら同じ solver 実行内の残り候補は解かず、次の検出サイクルに渡す。
 - 自動遷移の候補に「完了」を含め、Grammar Bank の単問確定を進める。
 
 fixture から確認した例:

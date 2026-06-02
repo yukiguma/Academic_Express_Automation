@@ -584,6 +584,24 @@
     );
   }
 
+  function isSingleQuestionProgress(activeQuestionRange) {
+    return (
+      activeQuestionRange !== null &&
+      activeQuestionRange.start === activeQuestionRange.end
+    );
+  }
+
+  function hasProgressAdvancedFrom(initialRange) {
+    if (!isSingleQuestionProgress(initialRange)) return false;
+    const currentRange = getCurrentProgressQuestionRange();
+    if (!currentRange) return true;
+    return (
+      currentRange.start !== initialRange.start ||
+      currentRange.end !== initialRange.end ||
+      currentRange.total !== initialRange.total
+    );
+  }
+
   function findQuestionIndexForElement(
     el,
     usedIndices,
@@ -1308,6 +1326,7 @@
   async function runSolver(matchedPairs, isNew) {
     if (isSolving) return;
     isSolving = true;
+    const initialProgressRange = getCurrentProgressQuestionRange();
 
     try {
       console.log(`Running solver for ${matchedPairs.length} questions...`);
@@ -1333,6 +1352,7 @@
       }
 
       let autoAdvance = false;
+      let progressedDuringSolve = false;
       for (let i = 0; i < matchedPairs.length; i++) {
         const pair = matchedPairs[i];
         if (pair.data.isAutoAdvance) autoAdvance = true;
@@ -1349,10 +1369,14 @@
         if (postSolveWait > 0) {
           await sleep(postSolveWait);
         }
+        if (hasProgressAdvancedFrom(initialProgressRange)) {
+          progressedDuringSolve = true;
+          break;
+        }
       }
 
       if (isAutoMode) {
-        if (autoAdvance) {
+        if (autoAdvance || progressedDuringSolve) {
           console.log(
             "Detecting auto-advance question, skipping manual transition click.",
           );
