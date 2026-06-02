@@ -76,10 +76,10 @@
       READING_MAX: 0,
       WORD_WAIT: 0,
       TRANSITION_WAIT: 100,
-      CLICK_WAIT: 0,
+      CLICK_WAIT: 50,
       OPTION_WAIT: 0,
-      SOLVE_INTERVAL: 25,
-      DEBOUNCE_WAIT: 30,
+      SOLVE_INTERVAL: 50,
+      DEBOUNCE_WAIT: 50,
       AUTO_ADVANCE_WAIT: 100,
     },
   };
@@ -196,13 +196,15 @@
       );
     }
 
-    // Solvers run nearly instantly, so answer count doesn't significantly add
-    // to duration. Auto-advance pages still need a small server-safe pace.
+    // Include a per-answer click pace. Auto-advance pages still need a small
+    // server-safe pace after solving.
+    const answerWait = config.CLICK_WAIT || 0;
     if (isVocabularyTest) {
       total +=
-        pairs.length * (config.AUTO_ADVANCE_WAIT || config.SOLVE_INTERVAL);
+        pairs.length *
+        (answerWait + (config.AUTO_ADVANCE_WAIT || config.SOLVE_INTERVAL));
     } else {
-      total += pairs.length * config.SOLVE_INTERVAL;
+      total += pairs.length * (answerWait + config.SOLVE_INTERVAL);
     }
 
     total += config.TRANSITION_WAIT;
@@ -1358,6 +1360,10 @@
         if (pair.data.isAutoAdvance) autoAdvance = true;
         if (pair.data.isAutoAdvance) {
           await waitForAutoAdvancePace();
+        }
+        const preSolveWait = getWaitTime("CLICK_WAIT");
+        if (preSolveWait > 0) {
+          await sleep(preSolveWait);
         }
         await solve(pair.data.answers, pair.data.type, pair.element, pair.data);
         if (pair.data.isAutoAdvance) {

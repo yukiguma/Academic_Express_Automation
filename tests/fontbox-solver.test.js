@@ -5,6 +5,34 @@ const { chromium } = require('@playwright/test');
 
 const extensionDir = path.join(__dirname, '..', 'extension');
 
+test('solver fast mode preserves explicit sorting waits', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main id="scope">
+                <ul class="SortingAQuestionBuilder__sortStringList___test">
+                    <li>alpha</li>
+                    <li>beta</li>
+                </ul>
+            </main>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const duration = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            const startedAt = performance.now();
+            await solve(['alpha', 'beta'], 'sorting', document.getElementById('scope'));
+            return performance.now() - startedAt;
+        });
+
+        assert.ok(duration >= 170, `Expected sorting waits to be preserved, got ${duration}ms`);
+    } finally {
+        await browser.close();
+    }
+});
+
 test('FontBox typing waits for each accepted key before sending the next', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();

@@ -135,6 +135,84 @@ test('content script solves only the visible auto-advance question in the active
     }
 });
 
+test('content script applies fast-mode click wait before solving', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['correct'],
+                displayOrder: 1,
+                questionNo: '1',
+                rawText: 'Choose the correct answer.',
+                signature: 'choosethecorrectanswer',
+                type: 'multipleChoice'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div></div></div>
+            <main>
+                <div>1 / 1</div>
+                <div class="QuestionBuilder__question___visible">
+                    Choose the correct answer.
+                </div>
+                <button>correct</button>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solveDelays = [];
+            window.solve = async (_answers, _type, _scope, _question) => {
+                window.__solveDelays.push(performance.now() - window.__solveClickStartedAt);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.evaluate(() => {
+            window.__solveClickStartedAt = performance.now();
+        });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solveDelays.length > 0, { timeout: 10_000 });
+        const [delay] = await page.evaluate(() => window.__solveDelays);
+        assert.ok(delay >= 40, `Expected fast click wait before solve, got ${delay}ms`);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 test('content script waits for clickable sorting tokens before using the visible prompt fallback', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
