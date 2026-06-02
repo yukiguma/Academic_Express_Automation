@@ -13,6 +13,8 @@
   let isSolving = false;
   let isTransitioning = false;
   let debounceTimer = null;
+  let autoSolveResumeTimer = null;
+  let nextAutoSolveAllowedAt = 0;
   let isAutoMode = false;
   let lastAutoAdvanceSolvedAt = 0;
 
@@ -123,6 +125,18 @@
     if (elapsed > 0 && elapsed < wait) {
       await sleep(wait - elapsed);
     }
+  }
+
+  function getAutoSolveResumeWait() {
+    return Math.max(getWaitTime("AUTO_ADVANCE_WAIT"), 500);
+  }
+
+  function scheduleAutoSolveResume(wait) {
+    if (autoSolveResumeTimer) clearTimeout(autoSolveResumeTimer);
+    autoSolveResumeTimer = setTimeout(() => {
+      autoSolveResumeTimer = null;
+      ensureSolveButton();
+    }, Math.max(0, wait));
   }
 
   function getCompositeRunKey(pairs) {
@@ -1268,6 +1282,12 @@
     };
 
     if (isAutoMode && isNewQuestion) {
+      const resumeWait = nextAutoSolveAllowedAt - Date.now();
+      if (resumeWait > 0) {
+        scheduleAutoSolveResume(resumeWait);
+        return;
+      }
+
       console.log("Auto-Mode: New questions detected. Triggering solver.");
       lastSolvedSignature = compositeSig;
       runSolver(activePairs, isNewQuestion);
@@ -1386,13 +1406,12 @@
           console.log(
             "Detecting auto-advance question, skipping manual transition click.",
           );
+          const resumeWait = getAutoSolveResumeWait();
+          nextAutoSolveAllowedAt = Date.now() + resumeWait;
           isSolving = false;
           resetHeaderProgress();
           setGlobalLock(false);
-          setTimeout(
-            ensureSolveButton,
-            Math.max(getWaitTime("AUTO_ADVANCE_WAIT"), 500),
-          );
+          scheduleAutoSolveResume(resumeWait);
           return;
         }
         await handleTransition();
