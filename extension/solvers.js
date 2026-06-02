@@ -34,7 +34,10 @@ function simulateType(element, value) {
 }
 
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    const wait = window.__ACADEMIC_EXPRESS_FAST_MODE__
+        ? Math.min(ms, 30)
+        : ms;
+    return new Promise(resolve => setTimeout(resolve, wait));
 }
 
 function normalizeText(text) {

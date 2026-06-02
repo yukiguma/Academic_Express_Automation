@@ -135,6 +135,111 @@ test('content script solves only the visible auto-advance question in the active
     }
 });
 
+test('content script waits for clickable sorting tokens before using the visible prompt fallback', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['That', 'is', 'old'],
+                displayOrder: 1,
+                questionNo: 'sort-1',
+                rawText: 'This is not visible. [That/is/old]',
+                signature: 'thisisnotvisiblethatisold',
+                type: 'sorting'
+            },
+            {
+                answers: ['In', 'order', 'to apply', 'to', 'the', 'college'],
+                displayOrder: 2,
+                questionNo: 'sort-2',
+                rawText: 'その大学に志願するには3通の推薦状が必要である。 [In/order/to apply/to/the/college], you will need three letters of recommendation.',
+                signature: 'その大学に志願するには3通の推薦状が必要であるinordertoapplytothecollegeyouwillneedthreelettersofrecommendation',
+                type: 'sorting'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div></div></div>
+            <main>
+                <div>2 / 2</div>
+                <div class="SortingAQuestionBuilder__questionBox___visible">
+                    <div class="QuestionBuilder__question___visible">
+                        その大学に志願するには3通の推薦状が必要である。 In order to apply to the college, you will need three letters of recommendation.
+                    </div>
+                    <ul class="SortingAQuestionBuilder__sortStringList___visible">
+                        <li>not-yet-ready</li>
+                    </ul>
+                </div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.questionNo);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+        await page.waitForTimeout(200);
+        assert.deepEqual(await page.evaluate(() => window.__solvedQuestions), []);
+
+        await page.evaluate(() => {
+            document.querySelector('[class*="sortStringList"]').innerHTML = [
+                '<li>extra-token</li>',
+                '<li>college</li>',
+                '<li>to apply</li>',
+                '<li>order</li>',
+                '<li>the</li>',
+                '<li>In</li>',
+                '<li>to</li>'
+            ].join('');
+        });
+        await page.waitForFunction(() => {
+            const button = document.getElementById('solve-btn');
+            return button && button.textContent.includes('自動入力');
+        }, { timeout: 10_000 });
+        await page.click('#solve-btn');
+        await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
+        const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
+        assert.deepEqual(solvedQuestions, ['sort-2']);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 test('content script scopes shuffled auto-advance typing to the current visible question box', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
