@@ -77,7 +77,7 @@
       READING_MIN: 0,
       READING_MAX: 0,
       WORD_WAIT: 0,
-      TRANSITION_WAIT: 100,
+      TRANSITION_WAIT: 50,
       CLICK_WAIT: 50,
       OPTION_WAIT: 0,
       SOLVE_INTERVAL: 50,
@@ -133,10 +133,13 @@
 
   function scheduleAutoSolveResume(wait) {
     if (autoSolveResumeTimer) clearTimeout(autoSolveResumeTimer);
-    autoSolveResumeTimer = setTimeout(() => {
-      autoSolveResumeTimer = null;
-      ensureSolveButton();
-    }, Math.max(0, wait));
+    autoSolveResumeTimer = setTimeout(
+      () => {
+        autoSolveResumeTimer = null;
+        ensureSolveButton();
+      },
+      Math.max(0, wait),
+    );
   }
 
   function getCompositeRunKey(pairs) {
@@ -815,26 +818,39 @@
     );
   }
 
-  function getVisibleSortingLists(searchRoot) {
-    return Array.from(searchRoot.querySelectorAll('[class*="sortStringList"]'))
+  function getVisibleSortingLists(searchRoot, activeQuestionRange = null) {
+    const lists = Array.from(
+      searchRoot.querySelectorAll('[class*="sortStringList"]'),
+    )
       .filter(isVisibleElement)
       .filter((list) => list.querySelectorAll("li").length > 0);
+    if (!isSingleQuestionProgress(activeQuestionRange)) return lists;
+    return lists.filter(isInViewport);
   }
 
-  function hasVisibleSortingPrompt(searchRoot) {
+  function hasVisibleSortingPrompt(searchRoot, activeQuestionRange = null) {
+    const candidates = Array.from(
+      searchRoot.querySelectorAll(
+        '[class*="SortingAQuestionBuilder__questionBox"]',
+      ),
+    ).filter(isVisibleElement);
+
+    if (isSingleQuestionProgress(activeQuestionRange)) {
+      return (
+        candidates.some(isInViewport) ||
+        getVisibleSortingLists(searchRoot, activeQuestionRange).length > 0
+      );
+    }
+
     const text = searchRoot?.innerText || searchRoot?.textContent || "";
     return (
       text.includes("並べ替え") ||
-      Array.from(
-        searchRoot.querySelectorAll(
-          '[class*="SortingAQuestionBuilder__questionBox"]',
-        ),
-      ).some(isVisibleElement)
+      candidates.length > 0
     );
   }
 
   function findActiveSortingPair(searchRoot, activeQuestionRange = null) {
-    const lists = getVisibleSortingLists(searchRoot);
+    const lists = getVisibleSortingLists(searchRoot, activeQuestionRange);
     if (lists.length !== 1) return null;
 
     const list = lists[0];
@@ -874,12 +890,11 @@
     };
   }
 
-  function narrowAutoAdvancePairsToCurrentProgress(pairs, activeQuestionRange) {
+  function narrowPairsToCurrentProgress(pairs, activeQuestionRange) {
     if (
       !activeQuestionRange ||
       activeQuestionRange.start !== activeQuestionRange.end ||
-      pairs.length <= 1 ||
-      !pairs.every((pair) => pair.data?.isAutoAdvance)
+      pairs.length <= 1
     ) {
       return pairs;
     }
@@ -904,9 +919,6 @@
     });
     if (promptMatchedPairs.length === 1) return promptMatchedPairs;
 
-    const hasShuffledQuestions = pairs.some(
-      (pair) => pair.data?.shuffleQuestions === true,
-    );
     const viewportPairs = pairs.filter((pair) => isInViewport(pair.element));
     if (viewportPairs.length === 1) return viewportPairs;
 
@@ -918,14 +930,24 @@
     if (currentNumberViewportPairs.length === 1)
       return currentNumberViewportPairs;
 
-    if (hasShuffledQuestions && activeQuestionRange.totalMatchesQuestionList) {
-      return [];
+    if (pairs.every((pair) => pair.data?.isAutoAdvance)) {
+      const hasShuffledQuestions = pairs.some(
+        (pair) => pair.data?.shuffleQuestions === true,
+      );
+      if (
+        hasShuffledQuestions &&
+        activeQuestionRange.totalMatchesQuestionList
+      ) {
+        return [];
+      }
+
+      const currentPair = pairs.find(
+        (pair) => Number(pair.data.displayOrder) === activeQuestionRange.start,
+      );
+      return currentPair ? [currentPair] : pairs;
     }
 
-    const currentPair = pairs.find(
-      (pair) => Number(pair.data.displayOrder) === activeQuestionRange.start,
-    );
-    return currentPair ? [currentPair] : pairs;
+    return [];
   }
 
   function findActiveQuestions() {
@@ -937,8 +959,8 @@
     );
     if (activeSortingPair) return [activeSortingPair];
     if (
-      getVisibleSortingLists(searchRoot).length > 0 ||
-      hasVisibleSortingPrompt(searchRoot)
+      getVisibleSortingLists(searchRoot, activeQuestionRange).length > 0 ||
+      hasVisibleSortingPrompt(searchRoot, activeQuestionRange)
     )
       return [];
 
@@ -1091,7 +1113,7 @@
       }
     }
 
-    return narrowAutoAdvancePairsToCurrentProgress(
+    return narrowPairsToCurrentProgress(
       matchedPairs,
       activeQuestionRange,
     );

@@ -101,9 +101,8 @@ test('GrammarBank sortingA fixture is auto-solved and submitted through completi
     assert.equal(writes.at(-1).saveType, '1');
 });
 
-test('GrammarBank full fixture does not carry stale matches into later questions', { timeout: 75_000 }, async () => {
-    const payload = fs.readFileSync(path.join(fixtureDir, 'question_authoring.cfc'), 'utf8')
-        .replace('shuffleQuestions="true"', 'shuffleQuestions="false"');
+test('GrammarBank full shuffled fixture does not carry stale matches into later questions', { timeout: 75_000 }, async () => {
+    const payload = fs.readFileSync(path.join(fixtureDir, 'question_authoring.cfc'), 'utf8');
     const questionData = parser.parseQuestionData(payload).parsed;
     const expectedQuestionNos = questionData.questions.map(question => question.questionNo).sort();
 

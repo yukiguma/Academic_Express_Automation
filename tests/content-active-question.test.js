@@ -213,6 +213,183 @@ test('content script applies fast-mode click wait before solving', { timeout: 20
     }
 });
 
+test('content script ignores offscreen stale normal question candidates', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['old'],
+                displayOrder: 2,
+                questionNo: 'old',
+                rawText: 'Old prompt.',
+                signature: 'oldprompt',
+                type: 'multipleChoice'
+            },
+            {
+                answers: ['current'],
+                displayOrder: 1,
+                questionNo: 'current',
+                rawText: 'Current prompt.',
+                signature: 'currentprompt',
+                type: 'multipleChoice'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div></div></div>
+            <main>
+                <div>1 / 2</div>
+                <section style="position:absolute; top:2000px; width:200px; height:40px;">
+                    <div class="QuestionBuilder__question___stale">Old prompt.</div>
+                    <button>old</button>
+                </section>
+                <section>
+                    <div class="QuestionBuilder__question___visible">Current prompt.</div>
+                    <button>current</button>
+                </section>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.questionNo);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
+        const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
+        assert.deepEqual(solvedQuestions, ['current']);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
+test('content script ignores offscreen stale sorting candidates', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['old', 'sort'],
+                displayOrder: 2,
+                questionNo: 'old-sort',
+                rawText: 'Old sorting prompt. [old/sort]',
+                signature: 'oldsortingpromptoldsort',
+                type: 'sorting'
+            },
+            {
+                answers: ['current'],
+                displayOrder: 1,
+                questionNo: 'current-choice',
+                rawText: 'Current prompt.',
+                signature: 'currentprompt',
+                type: 'multipleChoice'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div></div></div>
+            <main>
+                <div>1 / 2</div>
+                <section class="SortingAQuestionBuilder__questionBox___stale" style="position:absolute; top:2000px; width:200px; height:80px;">
+                    <div class="QuestionBuilder__question___stale">Old sorting prompt. old sort</div>
+                    <ul class="SortingAQuestionBuilder__sortStringList___stale">
+                        <li>old</li>
+                        <li>sort</li>
+                    </ul>
+                </section>
+                <section>
+                    <div class="QuestionBuilder__question___visible">Current prompt.</div>
+                    <button>current</button>
+                </section>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.questionNo);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
+        const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
+        assert.deepEqual(solvedQuestions, ['current-choice']);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 test('content script gates auto-mode resume after automatic progress changes', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
