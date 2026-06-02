@@ -143,6 +143,21 @@ test('parses grammar bank sorting questions as ordered tokens', () => {
     assert.deepEqual(parsed.questions[20].answers, ['Jason', 'lost', 'his', 'first', 'wife']);
 });
 
+test('preserves repeated grammar bank sorting tokens', () => {
+    const response = `
+        <questions>
+            <question no="duplicate-sort" type="sortingA">
+                <questionText>[had/had/enough/to/to]</questionText>
+            </question>
+        </questions>
+    `;
+    const { parsed, dataType } = parser.parseQuestionData(response);
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 1);
+    assert.deepEqual(parsed.questions[0].answers, ['had', 'had', 'enough', 'to', 'to']);
+});
+
 test('parses saved vocabulary bank payload as wd_type 5 questions', () => {
     const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('VocabularyBank', 'tango_data_manipulate.cfc'));
 
