@@ -84,7 +84,7 @@
       SOLVE_INTERVAL: 50,
       DEBOUNCE_WAIT: 50,
       AUTO_ADVANCE_WAIT: 100,
-      AUTO_SOLVE_RESUME_WAIT: 500,
+      AUTO_SOLVE_RESUME_WAIT: 50,
     },
   };
 
@@ -117,6 +117,26 @@
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function getNow() {
+    return typeof performance !== "undefined" && performance.now
+      ? performance.now()
+      : Date.now();
+  }
+
+  function requestProgressFrame(callback) {
+    return typeof requestAnimationFrame === "function"
+      ? requestAnimationFrame(callback)
+      : setTimeout(callback, 16);
+  }
+
+  function cancelProgressFrame(frameId) {
+    if (typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(frameId);
+    } else {
+      clearTimeout(frameId);
+    }
   }
 
   async function waitForAutoAdvancePace() {
@@ -191,7 +211,7 @@
   loadQuestionData();
 
   // Time Estimation Logic
-  function getEstimatedTime(pairs, isFast, forceNew = null) {
+  function getEstimatedDurationMs(pairs, isFast, forceNew = null, options = {}) {
     const mode = isFast ? "fastmode" : "slowmode";
     const config = SPEED_CONFIG[mode];
     let total = 0;
@@ -203,12 +223,16 @@
     // Skip reading time for vocabulary tests (isAutoAdvance) or fast mode
     const isVocabularyTest = pairs.some((p) => p.data.isAutoAdvance);
     if (!isFast && isNew && !isVocabularyTest) {
-      const totalText = pairs.map((p) => p.data.rawText || "").join(" ");
-      const words = totalText.trim().split(/\s+/).filter(Boolean).length;
-      total += Math.min(
-        Math.max(words * config.WORD_WAIT, config.READING_MIN),
-        config.READING_MAX,
-      );
+      if (Number.isFinite(options.readingWaitMs)) {
+        total += options.readingWaitMs;
+      } else {
+        const totalText = pairs.map((p) => p.data.rawText || "").join(" ");
+        const words = totalText.trim().split(/\s+/).filter(Boolean).length;
+        total += Math.min(
+          Math.max(words * config.WORD_WAIT, config.READING_MIN),
+          config.READING_MAX,
+        );
+      }
     }
 
     // Include a per-answer click pace. Auto-advance pages still need a small
@@ -223,7 +247,11 @@
     }
 
     total += config.TRANSITION_WAIT;
-    return Math.ceil(total / 1000);
+    return total;
+  }
+
+  function getEstimatedTime(pairs, isFast, forceNew = null) {
+    return Math.ceil(getEstimatedDurationMs(pairs, isFast, forceNew) / 1000);
   }
 
   // Header Progress Bar Logic
@@ -245,27 +273,75 @@
     target.style.setProperty("background-image", gradient);
   }
 
-  let progressInterval = null;
-  function startHeaderAnimation(seconds) {
-    clearInterval(progressInterval);
-    const startTime = Date.now();
-    const duration = seconds * 1000;
+  const HEADER_PROGRESS_MIN_DURATION = {
+    slowmode: 900,
+    fastmode: 700,
+  };
+
+  let progressAnimationFrame = null;
+  let progressAnimation = null;
+
+  function stopHeaderAnimation() {
+    if (progressAnimationFrame) {
+      cancelProgressFrame(progressAnimationFrame);
+      progressAnimationFrame = null;
+    }
+    progressAnimation = null;
+  }
+
+  function startHeaderAnimation(durationMs) {
+    stopHeaderAnimation();
+    const mode = isFastMode ? "fastmode" : "slowmode";
+    const duration = Math.max(
+      Number(durationMs) || 0,
+      HEADER_PROGRESS_MIN_DURATION[mode],
+    );
+    const startTime = getNow();
+
+    progressAnimation = {
+      startTime,
+      duration,
+      minimumDuration: HEADER_PROGRESS_MIN_DURATION[mode],
+    };
 
     setHeaderProgress(0);
 
-    progressInterval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min((elapsed / duration) * 100, 100);
+    const step = () => {
+      if (!progressAnimation) return;
+
+      const elapsed = getNow() - progressAnimation.startTime;
+      const progress = Math.min(
+        (elapsed / progressAnimation.duration) * 100,
+        100,
+      );
       setHeaderProgress(progress);
 
       if (progress >= 100) {
-        clearInterval(progressInterval);
+        stopHeaderAnimation();
+        return;
       }
-    }, 100);
+
+      progressAnimationFrame = requestProgressFrame(step);
+    };
+
+    progressAnimationFrame = requestProgressFrame(step);
+  }
+
+  async function finishHeaderAnimation() {
+    if (!progressAnimation) return;
+
+    const remainingMinimum =
+      progressAnimation.minimumDuration -
+      (getNow() - progressAnimation.startTime);
+    if (remainingMinimum > 0) {
+      await sleep(remainingMinimum);
+    }
+
+    setHeaderProgress(100);
   }
 
   function resetHeaderProgress() {
-    clearInterval(progressInterval);
+    stopHeaderAnimation();
     setHeaderProgress(0);
   }
 
@@ -403,9 +479,8 @@
   }
 
   function getQuestionMediaSignatures(question) {
-    return (Array.isArray(question?.mediaSignatures)
-      ? question.mediaSignatures
-      : []
+    return (
+      Array.isArray(question?.mediaSignatures) ? question.mediaSignatures : []
     )
       .map(normalizeMediaSignature)
       .filter(Boolean)
@@ -444,7 +519,9 @@
     entries
       .filter((entry) => {
         const name = String(entry?.name || "");
-        return /material(?:Sound|Image)\.cfm/i.test(name) || /[?&]id=/i.test(name);
+        return (
+          /material(?:Sound|Image)\.cfm/i.test(name) || /[?&]id=/i.test(name)
+        );
       })
       .sort((a, b) => {
         const bTime = b.responseEnd || b.startTime || 0;
@@ -1483,22 +1560,26 @@
       window.__ACADEMIC_EXPRESS_FAST_MODE__ = isFastMode;
 
       const isVocabularyTest = matchedPairs.some((p) => p.data.isAutoAdvance);
-      const totalEstimatedSeconds = getEstimatedTime(
-        matchedPairs,
-        isFastMode,
-        isNew,
-      );
-      startHeaderAnimation(totalEstimatedSeconds);
-      setGlobalLock(true);
-
-      // Skip reading delay for vocabulary tests
+      let readingWait = 0;
       if (!isFastMode && isNew && !isVocabularyTest) {
         const totalText = matchedPairs
           .map((p) => p.data.rawText || "")
           .join(" ");
-        const wait = getWaitTime("READING_WAIT", totalText);
-        console.log(`Initial reading delay: ${wait}ms`);
-        await new Promise((r) => setTimeout(r, wait));
+        readingWait = getWaitTime("READING_WAIT", totalText);
+      }
+      const totalEstimatedMs = getEstimatedDurationMs(
+        matchedPairs,
+        isFastMode,
+        isNew,
+        { readingWaitMs: readingWait },
+      );
+      startHeaderAnimation(totalEstimatedMs);
+      setGlobalLock(true);
+
+      // Skip reading delay for vocabulary tests
+      if (readingWait > 0) {
+        console.log(`Initial reading delay: ${readingWait}ms`);
+        await sleep(readingWait);
       }
 
       let autoAdvance = false;
@@ -1537,8 +1618,6 @@
           const resumeWait = getWaitTime("AUTO_SOLVE_RESUME_WAIT");
           nextAutoSolveAllowedAt = Date.now() + resumeWait;
           isSolving = false;
-          resetHeaderProgress();
-          setGlobalLock(false);
           scheduleAutoSolveResume(resumeWait);
           return;
         }
@@ -1547,6 +1626,7 @@
     } finally {
       isSolving = false;
       setGlobalLock(false);
+      await finishHeaderAnimation();
       resetHeaderProgress();
       updateUIStates();
     }
