@@ -178,6 +178,11 @@ test('Dictation solver sends only input letters and apostrophes', { timeout: 20_
 
     try {
         await page.setContent(`
+            <main>
+                <div class="QuestionArea__dictationArea___test">
+                    D o n ' t   b e   l a z y .   W h a t ' s   t h e   m a t t e r   w i t h   y o u ?
+                </div>
+            </main>
             <script>
                 window.keypresses = [];
                 document.addEventListener('keypress', event => {
@@ -194,6 +199,51 @@ test('Dictation solver sends only input letters and apostrophes', { timeout: 20_
         });
 
         assert.equal(keys, "Don'tbelazyWhat'sthematterwithyou");
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver waits for the current question text before typing', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div id="dictation-question" class="QuestionArea__dictationArea___test">
+                    O l d   q u e s t i o n .
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                window.firstKeyAt = null;
+                window.questionReadyAt = null;
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    window.firstKeyAt = window.firstKeyAt || performance.now();
+                });
+                setTimeout(() => {
+                    document.getElementById('dictation-question').textContent =
+                        'T h i s   t e a   i s   t o o   h o t   f o r   m e   t o   d r i n k .';
+                    window.questionReadyAt = performance.now();
+                }, 250);
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const result = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            await solve(['This tea is too hot for me to drink.'], 'dictation', document);
+            return {
+                firstKeyAt: window.firstKeyAt,
+                keypresses: window.keypresses.join(''),
+                questionReadyAt: window.questionReadyAt
+            };
+        });
+
+        assert.equal(result.keypresses, 'Thisteaistoohotformetodrink');
+        assert.ok(result.firstKeyAt >= result.questionReadyAt);
     } finally {
         await browser.close();
     }

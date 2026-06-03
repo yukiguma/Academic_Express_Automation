@@ -615,6 +615,7 @@ async function solveDictation(answers) {
     await dismissDictationStartModal();
 
     const chars = dictationInputChars(answer);
+    await waitForDictationQuestionReady(chars);
     console.log(`Dictation Strategy: Typing ${chars.length} characters.`);
     for (const char of chars) {
         dispatchKeyboardChar(char, document);
@@ -628,6 +629,22 @@ async function solveDictation(answers) {
 function dictationInputChars(answer) {
     return Array.from(String(answer || "").replace(/\u2019/g, "'"))
         .filter(char => /[\p{L}\p{N}']/u.test(char));
+}
+
+async function waitForDictationQuestionReady(expectedChars) {
+    const expected = expectedChars.join('').toLowerCase();
+    if (!expected) return true;
+
+    const ready = await waitUntil(() => {
+        const visibleText = document.body?.innerText || document.body?.textContent || "";
+        const visibleChars = dictationInputChars(visibleText).join('').toLowerCase();
+        return visibleChars.includes(expected);
+    }, 800, 50);
+
+    if (!ready) {
+        console.warn("Dictation Strategy: Question text was not visible before typing.");
+    }
+    return ready;
 }
 
 // Solver: Sorting

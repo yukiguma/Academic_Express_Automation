@@ -789,6 +789,26 @@
     return false;
   }
 
+  function isDictationPair(pair) {
+    return String(pair?.data?.type || "").toLowerCase().includes("dictation");
+  }
+
+  function getAutoSolveResumeWait(pairs) {
+    const baseWait = getWaitTime("AUTO_SOLVE_RESUME_WAIT");
+    if (pairs.some(isDictationPair)) {
+      return Math.max(baseWait, 1500);
+    }
+    return baseWait;
+  }
+
+  function getPreSolveWait(pair) {
+    const baseWait = getWaitTime("CLICK_WAIT");
+    if (isDictationPair(pair)) {
+      return Math.max(baseWait, 800);
+    }
+    return baseWait;
+  }
+
   function hasProgressAdvancedFrom(initialRange) {
     if (!isSingleQuestionProgress(initialRange)) return false;
     const currentRange = getCurrentProgressQuestionRange();
@@ -1655,7 +1675,7 @@
         if (pairAutoAdvances) {
           await waitForAutoAdvancePace();
         }
-        const preSolveWait = getWaitTime("CLICK_WAIT");
+        const preSolveWait = getPreSolveWait(pair);
         if (preSolveWait > 0) {
           await sleep(preSolveWait);
         }
@@ -1688,7 +1708,7 @@
           console.log(
             "Detecting auto-advance question, skipping manual transition click.",
           );
-          const resumeWait = getWaitTime("AUTO_SOLVE_RESUME_WAIT");
+          const resumeWait = getAutoSolveResumeWait(matchedPairs);
           nextAutoSolveAllowedAt = Date.now() + resumeWait;
           isSolving = false;
           scheduleAutoSolveResume(resumeWait);
