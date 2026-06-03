@@ -1324,3 +1324,140 @@ test('content script matches shuffled spelling sentence typing by Japanese promp
         await new Promise(resolve => server.close(resolve));
     }
 });
+
+test('content script keeps selected question hub links visually marked', { timeout: 20_000 }, async () => {
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <main>
+                <div class="unit-box">
+                    <div class="unit-title"><span class="unit-title-char">リスタン</span></div>
+                    <a class="btn" href="/as/lplayer/index.cfm?uno=1">Q1.学習する</a>
+                </div>
+                <div class="unit-box">
+                    <div class="unit-title"><span class="unit-title-char">Review</span></div>
+                    <a class="btn" href="/as/lplayer/index.cfm?uno=2">学習する</a>
+                </div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(() => {
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage() {
+                        return Promise.resolve({});
+                    }
+                }
+            };
+        });
+
+        await page.goto(`http://127.0.0.1:${port}/student/cw/unit/1322`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+
+        await page.waitForSelector('#question-hub-control', { timeout: 10_000 });
+        await page.click('#question-hub-mode-btn');
+        await page.getByText('Q1.学習する').click();
+
+        const selected = await page.evaluate(() => ({
+            stored: JSON.parse(localStorage.getItem('question-hub-selected-links')),
+            marked: document.querySelectorAll('.ae-question-hub-selected').length,
+            status: document.getElementById('question-hub-status').textContent
+        }));
+        assert.equal(selected.stored.length, 1);
+        assert.equal(selected.marked, 1);
+        assert.equal(selected.status, '選択 1件');
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
+test('content script runs selected question hub links in saved order', { timeout: 20_000 }, async () => {
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <main>
+                <div class="unit-box">
+                    <div class="unit-title"><span class="unit-title-char">First</span></div>
+                    <a class="btn" href="/as/lplayer/index.cfm?uno=1">Q1.学習する</a>
+                </div>
+                <div class="unit-box">
+                    <div class="unit-title"><span class="unit-title-char">Second</span></div>
+                    <a class="btn" href="/as/lplayer/index.cfm?uno=2">Q2.学習する</a>
+                </div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    const hubUrl = `http://127.0.0.1:${port}/student/cw/unit/1322`;
+
+    try {
+        await page.addInitScript(() => {
+            document.addEventListener('click', event => {
+                const link = event.target.closest?.('a[href*="/as/lplayer/index.cfm"]');
+                if (!link) return;
+                event.preventDefault();
+                const launches = JSON.parse(localStorage.getItem('question-hub-test-launches') || '[]');
+                launches.push(link.href);
+                localStorage.setItem('question-hub-test-launches', JSON.stringify(launches));
+            });
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage() {
+                        return Promise.resolve({});
+                    }
+                }
+            };
+        });
+
+        await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
+        await page.evaluate(() => {
+            localStorage.setItem(
+                'question-hub-selected-links',
+                JSON.stringify([
+                    `${location.origin}/as/lplayer/index.cfm?uno=1`,
+                    `${location.origin}/as/lplayer/index.cfm?uno=2`
+                ])
+            );
+        });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.waitForSelector('#question-hub-control', { timeout: 10_000 });
+        await page.click('#question-hub-run-btn');
+        await page.waitForFunction(() => JSON.parse(localStorage.getItem('question-hub-test-launches') || '[]').length === 1, { timeout: 10_000 });
+
+        await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.waitForFunction(() => JSON.parse(localStorage.getItem('question-hub-test-launches') || '[]').length === 2, { timeout: 10_000 });
+
+        const launches = await page.evaluate(() => {
+            return JSON.parse(localStorage.getItem('question-hub-test-launches')).map(url => new URL(url).search);
+        });
+        assert.deepEqual(launches, ['?uno=1', '?uno=2']);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});

@@ -17,6 +17,12 @@
   let nextAutoSolveAllowedAt = 0;
   let isAutoMode = false;
   let lastAutoAdvanceSolvedAt = 0;
+  const QUESTION_HUB_SELECTION_MODE_KEY = "question-hub-selection-mode";
+  const QUESTION_HUB_SELECTED_KEY = "question-hub-selected-links";
+  const QUESTION_HUB_RUN_STATE_KEY = "question-hub-run-state";
+  let isQuestionHubSelectionMode =
+    localStorage.getItem(QUESTION_HUB_SELECTION_MODE_KEY) === "true";
+  let isQuestionHubLaunching = false;
 
   function isQuizPlayerPage() {
     return window.location.pathname.includes("/as/lplayer/");
@@ -24,6 +30,10 @@
 
   function isStudentPage() {
     return window.location.pathname.includes("/student/");
+  }
+
+  function isQuestionHubPage() {
+    return isStudentPage() && getQuestionHubLinks().length > 0;
   }
 
   function clearAutoModeStorage() {
@@ -377,6 +387,251 @@
       container.style.position = "relative";
       container.style.zIndex = active ? "100001" : "";
     }
+  }
+
+  function parseJsonStorage(key, fallback) {
+    try {
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function getQuestionHubLinks() {
+    return Array.from(
+      document.querySelectorAll('a[href*="/as/lplayer/index.cfm"]'),
+    ).filter((link) => {
+      const href = link.href || "";
+      return href && !href.startsWith("javascript:") && isVisibleElement(link);
+    });
+  }
+
+  function getQuestionHubSelectedHrefs() {
+    const selected = parseJsonStorage(QUESTION_HUB_SELECTED_KEY, []);
+    return Array.isArray(selected) ? selected.filter(Boolean) : [];
+  }
+
+  function setQuestionHubSelectedHrefs(hrefs) {
+    const uniqueHrefs = Array.from(new Set(hrefs.filter(Boolean)));
+    localStorage.setItem(
+      QUESTION_HUB_SELECTED_KEY,
+      JSON.stringify(uniqueHrefs),
+    );
+    return uniqueHrefs;
+  }
+
+  function getQuestionHubRunState() {
+    const state = parseJsonStorage(QUESTION_HUB_RUN_STATE_KEY, null);
+    if (!state || !Array.isArray(state.queue)) return null;
+    return {
+      active: state.active === true,
+      queue: state.queue.filter(Boolean),
+      index: Math.max(0, Number(state.index) || 0),
+      hubUrl: state.hubUrl || "",
+    };
+  }
+
+  function setQuestionHubRunState(state) {
+    if (!state || !state.active) {
+      localStorage.removeItem(QUESTION_HUB_RUN_STATE_KEY);
+      return;
+    }
+    localStorage.setItem(QUESTION_HUB_RUN_STATE_KEY, JSON.stringify(state));
+  }
+
+  function getQuestionHubLinkLabel(link) {
+    const text = (link.textContent || "").replace(/\s+/g, " ").trim();
+    const unitTitle = link
+      .closest(".unit-box")
+      ?.querySelector(".unit-title-char")
+      ?.textContent?.replace(/\s+/g, " ")
+      .trim();
+    return [unitTitle, text].filter(Boolean).join(" / ") || link.href;
+  }
+
+  function clickQuestionHubLink(link) {
+    if (typeof simulateClick === "function") {
+      simulateClick(link);
+    } else {
+      link.click();
+    }
+  }
+
+  function updateQuestionHubLinkStates() {
+    const selected = new Set(getQuestionHubSelectedHrefs());
+    getQuestionHubLinks().forEach((link) => {
+      const isSelected = selected.has(link.href);
+      link.classList.toggle("ae-question-hub-selected", isSelected);
+      link.setAttribute("data-ae-question-hub-bound", "true");
+      if (isSelected) {
+        link.setAttribute("aria-pressed", "true");
+        link.title = "選択済み: " + getQuestionHubLinkLabel(link);
+      } else {
+        link.removeAttribute("aria-pressed");
+        link.removeAttribute("title");
+      }
+    });
+  }
+
+  function launchNextQuestionHubItem() {
+    if (isQuestionHubLaunching) return true;
+
+    const state = getQuestionHubRunState();
+    if (!state?.active) return false;
+
+    if (state.index >= state.queue.length) {
+      setQuestionHubRunState(null);
+      updateQuestionHubPanel();
+      updateQuestionHubLinkStates();
+      return false;
+    }
+
+    const href = state.queue[state.index];
+    const link = getQuestionHubLinks().find((candidate) => candidate.href === href);
+    if (!link) {
+      state.index += 1;
+      setQuestionHubRunState(state);
+      return launchNextQuestionHubItem();
+    }
+
+    state.index += 1;
+    setQuestionHubRunState(state);
+    isQuestionHubLaunching = true;
+    setTimeout(() => {
+      console.log("QuestionHub: launching selected question set.", href);
+      clickQuestionHubLink(link);
+    }, getWaitTime("TRANSITION_WAIT"));
+    return true;
+  }
+
+  function toggleQuestionHubSelection(link) {
+    const selected = getQuestionHubSelectedHrefs();
+    const index = selected.indexOf(link.href);
+    if (index === -1) {
+      selected.push(link.href);
+    } else {
+      selected.splice(index, 1);
+    }
+    setQuestionHubSelectedHrefs(selected);
+    updateQuestionHubPanel();
+    updateQuestionHubLinkStates();
+  }
+
+  function bindQuestionHubLinks() {
+    getQuestionHubLinks().forEach((link) => {
+      if (link.dataset.aeQuestionHubClickBound === "true") return;
+      link.dataset.aeQuestionHubClickBound = "true";
+      link.addEventListener(
+        "click",
+        (event) => {
+          if (!isQuestionHubSelectionMode) return;
+          event.preventDefault();
+          event.stopPropagation();
+          toggleQuestionHubSelection(link);
+        },
+        true,
+      );
+    });
+  }
+
+  function updateQuestionHubPanel() {
+    const panel = document.getElementById("question-hub-control");
+    if (!panel) return;
+
+    const selected = getQuestionHubSelectedHrefs();
+    const runState = getQuestionHubRunState();
+    const modeBtn = panel.querySelector("#question-hub-mode-btn");
+    const runBtn = panel.querySelector("#question-hub-run-btn");
+    const clearBtn = panel.querySelector("#question-hub-clear-btn");
+    const status = panel.querySelector("#question-hub-status");
+
+    if (modeBtn) {
+      modeBtn.textContent = isQuestionHubSelectionMode
+        ? "選択モード中"
+        : "問題選択モード";
+      modeBtn.classList.toggle(
+        "ae-question-hub-primary",
+        isQuestionHubSelectionMode,
+      );
+    }
+    if (runBtn) {
+      runBtn.disabled = selected.length === 0 || runState?.active;
+    }
+    if (clearBtn) {
+      clearBtn.disabled = selected.length === 0 || runState?.active;
+    }
+    if (status) {
+      status.textContent = runState?.active
+        ? `実行中 ${Math.min(runState.index, runState.queue.length)} / ${
+            runState.queue.length
+          }`
+        : `選択 ${selected.length}件`;
+    }
+  }
+
+  function createQuestionHubPanel() {
+    if (document.getElementById("question-hub-control")) return;
+    injectStyles();
+
+    const panel = document.createElement("div");
+    panel.id = "question-hub-control";
+    panel.innerHTML = `
+      <button type="button" id="question-hub-mode-btn"></button>
+      <button type="button" id="question-hub-run-btn">実行</button>
+      <button type="button" id="question-hub-clear-btn">クリア</button>
+      <span id="question-hub-status"></span>
+    `;
+    document.body.appendChild(panel);
+
+    panel
+      .querySelector("#question-hub-mode-btn")
+      .addEventListener("click", () => {
+        isQuestionHubSelectionMode = !isQuestionHubSelectionMode;
+        localStorage.setItem(
+          QUESTION_HUB_SELECTION_MODE_KEY,
+          String(isQuestionHubSelectionMode),
+        );
+        updateQuestionHubPanel();
+      });
+
+    panel.querySelector("#question-hub-run-btn").addEventListener("click", () => {
+      const queue = getQuestionHubSelectedHrefs();
+      if (queue.length === 0) return;
+      isQuestionHubSelectionMode = false;
+      localStorage.setItem(QUESTION_HUB_SELECTION_MODE_KEY, "false");
+      setQuestionHubRunState({
+        active: true,
+        queue,
+        index: 0,
+        hubUrl: window.location.href,
+      });
+      updateQuestionHubPanel();
+      launchNextQuestionHubItem();
+    });
+
+    panel
+      .querySelector("#question-hub-clear-btn")
+      .addEventListener("click", () => {
+        setQuestionHubSelectedHrefs([]);
+        updateQuestionHubPanel();
+        updateQuestionHubLinkStates();
+      });
+  }
+
+  function ensureQuestionHubControls() {
+    if (!isQuestionHubPage()) return false;
+    clearAutoModeStorage();
+    bindQuestionHubLinks();
+    createQuestionHubPanel();
+    updateQuestionHubPanel();
+    updateQuestionHubLinkStates();
+
+    const runState = getQuestionHubRunState();
+    if (runState?.active && !isQuestionHubSelectionMode) {
+      launchNextQuestionHubItem();
+    }
+    return true;
   }
 
   // Robust Observer Callback with Debounce
@@ -1382,6 +1637,73 @@
             .segment:hover:not(.active) {
                 background-color: #e8e8e8;
             }
+            #question-hub-control {
+                position: fixed;
+                right: 16px;
+                bottom: 16px;
+                z-index: 100003;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 12px;
+                background: #fff;
+                border: 1px solid #d8d8d8;
+                border-radius: 6px;
+                box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+                font-family: inherit;
+            }
+            #question-hub-control button {
+                height: 32px;
+                padding: 0 12px;
+                border: 1px solid #c9c9c9;
+                border-radius: 4px;
+                background: #f7f7f7;
+                color: #333;
+                font-size: 12px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+            #question-hub-control button:hover:not(:disabled) {
+                background: #eee;
+            }
+            #question-hub-control button:disabled {
+                cursor: default;
+                opacity: 0.55;
+            }
+            #question-hub-control .ae-question-hub-primary,
+            #question-hub-run-btn:not(:disabled) {
+                background: #ff0000;
+                border-color: #ff0000;
+                color: #fff;
+            }
+            #question-hub-status {
+                min-width: 64px;
+                color: #555;
+                font-size: 12px;
+                font-weight: bold;
+                white-space: nowrap;
+            }
+            a.ae-question-hub-selected {
+                position: relative;
+                outline: 3px solid #ff0000 !important;
+                outline-offset: 2px;
+                background-color: #fff2f2 !important;
+                box-shadow: 0 0 0 4px rgba(255,0,0,0.12) !important;
+            }
+            a.ae-question-hub-selected::after {
+                content: "選択済み";
+                position: absolute;
+                right: 4px;
+                top: -18px;
+                padding: 2px 6px;
+                border-radius: 3px;
+                background: #ff0000;
+                color: #fff;
+                font-size: 10px;
+                line-height: 1.2;
+                white-space: nowrap;
+                pointer-events: none;
+            }
         `;
     document.head.appendChild(style);
   }
@@ -1560,6 +1882,8 @@
   }
 
   function ensureSolveButton() {
+    if (ensureQuestionHubControls()) return;
+
     const finishLink = document.querySelector("a.btn");
     if (finishLink) {
       const speedCtrl = document.getElementById("speed-control");
@@ -1832,4 +2156,6 @@
       return keywords.some((keyword) => text.includes(keyword));
     });
   }
+
+  setTimeout(() => ensureSolveButton(), 0);
 })();
