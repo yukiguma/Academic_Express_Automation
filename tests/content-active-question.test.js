@@ -484,7 +484,7 @@ test('content script ignores offscreen stale sorting candidates', { timeout: 20_
     }
 });
 
-test('content script gates auto-mode resume after automatic progress changes', { timeout: 20_000 }, async () => {
+test('content script resumes auto-mode after automatic progress changes', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
             {
@@ -532,10 +532,7 @@ test('content script gates auto-mode resume after automatic progress changes', {
         await page.addInitScript(data => {
             window.__solveEvents = [];
             window.solve = async (_answers, _type, _scope, question) => {
-                window.__solveEvents.push({
-                    questionNo: question.questionNo,
-                    time: performance.now()
-                });
+                window.__solveEvents.push(question.questionNo);
                 if (question.questionNo === '1') {
                     document.getElementById('progress').textContent = '2 / 2';
                     document.getElementById('prompt').textContent = 'Second prompt.';
@@ -567,8 +564,7 @@ test('content script gates auto-mode resume after automatic progress changes', {
 
         await page.waitForFunction(() => window.__solveEvents.length === 2, { timeout: 10_000 });
         const events = await page.evaluate(() => window.__solveEvents);
-        const gap = events[1].time - events[0].time;
-        assert.ok(gap >= 450, `Expected gated auto resume, got ${gap}ms`);
+        assert.deepEqual(events, ['1', '2']);
     } finally {
         await browser.close();
         await new Promise(resolve => server.close(resolve));

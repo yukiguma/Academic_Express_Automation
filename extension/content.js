@@ -72,6 +72,7 @@
       SOLVE_INTERVAL: 2000,
       DEBOUNCE_WAIT: 300,
       AUTO_ADVANCE_WAIT: 1000,
+      AUTO_SOLVE_RESUME_WAIT: 1000,
     },
     fastmode: {
       READING_MIN: 0,
@@ -83,6 +84,7 @@
       SOLVE_INTERVAL: 50,
       DEBOUNCE_WAIT: 50,
       AUTO_ADVANCE_WAIT: 100,
+      AUTO_SOLVE_RESUME_WAIT: 500,
     },
   };
 
@@ -125,10 +127,6 @@
     if (elapsed > 0 && elapsed < wait) {
       await sleep(wait - elapsed);
     }
-  }
-
-  function getAutoSolveResumeWait() {
-    return Math.max(getWaitTime("AUTO_ADVANCE_WAIT"), 500);
   }
 
   function scheduleAutoSolveResume(wait) {
@@ -845,10 +843,7 @@
     }
 
     const text = searchRoot?.innerText || searchRoot?.textContent || "";
-    return (
-      text.includes("並べ替え") ||
-      candidates.length > 0
-    );
+    return text.includes("並べ替え") || candidates.length > 0;
   }
 
   function findActiveSortingPair(searchRoot, activeQuestionRange = null) {
@@ -1115,10 +1110,7 @@
       }
     }
 
-    return narrowPairsToCurrentProgress(
-      matchedPairs,
-      activeQuestionRange,
-    );
+    return narrowPairsToCurrentProgress(matchedPairs, activeQuestionRange);
   }
 
   function injectStyles() {
@@ -1430,7 +1422,7 @@
           console.log(
             "Detecting auto-advance question, skipping manual transition click.",
           );
-          const resumeWait = getAutoSolveResumeWait();
+          const resumeWait = getWaitTime("AUTO_SOLVE_RESUME_WAIT");
           nextAutoSolveAllowedAt = Date.now() + resumeWait;
           isSolving = false;
           resetHeaderProgress();
@@ -1454,9 +1446,7 @@
     isTransitioning = true;
 
     async function waitForTransitionSettle() {
-      const settleWait = isFastMode
-        ? Math.max(getWaitTime("TRANSITION_WAIT"), 250)
-        : Math.max(getWaitTime("TRANSITION_WAIT"), 1600);
+      const settleWait = getWaitTime("TRANSITION_WAIT");
       await sleep(settleWait);
     }
 
