@@ -73,6 +73,8 @@
       DEBOUNCE_WAIT: 300,
       AUTO_ADVANCE_WAIT: 1000,
       AUTO_SOLVE_RESUME_WAIT: 1000,
+      DICTATION_PRE_SOLVE_WAIT: 800,
+      DICTATION_AUTO_SOLVE_RESUME_WAIT: 1500,
     },
     fastmode: {
       READING_MIN: 0,
@@ -85,6 +87,8 @@
       DEBOUNCE_WAIT: 50,
       AUTO_ADVANCE_WAIT: 100,
       AUTO_SOLVE_RESUME_WAIT: 50,
+      DICTATION_PRE_SOLVE_WAIT: 800,
+      DICTATION_AUTO_SOLVE_RESUME_WAIT: 1500,
     },
   };
 
@@ -796,7 +800,7 @@
   function getAutoSolveResumeWait(pairs) {
     const baseWait = getWaitTime("AUTO_SOLVE_RESUME_WAIT");
     if (pairs.some(isDictationPair)) {
-      return Math.max(baseWait, 1500);
+      return Math.max(baseWait, getWaitTime("DICTATION_AUTO_SOLVE_RESUME_WAIT"));
     }
     return baseWait;
   }
@@ -804,7 +808,7 @@
   function getPreSolveWait(pair) {
     const baseWait = getWaitTime("CLICK_WAIT");
     if (isDictationPair(pair)) {
-      return Math.max(baseWait, 800);
+      return Math.max(baseWait, getWaitTime("DICTATION_PRE_SOLVE_WAIT"));
     }
     return baseWait;
   }

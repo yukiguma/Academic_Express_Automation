@@ -1087,6 +1087,80 @@ test('content script treats dictation type as auto-advance without layout detect
     }
 });
 
+test('content script applies dictation pre-solve wait in fast mode', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['This tea is too hot for me to drink.'],
+                displayOrder: 1,
+                questionNo: '203',
+                rawText: 'This tea is too hot for me to drink.',
+                signature: 'thisteaistoohotformetodrink',
+                type: 'dictation'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="QuestionHeader__innerContainer___2J16p">
+                <div class="QuestionHeader__center___2GqF7">1/1</div>
+            </div>
+            <main>
+                <div class="QuestionArea__dictationArea___1EZet"></div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solveStartedAt = null;
+            window.solve = async () => {
+                window.__solveStartedAt = performance.now();
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        const clickedAt = await page.evaluate(() => performance.now());
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solveStartedAt !== null, { timeout: 10_000 });
+        const elapsed = await page.evaluate(startedAt => window.__solveStartedAt - startedAt, clickedAt);
+        assert.ok(elapsed >= 700, `Expected dictation pre-solve wait, got ${elapsed}ms`);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 test('content script matches sentence typing when the hidden word is absent from visible text', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
