@@ -142,6 +142,7 @@ fixture の期待正答:
 - parser は `<sound>` と `<jpscript>` を持ち、`questionText` 全体が bracket で囲まれた `typing` を `dictation` として扱う。
 - prefix つきの場合も同じく `dictation` として扱い、bracket 内だけを `answers` に保持する。
 - solver は input 要素探索ではなく、正答文字列を document へ `keydown` / `keypress` / `keyup` として送る。
+- keyboard event は `keydown` / `keyup` では物理キーの `keyCode` / `which`、`keypress` では文字コードを送る。プレイヤー側が `key` ではなく `keyCode` を見る場合、文字コードを物理キーとして送るとミスタイプ扱いになり、自動的に次問へ進む。
 - 「スタート」ボタンは画面最前面で押せる状態のときだけ solver が押す。保存 HTML の E2E では開始オーバーレイが残るため、テスト側で開始後に拡張を注入する。
 - 画面テキストでは問題を照合できないため、`window.config.question_no` と `questionNo` の一致で active question を特定する。
 - 完答後の遷移では「採点」「続ける」「判定」を優先し、それらがなければ Dictation の「終了」ボタンを押す。

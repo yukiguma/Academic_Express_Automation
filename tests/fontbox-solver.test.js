@@ -120,6 +120,58 @@ test('FontBox typing waits for each accepted key before sending the next', { tim
     }
 });
 
+test('keyboard dispatch uses physical key codes for letters and punctuation', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <script>
+                window.events = [];
+                for (const name of ['keydown', 'keypress', 'keyup']) {
+                    document.addEventListener(name, event => {
+                        window.events.push({
+                            type: event.type,
+                            key: event.key,
+                            code: event.code,
+                            charCode: event.charCode,
+                            keyCode: event.keyCode,
+                            shiftKey: event.shiftKey,
+                            which: event.which
+                        });
+                    });
+                }
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const events = await page.evaluate(() => {
+            dispatchKeyboardChar('o', document);
+            dispatchKeyboardChar('?', document);
+            dispatchKeyboardChar("'", document);
+            return window.events;
+        });
+
+        assert.deepEqual(events.slice(0, 3), [
+            { type: 'keydown', key: 'o', code: 'KeyO', charCode: 0, keyCode: 79, shiftKey: false, which: 79 },
+            { type: 'keypress', key: 'o', code: 'KeyO', charCode: 111, keyCode: 111, shiftKey: false, which: 111 },
+            { type: 'keyup', key: 'o', code: 'KeyO', charCode: 0, keyCode: 79, shiftKey: false, which: 79 }
+        ]);
+        assert.deepEqual(events.slice(3, 6), [
+            { type: 'keydown', key: '?', code: 'Slash', charCode: 0, keyCode: 191, shiftKey: true, which: 191 },
+            { type: 'keypress', key: '?', code: 'Slash', charCode: 63, keyCode: 63, shiftKey: true, which: 63 },
+            { type: 'keyup', key: '?', code: 'Slash', charCode: 0, keyCode: 191, shiftKey: true, which: 191 }
+        ]);
+        assert.deepEqual(events.slice(6, 9), [
+            { type: 'keydown', key: "'", code: 'Quote', charCode: 0, keyCode: 222, shiftKey: false, which: 222 },
+            { type: 'keypress', key: "'", code: 'Quote', charCode: 39, keyCode: 39, shiftKey: false, which: 39 },
+            { type: 'keyup', key: "'", code: 'Quote', charCode: 0, keyCode: 222, shiftKey: false, which: 222 }
+        ]);
+    } finally {
+        await browser.close();
+    }
+});
+
 test('FontBox sentence typing uses bracket text instead of the full sentence', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();

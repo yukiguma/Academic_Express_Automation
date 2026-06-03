@@ -507,20 +507,22 @@ function keyboardInfoForChar(char) {
     const upper = key.toUpperCase();
     const specialKeys = {
         ' ': { code: 'Space', keyCode: 32 },
-        '.': { code: 'Period' },
-        ',': { code: 'Comma' },
-        '?': { code: 'Slash', shiftKey: true },
-        '!': { code: 'Digit1', shiftKey: true },
-        "'": { code: 'Quote' },
-        '"': { code: 'Quote', shiftKey: true },
-        '-': { code: 'Minus' }
+        '.': { code: 'Period', keyCode: 190 },
+        ',': { code: 'Comma', keyCode: 188 },
+        '?': { code: 'Slash', keyCode: 191, shiftKey: true },
+        '!': { code: 'Digit1', keyCode: 49, shiftKey: true },
+        "'": { code: 'Quote', keyCode: 222 },
+        '"': { code: 'Quote', keyCode: 222, shiftKey: true },
+        '-': { code: 'Minus', keyCode: 189 },
+        ';': { code: 'Semicolon', keyCode: 186 },
+        ':': { code: 'Semicolon', keyCode: 186, shiftKey: true }
     };
 
     if (specialKeys[key]) {
         return {
             charCode: key.charCodeAt(0),
             code: specialKeys[key].code,
-            keyCode: key.charCodeAt(0),
+            keyCode: specialKeys[key].keyCode,
             shiftKey: Boolean(specialKeys[key].shiftKey)
         };
     }
@@ -529,7 +531,7 @@ function keyboardInfoForChar(char) {
         return {
             charCode: key.charCodeAt(0),
             code: `Key${upper}`,
-            keyCode: key.charCodeAt(0),
+            keyCode: upper.charCodeAt(0),
             shiftKey: key !== key.toLowerCase()
         };
     }
@@ -553,7 +555,7 @@ function keyboardInfoForChar(char) {
 
 function dispatchKeyboardChar(char, target = document) {
     const info = keyboardInfoForChar(char);
-    const base = {
+    const physicalKeyEvent = {
         bubbles: true,
         cancelable: true,
         charCode: 0,
@@ -564,12 +566,14 @@ function dispatchKeyboardChar(char, target = document) {
         which: info.keyCode
     };
 
-    target.dispatchEvent(new KeyboardEvent('keydown', base));
+    target.dispatchEvent(new KeyboardEvent('keydown', physicalKeyEvent));
     target.dispatchEvent(new KeyboardEvent('keypress', {
-        ...base,
-        charCode: info.charCode
+        ...physicalKeyEvent,
+        charCode: info.charCode,
+        keyCode: info.charCode,
+        which: info.charCode
     }));
-    target.dispatchEvent(new KeyboardEvent('keyup', base));
+    target.dispatchEvent(new KeyboardEvent('keyup', physicalKeyEvent));
 }
 
 // Solver: Dictation player. This layout has no input element; it listens for
