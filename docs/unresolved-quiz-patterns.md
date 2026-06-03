@@ -99,7 +99,7 @@ fixture の期待正答:
 
 実装上の対応:
 
-- parser は multiple choice XML の `<sound>` / `<image>` から `mediaSignatures` を保持する。
+- parser は multiple choice / trueFalse などの選択式 XML の `<sound>` / `<image>` から `mediaSignatures` を保持する。
 - parser は book の `shuffleQuestions="true"` を各 question に保持する。
 - content 側は DOM 上の media URL と `performance.getEntriesByType("resource")` の直近 `materialSound.cfm` / `materialImage.cfm` から素材 ID を読み、`mediaSignatures` と一致した question を現在問として優先する。
 - 素材 ID で現在問が決まった場合は、重複する問題文に対する進捗番号 fallback を使わず、その1問だけを解く。

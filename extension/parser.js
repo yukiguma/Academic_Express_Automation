@@ -181,6 +181,14 @@ var AcademicExpressParser = (function () {
         return signatures;
     }
 
+    function isSelectionQuestionType(type) {
+        const lowerType = String(type || "").toLowerCase();
+        return lowerType.includes('choice') ||
+            lowerType.includes('true') ||
+            lowerType.includes('select') ||
+            lowerType.includes('quiz');
+    }
+
     function splitSortingAnswerTokens(answers) {
         const tokens = [];
 
@@ -267,7 +275,7 @@ var AcademicExpressParser = (function () {
                     displayOrder: displayOrder,
                     questionNo: attrs.no || ""
                 };
-                const mediaSignatures = String(type || "").toLowerCase().includes('choice')
+                const mediaSignatures = isSelectionQuestionType(type)
                     ? collectXMLMediaSignatures(questionContent)
                     : [];
                 if (mediaSignatures.length > 0) {
