@@ -18,7 +18,7 @@
 | `tests/fixtures/ListeningTest` | Listening | `listeningComprehension`、重複する `questionText`、番号参照の選択肢、単問進行 | parser / E2E |
 | `tests/fixtures/ListeningTest2` | Listening | `listeningComprehension`、`trueFalse`、`multipleChoice`、`anaumeFilIn initialLetterShown="true"`、複数 blank の `ClozeTest` | parser / E2E |
 | `tests/fixtures/ListeningTest3` | Listening | `shuffleQuestions="true"`、重複する `questionText`、音声・画像の素材 ID による現在問照合 | parser / E2E |
-| `tests/fixtures/Dictation` / `Dictation2` | Listening | `typing` XML だが画面は Dictation 専用。input 要素なし、document の keyboard event で文字枠を開く。一部 prefix が最初から開いている場合あり | parser / E2E |
+| `tests/fixtures/Dictation` / `Dictation2` / `Dictation3` | Listening | `typing` XML だが画面は Dictation 専用。input 要素なし、document の keyboard event で文字枠を開く。一部 prefix が最初から開いている場合や、`QuestionHeader` レイアウトの複数問進行あり | parser / E2E |
 | `tests/fixtures/Scanning` | Reading | 開始画面つき `scanning`、本文中の該当英文クリック、複数問同時保存 | parser / E2E |
 | `tests/fixtures/VocabraryMatching` | Reading | `matching`、本文中の複数 blank に候補語句を投入、複数 `<answer>` 保存 | parser / E2E |
 | `tests/authoring2.xml` | Reading | `readingComprehension`、進捗範囲 `1 - 2 / 5`、1画面複数問 | parser |
@@ -119,7 +119,7 @@ fixture の期待正答:
 | `1597` | `2` |
 | `1591` | `4` |
 
-## `tests/fixtures/Dictation` / `tests/fixtures/Dictation2`
+## `tests/fixtures/Dictation` / `tests/fixtures/Dictation2` / `tests/fixtures/Dictation3`
 
 保存済みのディクタン画面と `authoring.cfc` payload を使う fixture。
 
@@ -127,9 +127,11 @@ fixture の期待正答:
 
 - XML type は `typing` だが、`questionText` 全体が `[We can stay home and study by computer.]` のように正答で、画面側には通常の input / textarea / 採点ボタンがない。
 - `Dictation2` では `Gene [began studying for his English test early this morning.]` のように、bracket の外側が最初から開いている prefix になる。自動入力するのは bracket 内の未入力部分だけ。
+- `Dictation3` は `QuestionHeader__innerContainer` / `QuestionArea__dictationArea` を使う新しい画面構造で、`AppPc__common_inner` がない。拡張の自動入力ボタンは `QuestionHeader` にも差し込む。
+- `Dictation3` は `window.config.question_no` がなく、画面の `1/10` 進捗表示から現在問を選ぶ。
 - 画面は `DictationBox` / `FontBox` の文字枠で構成され、document レベルの keyboard event を受けて1文字ずつ開く。
 - 初期表示には「スタート」オーバーレイがあり、開始後にキー入力を受け付ける。
-- `AppHeader__fixed-top` がなく、拡張の自動入力ボタンは `AppPc__common_inner` などの Dictation 用ヘッダーへ差し込む。
+- `AppHeader__fixed-top` がなく、拡張の自動入力ボタンは `AppPc__common_inner` や `QuestionHeader__innerContainer` などの Dictation 用ヘッダーへ差し込む。
 - プレイヤーは完答時に `write_answer_au` を自動送信し、`answer` 本文は空、`miss_cnt=0`、`correct_flag=5` で保存される。
 - 効果音 `sounds/typing/sprite.mp3` の読み込みに失敗すると画面が終了 URL へ戻るため、E2E harness では mp3 も無音 WAV で返す。
 
@@ -148,6 +150,15 @@ fixture の期待正答:
 | --- | --- | --- |
 | `20303814` | `dictation` | `We can stay home and study by computer.` |
 | `20274614` | `dictation` | `began studying for his English test early this morning.` |
+| `20280414` | `dictation` | `I have to go to the bank before lunch.` |
+| `203016143` | `dictation` | `Don't be lazy. You have to study English harder.` |
+| `20275814` | `dictation` | `It was snowing when I arrived at the library.` |
+| `20302814` | `dictation` | `My uncle liked singing so he became a singer.` |
+| `20296914` | `dictation` | `You have to take off your shoes here.` |
+| `20288014` | `dictation` | `My brother and I were playing catch this morning.` |
+| `20296514` | `dictation` | `Look at those white clouds in the blue sky.` |
+| `203143143` | `dictation` | `You look very sick. What's the matter with you?` |
+| `20299014` | `dictation` | `I believe her because she never tells a lie.` |
 
 ## `tests/authoring2.xml`
 

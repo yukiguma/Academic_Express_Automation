@@ -151,6 +151,25 @@ test('parses dictation CFC fixture with an already-open prefix', () => {
     assert.equal(parsed.questions[0].rawText, 'began studying for his English test early this morning.');
 });
 
+test('parses dictation CFC fixture with multiple QuestionHeader layout questions', () => {
+    const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('Dictation3', 'authoring.cfc'));
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 10);
+    assert.deepEqual(parsed.questions.map(question => [question.questionNo, question.type, question.answers[0]]), [
+        ['20280414', 'dictation', 'I have to go to the bank before lunch.'],
+        ['203016143', 'dictation', "Don't be lazy. You have to study English harder."],
+        ['20275814', 'dictation', 'It was snowing when I arrived at the library.'],
+        ['20302814', 'dictation', 'My uncle liked singing so he became a singer.'],
+        ['20296914', 'dictation', 'You have to take off your shoes here.'],
+        ['20288014', 'dictation', 'My brother and I were playing catch this morning.'],
+        ['20303814', 'dictation', 'We can stay home and study by computer.'],
+        ['20296514', 'dictation', 'Look at those white clouds in the blue sky.'],
+        ['203143143', 'dictation', "You look very sick. What's the matter with you?"],
+        ['20299014', 'dictation', 'I believe her because she never tells a lie.']
+    ]);
+});
+
 test('parses shuffled question authoring XML by question text and exact answers', () => {
     const { parsed } = parser.parseQuestionData(readFixture('question_authoring.xml'));
 

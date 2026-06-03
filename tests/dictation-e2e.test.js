@@ -88,3 +88,28 @@ test('Dictation2 fixture starts after an already-open prefix and exits', { timeo
         startFirst: true
     });
 });
+
+test('Dictation3 fixture with QuestionHeader layout shows controls', { timeout: 30_000 }, async () => {
+    const fixtureDir = path.join(__dirname, 'fixtures', 'Dictation3');
+    const questionData = parser.parseQuestionData(fs.readFileSync(path.join(fixtureDir, 'authoring.cfc'), 'utf8')).parsed;
+    assert.equal(questionData.questions.length, 10);
+
+    const { server } = createFixtureServer({
+        apiResponses: new Map([
+            ['/as/flash/data_manipulate.cfc', saveSuccess]
+        ]),
+        fixtureDir,
+        routes: new Map([
+            ['/as/lplayer/index.cfm', 'ディクタン _ Academic Express3.html'],
+            ['/as/lplayer/bundle.js', 'bundle.js'],
+            ['/as/player_data/authoring.cfc', 'authoring.cfc']
+        ])
+    });
+
+    await runAutoSolve({
+        clickSolve: false,
+        pageReadySelector: '[class*="QuestionHeader__innerContainer"]',
+        questionData,
+        server
+    });
+});

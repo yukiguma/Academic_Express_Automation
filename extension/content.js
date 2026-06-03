@@ -734,7 +734,7 @@
   function isDictationLayoutVisible() {
     return Boolean(
       document.querySelector(
-        '[class*="dictationBox"], [class*="DictationBox"]',
+        '[class*="dictationBox"], [class*="DictationBox"], [class*="dictationArea"]',
       ),
     );
   }
@@ -1375,11 +1375,16 @@
     injectStyles();
 
     let parentContainer;
-    const backButtonDiv = Array.from(header.querySelectorAll("div")).find(
-      (el) =>
-        el.textContent.includes("戻る") ||
-        el.className.toLowerCase().includes("back"),
+    const isQuestionHeader = String(header.className || "").includes(
+      "QuestionHeader__innerContainer",
     );
+    const backButtonDiv = isQuestionHeader
+      ? null
+      : Array.from(header.querySelectorAll("div")).find(
+          (el) =>
+            el.textContent.includes("戻る") ||
+            el.className.toLowerCase().includes("back"),
+        );
 
     if (backButtonDiv) {
       parentContainer = backButtonDiv;
@@ -1394,7 +1399,16 @@
       parentContainer.style.gap = "16px";
       parentContainer.style.marginLeft = "8px";
       parentContainer.style.marginRight = "8px";
-      header.appendChild(parentContainer);
+      parentContainer.style.position = "relative";
+      parentContainer.style.zIndex = "100002";
+
+      if (isQuestionHeader) {
+        parentContainer.style.flex = "0 0 auto";
+        const right = header.querySelector('[class*="QuestionHeader__right"]');
+        header.insertBefore(parentContainer, right);
+      } else {
+        header.appendChild(parentContainer);
+      }
     }
 
     const control = document.createElement("div");
@@ -1460,6 +1474,7 @@
         '[class*="AppSp__common_inner"]',
         '[class*="common_header_inner"]',
         '[class*="ControlBox__root"]',
+        '[class*="QuestionHeader__innerContainer"]',
       ].join(", "),
     );
   }
