@@ -781,18 +781,12 @@
     );
   }
 
-  function isQuestionHeaderDictationLayoutVisible() {
-    return Boolean(
-      document.querySelector('[class*="QuestionHeader__innerContainer"]') &&
-        document.querySelector('[class*="dictationArea"]'),
-    );
-  }
-
   function isAutoAdvancePair(pair) {
     if (pair?.data?.isAutoAdvance) return true;
 
     const type = String(pair?.data?.type || "").toLowerCase();
-    return type.includes("dictation") && isQuestionHeaderDictationLayoutVisible();
+    if (type.includes("dictation") && questionsList.length > 1) return true;
+    return false;
   }
 
   function hasProgressAdvancedFrom(initialRange) {

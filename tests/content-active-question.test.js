@@ -995,7 +995,7 @@ test('content script solves single current auto-advance payload regardless of pr
     }
 });
 
-test('content script treats QuestionHeader dictation as auto-advance', { timeout: 20_000 }, async () => {
+test('content script treats dictation type as auto-advance without layout detection', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
             {
@@ -1027,7 +1027,7 @@ test('content script treats QuestionHeader dictation as auto-advance', { timeout
                 <div class="QuestionHeader__right___2S11U"><button id="nextButton">次へ</button></div>
             </div>
             <main>
-                <div class="QuestionArea__dictationArea___1EZet">
+                <div class="QuestionArea__typingArea___1EZet">
                     <div class="FontBox__root___23-B9"></div>
                 </div>
                 <div id="transition-host"><button id="grade-button">採点</button></div>
