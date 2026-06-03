@@ -608,14 +608,16 @@ async function dismissDictationStartModal() {
     await sleep(300);
 }
 
-async function solveDictation(answers) {
+async function solveDictation(answers, scope, question = {}) {
     const answer = answers.join(' ').trim();
     if (!answer) return false;
 
     await dismissDictationStartModal();
 
     const chars = dictationInputChars(answer);
-    await waitForDictationQuestionReady(chars);
+    if (!await waitForDictationQuestionReady(chars, question)) {
+        return false;
+    }
     console.log(`Dictation Strategy: Typing ${chars.length} characters.`);
     for (const char of chars) {
         dispatchKeyboardChar(char, document);
@@ -631,20 +633,47 @@ function dictationInputChars(answer) {
         .filter(char => /[\p{L}\p{N}']/u.test(char));
 }
 
-async function waitForDictationQuestionReady(expectedChars) {
+async function waitForDictationQuestionReady(expectedChars, question = {}) {
     const expected = expectedChars.join('').toLowerCase();
+    const questionTextChars = dictationInputChars(question.rawText || "").join('').toLowerCase();
     if (!expected) return true;
 
     const ready = await waitUntil(() => {
-        const visibleText = document.body?.innerText || document.body?.textContent || "";
-        const visibleChars = dictationInputChars(visibleText).join('').toLowerCase();
-        return visibleChars.includes(expected);
-    }, 800, 50);
+        const visibleChars = visibleDictationInputChars().toLowerCase();
+        if (visibleChars.includes(expected)) return true;
+        if (visibleChars && expected.startsWith(visibleChars)) return true;
+        if (visibleChars && questionTextChars.startsWith(visibleChars)) return true;
+        if (visibleChars.length < expected.length && hasHiddenDictationBoxes()) return true;
+
+        // Some Dictation layouts render blank boxes before typing, so there is
+        // no current-answer text to compare against. In that case readiness has
+        // to be delegated to the player listener rather than blocked forever.
+        const minimumComparableLength = Math.min(6, expected.length);
+        return visibleChars.length < minimumComparableLength;
+    }, 5000, 50);
 
     if (!ready) {
-        console.warn("Dictation Strategy: Question text was not visible before typing.");
+        console.warn("Dictation Strategy: Current question text is not ready; deferring typing.");
     }
     return ready;
+}
+
+function visibleDictationInputChars() {
+    const roots = Array.from(document.querySelectorAll([
+        '[class*="dictationArea"]',
+        '[class*="dictationBox"]',
+        '[class*="DictationBox"]',
+        '[class*="FontBox__root"]'
+    ].join(','))).filter(isVisible);
+    const text = (roots.length ? roots : [document.body])
+        .map(root => root?.innerText || root?.textContent || "")
+        .join(' ');
+    return dictationInputChars(text).join('');
+}
+
+function hasHiddenDictationBoxes() {
+    return Array.from(document.querySelectorAll('[class*="FontBox__hide"]'))
+        .some(isVisible);
 }
 
 // Solver: Sorting
@@ -769,7 +798,7 @@ async function solve(answers, type, scope, question = {}) {
         return solveFillBlank(answers, scope);
     }
     if (normalizedType.includes('dictation') || normalizedType.includes('dectation')) {
-        return solveDictation(answers, scope);
+        return solveDictation(answers, scope, question);
     }
     if (normalizedType.includes('choice') || normalizedType.includes('true') || normalizedType.includes('select') || normalizedType.includes('quiz')) {
         return solveMultipleChoice(answers, scope);

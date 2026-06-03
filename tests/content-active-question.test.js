@@ -1087,7 +1087,7 @@ test('content script treats dictation type as auto-advance without layout detect
     }
 });
 
-test('content script applies dictation pre-solve wait in fast mode', { timeout: 20_000 }, async () => {
+test('content script retries dictation when solver defers until the question is ready', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
             {
@@ -1125,9 +1125,11 @@ test('content script applies dictation pre-solve wait in fast mode', { timeout: 
 
     try {
         await page.addInitScript(data => {
-            window.__solveStartedAt = null;
+            window.__ready = false;
+            window.__solveAttempts = 0;
             window.solve = async () => {
-                window.__solveStartedAt = performance.now();
+                window.__solveAttempts += 1;
+                return window.__ready;
             };
             window.chrome = {
                 runtime: {
@@ -1149,12 +1151,16 @@ test('content script applies dictation pre-solve wait in fast mode', { timeout: 
             document.body.appendChild(document.createElement('div'));
         });
         await page.waitForSelector('#solve-btn', { timeout: 10_000 });
-        const clickedAt = await page.evaluate(() => performance.now());
         await page.click('#solve-btn');
 
-        await page.waitForFunction(() => window.__solveStartedAt !== null, { timeout: 10_000 });
-        const elapsed = await page.evaluate(startedAt => window.__solveStartedAt - startedAt, clickedAt);
-        assert.ok(elapsed >= 700, `Expected dictation pre-solve wait, got ${elapsed}ms`);
+        await page.waitForFunction(() => window.__solveAttempts >= 1, { timeout: 10_000 });
+        await page.evaluate(() => {
+            window.__ready = true;
+            document.body.appendChild(document.createElement('div'));
+        });
+
+        await page.waitForFunction(() => window.__solveAttempts >= 2, { timeout: 10_000 });
+        assert.equal(await page.evaluate(() => window.__solveAttempts), 2);
     } finally {
         await browser.close();
         await new Promise(resolve => server.close(resolve));

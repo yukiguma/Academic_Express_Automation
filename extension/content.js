@@ -73,8 +73,6 @@
       DEBOUNCE_WAIT: 300,
       AUTO_ADVANCE_WAIT: 1000,
       AUTO_SOLVE_RESUME_WAIT: 1000,
-      DICTATION_PRE_SOLVE_WAIT: 800,
-      DICTATION_AUTO_SOLVE_RESUME_WAIT: 1500,
     },
     fastmode: {
       READING_MIN: 0,
@@ -87,8 +85,6 @@
       DEBOUNCE_WAIT: 50,
       AUTO_ADVANCE_WAIT: 100,
       AUTO_SOLVE_RESUME_WAIT: 50,
-      DICTATION_PRE_SOLVE_WAIT: 800,
-      DICTATION_AUTO_SOLVE_RESUME_WAIT: 1500,
     },
   };
 
@@ -797,20 +793,9 @@
     return String(pair?.data?.type || "").toLowerCase().includes("dictation");
   }
 
-  function getAutoSolveResumeWait(pairs) {
-    const baseWait = getWaitTime("AUTO_SOLVE_RESUME_WAIT");
-    if (pairs.some(isDictationPair)) {
-      return Math.max(baseWait, getWaitTime("DICTATION_AUTO_SOLVE_RESUME_WAIT"));
-    }
-    return baseWait;
-  }
-
   function getPreSolveWait(pair) {
-    const baseWait = getWaitTime("CLICK_WAIT");
-    if (isDictationPair(pair)) {
-      return Math.max(baseWait, getWaitTime("DICTATION_PRE_SOLVE_WAIT"));
-    }
-    return baseWait;
+    if (isDictationPair(pair)) return 0;
+    return getWaitTime("CLICK_WAIT");
   }
 
   function hasProgressAdvancedFrom(initialRange) {
@@ -1683,7 +1668,19 @@
         if (preSolveWait > 0) {
           await sleep(preSolveWait);
         }
-        await solve(pair.data.answers, pair.data.type, pair.element, pair.data);
+        const solved = await solve(
+          pair.data.answers,
+          pair.data.type,
+          pair.element,
+          pair.data,
+        );
+        if (solved === false && isDictationPair(pair)) {
+          console.warn("Solver deferred because the current question is not ready.");
+          lastSolvedSignature = "";
+          isSolving = false;
+          scheduleAutoSolveResume(getWaitTime("DEBOUNCE_WAIT"));
+          return;
+        }
         if (pairAutoAdvances) {
           lastAutoAdvanceSolvedAt = Date.now();
         }
@@ -1712,7 +1709,7 @@
           console.log(
             "Detecting auto-advance question, skipping manual transition click.",
           );
-          const resumeWait = getAutoSolveResumeWait(matchedPairs);
+          const resumeWait = getWaitTime("AUTO_SOLVE_RESUME_WAIT");
           nextAutoSolveAllowedAt = Date.now() + resumeWait;
           isSolving = false;
           scheduleAutoSolveResume(resumeWait);
