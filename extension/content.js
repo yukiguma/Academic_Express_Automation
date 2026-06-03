@@ -346,6 +346,11 @@
     setHeaderProgress(100);
   }
 
+  function completeHeaderProgress() {
+    stopHeaderAnimation();
+    setHeaderProgress(100);
+  }
+
   function resetHeaderProgress() {
     stopHeaderAnimation();
     setHeaderProgress(0);
@@ -787,6 +792,23 @@
       currentRange.end !== initialRange.end ||
       currentRange.total !== initialRange.total
     );
+  }
+
+  async function waitForPostSolveSettle(waitMs, initialRange) {
+    const deadline = Date.now() + Math.max(0, waitMs);
+    while (Date.now() < deadline) {
+      if (hasProgressAdvancedFrom(initialRange)) {
+        completeHeaderProgress();
+        return true;
+      }
+      await sleep(Math.min(50, deadline - Date.now()));
+    }
+
+    if (hasProgressAdvancedFrom(initialRange)) {
+      completeHeaderProgress();
+      return true;
+    }
+    return false;
   }
 
   function findQuestionIndexForElement(
@@ -1620,10 +1642,18 @@
         const postSolveWait = pair.data.isAutoAdvance
           ? getWaitTime("AUTO_ADVANCE_WAIT")
           : getWaitTime("SOLVE_INTERVAL");
-        if (postSolveWait > 0) {
-          await sleep(postSolveWait);
-        }
         if (hasProgressAdvancedFrom(initialProgressRange)) {
+          completeHeaderProgress();
+          progressedDuringSolve = true;
+          break;
+        }
+        if (postSolveWait > 0) {
+          progressedDuringSolve = await waitForPostSolveSettle(
+            postSolveWait,
+            initialProgressRange,
+          );
+        }
+        if (progressedDuringSolve) {
           progressedDuringSolve = true;
           break;
         }
@@ -1669,6 +1699,7 @@
 
       if (nextBtn && !nextBtn.disabled) {
         console.log("Transition: Clicking Next Button.");
+        completeHeaderProgress();
         simulateClick(nextBtn);
         await waitForTransitionSettle();
         return;
@@ -1684,6 +1715,7 @@
       if (button) {
         const buttonText = button.textContent.trim();
         console.log(`Transition: Clicking "${buttonText}" Button.`);
+        completeHeaderProgress();
         simulateClick(button);
         await waitForTransitionSettle();
         const resultText = document.body?.innerText || "";
@@ -1696,6 +1728,7 @@
           console.log(
             `Transition: Clicking "${finishButton.textContent.trim()}" Button.`,
           );
+          completeHeaderProgress();
           simulateClick(finishButton);
           await waitForTransitionSettle();
           isAutoMode = false;
@@ -1706,6 +1739,7 @@
       const quitBtn = document.getElementById("quitButton");
       if (quitBtn) {
         console.log("Transition: Clicking Finish/Quit Button.");
+        completeHeaderProgress();
         simulateClick(quitBtn);
         await waitForTransitionSettle();
         isAutoMode = false;
@@ -1715,6 +1749,7 @@
       const link = document.querySelector("a.btn");
       if (link) {
         console.log("Transition: Clicking .btn Link (Finish).");
+        completeHeaderProgress();
         link.click();
         await waitForTransitionSettle();
         isAutoMode = false;
