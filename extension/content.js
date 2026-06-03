@@ -72,6 +72,7 @@
       SOLVE_INTERVAL: 2000,
       DEBOUNCE_WAIT: 300,
       AUTO_ADVANCE_WAIT: 1000,
+      AUTO_SOLVE_RESUME_WAIT: 1000,
     },
     fastmode: {
       READING_MIN: 0,
@@ -83,6 +84,7 @@
       SOLVE_INTERVAL: 50,
       DEBOUNCE_WAIT: 50,
       AUTO_ADVANCE_WAIT: 100,
+      AUTO_SOLVE_RESUME_WAIT: 500,
     },
   };
 
@@ -1420,12 +1422,12 @@
           console.log(
             "Detecting auto-advance question, skipping manual transition click.",
           );
-          nextAutoSolveAllowedAt =
-            Date.now() + getWaitTime("AUTO_ADVANCE_WAIT");
+          const resumeWait = getWaitTime("AUTO_SOLVE_RESUME_WAIT");
+          nextAutoSolveAllowedAt = Date.now() + resumeWait;
           isSolving = false;
           resetHeaderProgress();
           setGlobalLock(false);
-          scheduleAutoSolveResume(getWaitTime("AUTO_ADVANCE_WAIT"));
+          scheduleAutoSolveResume(resumeWait);
           return;
         }
         await handleTransition();
