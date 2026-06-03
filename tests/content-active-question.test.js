@@ -995,6 +995,98 @@ test('content script solves single current auto-advance payload regardless of pr
     }
 });
 
+test('content script treats QuestionHeader dictation as auto-advance', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['I have to go to the bank before lunch.'],
+                displayOrder: 1,
+                questionNo: '20280414',
+                rawText: 'I have to go to the bank before lunch.',
+                signature: 'ihavetogotothebankbeforelunch',
+                type: 'dictation'
+            },
+            {
+                answers: ["Don't be lazy. You have to study English harder."],
+                displayOrder: 2,
+                questionNo: '203016143',
+                rawText: "Don't be lazy. You have to study English harder.",
+                signature: 'dontbelazyyouhavetostudyenglishharder',
+                type: 'dictation'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="QuestionHeader__innerContainer___2J16p">
+                <div class="QuestionHeader__left___24vuK"><button>前のページに戻る</button></div>
+                <div class="QuestionHeader__center___2GqF7">1/2</div>
+                <div class="QuestionHeader__right___2S11U"><button>次へ</button></div>
+            </div>
+            <main>
+                <div class="QuestionArea__dictationArea___1EZet">
+                    <div class="FontBox__root___23-B9"></div>
+                </div>
+                <div id="transition-host"><button id="grade-button">採点</button></div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.__transitionClicks = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.questionNo);
+            };
+            window.simulateClick = element => {
+                window.__transitionClicks.push(element.textContent.trim());
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.waitForFunction(() => document.getElementById('solve-btn')?.textContent?.includes('自動入力'), { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
+        await page.waitForTimeout(500);
+        assert.deepEqual(await page.evaluate(() => window.__solvedQuestions), ['20280414']);
+        assert.deepEqual(await page.evaluate(() => window.__transitionClicks), []);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 test('content script matches sentence typing when the hidden word is absent from visible text', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [

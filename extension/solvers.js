@@ -37,6 +37,15 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, Math.max(0, ms)));
 }
 
+async function waitUntil(predicate, timeoutMs = 3000, intervalMs = 50) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        if (predicate()) return true;
+        await sleep(intervalMs);
+    }
+    return predicate();
+}
+
 function normalizeText(text) {
     return String(text || "")
         .replace(/[\u2018\u2019\u02bc]/g, "'")
@@ -565,18 +574,41 @@ function dispatchKeyboardChar(char, target = document) {
 
 // Solver: Dictation player. This layout has no input element; it listens for
 // document-level keyboard events and opens character boxes as keys arrive.
+async function dismissDictationStartModal() {
+    const startButton = findVisibleByText('button, [role="button"], span', 'スタート');
+    if (!startButton) return;
+
+    const button = startButton.closest('button') || startButton;
+    const lockOverlay = document.getElementById('global-lock');
+    const previousDisplay = lockOverlay?.style.display;
+    const previousPointerEvents = lockOverlay?.style.pointerEvents;
+
+    if (lockOverlay) {
+        lockOverlay.style.display = 'none';
+        lockOverlay.style.pointerEvents = 'none';
+    }
+
+    simulateClick(button);
+
+    await waitUntil(
+        () => !findVisibleByText('button, [role="button"], span', 'スタート'),
+        3000,
+        50
+    );
+
+    if (lockOverlay) {
+        lockOverlay.style.display = previousDisplay;
+        lockOverlay.style.pointerEvents = previousPointerEvents;
+    }
+
+    await sleep(300);
+}
+
 async function solveDictation(answers) {
     const answer = answers.join(' ').trim();
     if (!answer) return false;
 
-    const startButton = findVisibleByText('button, [role="button"], span', 'スタート');
-    if (startButton) {
-        const button = startButton.closest('button') || startButton;
-        if (isElementTopmost(button)) {
-            simulateClick(button);
-            await sleep(250);
-        }
-    }
+    await dismissDictationStartModal();
 
     console.log(`Dictation Strategy: Typing ${answer.length} characters.`);
     for (const char of answer) {

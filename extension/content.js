@@ -220,9 +220,9 @@
     const isNew =
       forceNew !== null ? forceNew : compositeSig !== lastSolvedSignature;
 
-    // Skip reading time for vocabulary tests (isAutoAdvance) or fast mode
-    const isVocabularyTest = pairs.some((p) => p.data.isAutoAdvance);
-    if (!isFast && isNew && !isVocabularyTest) {
+    // Skip reading time for pages that advance as soon as the answer completes.
+    const hasAutoAdvancePair = pairs.some(isAutoAdvancePair);
+    if (!isFast && isNew && !hasAutoAdvancePair) {
       if (Number.isFinite(options.readingWaitMs)) {
         total += options.readingWaitMs;
       } else {
@@ -239,7 +239,7 @@
     // Auto-advance pages navigate as soon as the answer is clicked, so the
     // post-click pace belongs to the next solve cycle, not this progress bar.
     const answerWait = config.CLICK_WAIT || 0;
-    if (isVocabularyTest) {
+    if (hasAutoAdvancePair) {
       total += pairs.length * answerWait;
       if (Number.isFinite(options.autoAdvancePaceWaitMs)) {
         total += options.autoAdvancePaceWaitMs;
@@ -779,6 +779,20 @@
       activeQuestionRange !== null &&
       activeQuestionRange.start === activeQuestionRange.end
     );
+  }
+
+  function isQuestionHeaderDictationLayoutVisible() {
+    return Boolean(
+      document.querySelector('[class*="QuestionHeader__innerContainer"]') &&
+        document.querySelector('[class*="dictationArea"]'),
+    );
+  }
+
+  function isAutoAdvancePair(pair) {
+    if (pair?.data?.isAutoAdvance) return true;
+
+    const type = String(pair?.data?.type || "").toLowerCase();
+    return type.includes("dictation") && isQuestionHeaderDictationLayoutVisible();
   }
 
   function hasProgressAdvancedFrom(initialRange) {
@@ -1602,16 +1616,16 @@
       console.log(`Running solver for ${matchedPairs.length} questions...`);
       window.__ACADEMIC_EXPRESS_FAST_MODE__ = isFastMode;
 
-      const isVocabularyTest = matchedPairs.some((p) => p.data.isAutoAdvance);
+      const hasAutoAdvancePair = matchedPairs.some(isAutoAdvancePair);
       let readingWait = 0;
-      if (!isFastMode && isNew && !isVocabularyTest) {
+      if (!isFastMode && isNew && !hasAutoAdvancePair) {
         const totalText = matchedPairs
           .map((p) => p.data.rawText || "")
           .join(" ");
         readingWait = getWaitTime("READING_WAIT", totalText);
       }
       let autoAdvancePaceWait = 0;
-      if (isVocabularyTest) {
+      if (hasAutoAdvancePair) {
         const paceWait = getWaitTime("AUTO_ADVANCE_WAIT");
         const elapsed = Date.now() - lastAutoAdvanceSolvedAt;
         if (elapsed > 0 && elapsed < paceWait) {
@@ -1628,7 +1642,7 @@
         },
       );
       startHeaderAnimation(totalEstimatedMs, {
-        minimumDurationMs: isVocabularyTest ? 0 : undefined,
+        minimumDurationMs: hasAutoAdvancePair ? 0 : undefined,
       });
       setGlobalLock(true);
 
@@ -1642,8 +1656,9 @@
       let progressedDuringSolve = false;
       for (let i = 0; i < matchedPairs.length; i++) {
         const pair = matchedPairs[i];
-        if (pair.data.isAutoAdvance) autoAdvance = true;
-        if (pair.data.isAutoAdvance) {
+        const pairAutoAdvances = isAutoAdvancePair(pair);
+        if (pairAutoAdvances) autoAdvance = true;
+        if (pairAutoAdvances) {
           await waitForAutoAdvancePace();
         }
         const preSolveWait = getWaitTime("CLICK_WAIT");
@@ -1651,10 +1666,10 @@
           await sleep(preSolveWait);
         }
         await solve(pair.data.answers, pair.data.type, pair.element, pair.data);
-        if (pair.data.isAutoAdvance) {
+        if (pairAutoAdvances) {
           lastAutoAdvanceSolvedAt = Date.now();
         }
-        const postSolveWait = pair.data.isAutoAdvance
+        const postSolveWait = pairAutoAdvances
           ? getWaitTime("AUTO_ADVANCE_WAIT")
           : getWaitTime("SOLVE_INTERVAL");
         if (hasProgressAdvancedFrom(initialProgressRange)) {

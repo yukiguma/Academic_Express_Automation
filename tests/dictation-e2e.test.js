@@ -21,6 +21,38 @@ function parseSavedAnswer(body) {
     };
 }
 
+function dictation3ExpectedQuestions() {
+    return [
+        ['20280414', 'dictation', 'I have to go to the bank before lunch.'],
+        ['203016143', 'dictation', "Don't be lazy. You have to study English harder."],
+        ['20275814', 'dictation', 'It was snowing when I arrived at the library.'],
+        ['20302814', 'dictation', 'My uncle liked singing so he became a singer.'],
+        ['20296914', 'dictation', 'You have to take off your shoes here.'],
+        ['20288014', 'dictation', 'My brother and I were playing catch this morning.'],
+        ['20303814', 'dictation', 'We can stay home and study by computer.'],
+        ['20296514', 'dictation', 'Look at those white clouds in the blue sky.'],
+        ['203143143', 'dictation', "You look very sick. What's the matter with you?"],
+        ['20299014', 'dictation', 'I believe her because she never tells a lie.']
+    ];
+}
+
+async function waitForSavedQuestionCount(saveRequests, count, timeoutMs = 45_000) {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+        const writes = saveRequests
+            .filter(request => request.method === 'POST')
+            .map(request => parseSavedAnswer(request.body))
+            .filter(answer => answer.questionNo);
+        if (writes.length >= count) return writes;
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    const writes = saveRequests
+        .filter(request => request.method === 'POST')
+        .map(request => parseSavedAnswer(request.body))
+        .filter(answer => answer.questionNo);
+    throw new Error(`Timed out waiting for ${count} saved dictation answers: ${JSON.stringify(writes)}`);
+}
+
 async function runDictationFixture({ expectedAnswer, fixtureName, questionNo, startFirst = false }) {
     const fixtureDir = path.join(__dirname, 'fixtures', fixtureName);
     const questionData = parser.parseQuestionData(fs.readFileSync(path.join(fixtureDir, 'authoring.cfc'), 'utf8')).parsed;
@@ -112,4 +144,43 @@ test('Dictation3 fixture with QuestionHeader layout shows controls', { timeout: 
         questionData,
         server
     });
+});
+
+test('Dictation3 fixture auto-solves consecutive questions without skipping', { timeout: 75_000 }, async () => {
+    const fixtureDir = path.join(__dirname, 'fixtures', 'Dictation3');
+    const questionData = parser.parseQuestionData(fs.readFileSync(path.join(fixtureDir, 'authoring.cfc'), 'utf8')).parsed;
+    const expectedQuestions = dictation3ExpectedQuestions();
+    assert.deepEqual(questionData.questions.map(question => [question.questionNo, question.type, question.answers[0]]), expectedQuestions);
+
+    const { saveRequests, server } = createFixtureServer({
+        apiResponses: new Map([
+            ['/as/flash/data_manipulate.cfc', saveSuccess]
+        ]),
+        fixtureDir,
+        routes: new Map([
+            ['/as/lplayer/index.cfm', 'ディクタン _ Academic Express3.html'],
+            ['/as/lplayer/bundle.js', 'bundle.js'],
+            ['/as/player_data/authoring.cfc', 'authoring.cfc']
+        ])
+    });
+
+    await runAutoSolve({
+        pageReadySelector: '[class*="QuestionHeader__innerContainer"]',
+        questionData,
+        server,
+        waitFor: () => waitForSavedQuestionCount(saveRequests, expectedQuestions.length)
+    });
+
+    const writes = saveRequests
+        .filter(request => request.method === 'POST')
+        .map(request => parseSavedAnswer(request.body))
+        .filter(answer => answer.questionNo);
+    assert.deepEqual(writes.map(({ soundCount, ...write }) => write), expectedQuestions.map(([questionNo], index) => ({
+        answer: '',
+        correctFlag: '5',
+        method: 'write_answer_au',
+        missCount: '0',
+        questionNo,
+        saveType: index === expectedQuestions.length - 1 ? '1' : '0'
+    })));
 });

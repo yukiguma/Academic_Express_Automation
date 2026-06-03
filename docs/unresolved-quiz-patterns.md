@@ -129,6 +129,8 @@ fixture の期待正答:
 - `Dictation2` では `Gene [began studying for his English test early this morning.]` のように、bracket の外側が最初から開いている prefix になる。自動入力するのは bracket 内の未入力部分だけ。
 - `Dictation3` は `QuestionHeader__innerContainer` / `QuestionArea__dictationArea` を使う新しい画面構造で、`AppPc__common_inner` がない。拡張の自動入力ボタンは `QuestionHeader` にも差し込む。
 - `Dictation3` は `window.config.question_no` がなく、画面の `1/10` 進捗表示から現在問を選ぶ。
+- `Dictation3` の開始モーダルは拡張の `global-lock` の下に出るため、solver は lock を一時解除して「スタート」を押してから入力する。
+- `Dictation3` は完答後にプレイヤー側が自動で次問へ進むため、拡張側では手動遷移を押さず、進捗変化を待って次の自動入力へ再開する。二重遷移すると偶数問が飛ばされる。
 - 画面は `DictationBox` / `FontBox` の文字枠で構成され、document レベルの keyboard event を受けて1文字ずつ開く。
 - 初期表示には「スタート」オーバーレイがあり、開始後にキー入力を受け付ける。
 - `AppHeader__fixed-top` がなく、拡張の自動入力ボタンは `AppPc__common_inner` や `QuestionHeader__innerContainer` などの Dictation 用ヘッダーへ差し込む。
