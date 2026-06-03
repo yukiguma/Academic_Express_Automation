@@ -127,10 +127,6 @@
     }
   }
 
-  function getAutoSolveResumeWait() {
-    return Math.max(getWaitTime("AUTO_ADVANCE_WAIT"), 500);
-  }
-
   function scheduleAutoSolveResume(wait) {
     if (autoSolveResumeTimer) clearTimeout(autoSolveResumeTimer);
     autoSolveResumeTimer = setTimeout(
@@ -845,10 +841,7 @@
     }
 
     const text = searchRoot?.innerText || searchRoot?.textContent || "";
-    return (
-      text.includes("並べ替え") ||
-      candidates.length > 0
-    );
+    return text.includes("並べ替え") || candidates.length > 0;
   }
 
   function findActiveSortingPair(searchRoot, activeQuestionRange = null) {
@@ -1115,10 +1108,7 @@
       }
     }
 
-    return narrowPairsToCurrentProgress(
-      matchedPairs,
-      activeQuestionRange,
-    );
+    return narrowPairsToCurrentProgress(matchedPairs, activeQuestionRange);
   }
 
   function injectStyles() {
@@ -1430,12 +1420,12 @@
           console.log(
             "Detecting auto-advance question, skipping manual transition click.",
           );
-          const resumeWait = getAutoSolveResumeWait();
-          nextAutoSolveAllowedAt = Date.now() + resumeWait;
+          nextAutoSolveAllowedAt =
+            Date.now() + getWaitTime("AUTO_ADVANCE_WAIT");
           isSolving = false;
           resetHeaderProgress();
           setGlobalLock(false);
-          scheduleAutoSolveResume(resumeWait);
+          scheduleAutoSolveResume(getWaitTime("AUTO_ADVANCE_WAIT"));
           return;
         }
         await handleTransition();
@@ -1454,9 +1444,7 @@
     isTransitioning = true;
 
     async function waitForTransitionSettle() {
-      const settleWait = isFastMode
-        ? Math.max(getWaitTime("TRANSITION_WAIT"), 250)
-        : Math.max(getWaitTime("TRANSITION_WAIT"), 1600);
+      const settleWait = getWaitTime("TRANSITION_WAIT");
       await sleep(settleWait);
     }
 
