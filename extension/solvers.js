@@ -626,7 +626,8 @@ async function solveDictation(answers) {
 }
 
 function dictationInputChars(answer) {
-    return Array.from(String(answer || "")).filter(char => !/[.!?]/.test(char));
+    return Array.from(String(answer || "").replace(/\u2019/g, "'"))
+        .filter(char => /[\p{L}\p{N}']/u.test(char));
 }
 
 // Solver: Sorting

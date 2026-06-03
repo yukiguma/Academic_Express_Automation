@@ -172,7 +172,7 @@ test('keyboard dispatch uses physical key codes for letters and punctuation', { 
     }
 });
 
-test('Dictation solver omits sentence punctuation that the player auto-completes', { timeout: 20_000 }, async () => {
+test('Dictation solver sends only input letters and apostrophes', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
@@ -193,7 +193,7 @@ test('Dictation solver omits sentence punctuation that the player auto-completes
             return window.keypresses.join('');
         });
 
-        assert.equal(keys, "Don't be lazy What's the matter with you");
+        assert.equal(keys, "Don'tbelazyWhat'sthematterwithyou");
     } finally {
         await browser.close();
     }

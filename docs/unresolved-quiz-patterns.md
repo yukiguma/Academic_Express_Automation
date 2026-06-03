@@ -143,7 +143,7 @@ fixture の期待正答:
 - prefix つきの場合も同じく `dictation` として扱い、bracket 内だけを `answers` に保持する。
 - solver は input 要素探索ではなく、正答文字列を document へ `keydown` / `keypress` / `keyup` として送る。
 - keyboard event は `keydown` / `keyup` では物理キーの `keyCode` / `which`、`keypress` では文字コードを送る。プレイヤー側が `key` ではなく `keyCode` を見る場合、文字コードを物理キーとして送るとミスタイプ扱いになり、自動的に次問へ進む。
-- Dictation プレイヤーはピリオドなどの文末句読点を直前の文字入力で自動補完するため、solver は `.?!` を送らない。補完済みの句読点を追加送信すると、次問の先頭入力として扱われてミス遷移の原因になり得る。
+- Dictation プレイヤーはスペースやピリオドなどの区切りを直前の文字入力で自動補完するため、solver は文字・数字・アポストロフィだけを送る。入力対象外の区切りを追加送信するとミスカウントが増え、上限到達による自動遷移の原因になり得る。
 - 複数問 Dictation はレイアウト検出に頼らず自動遷移扱いにする。入力中や入力直後の DOM 変化で `dictationArea` 検出が外れても、拡張側の手動 `次へ` / `採点` 遷移が割り込まないようにする。
 - 「スタート」ボタンは画面最前面で押せる状態のときだけ solver が押す。保存 HTML の E2E では開始オーバーレイが残るため、テスト側で開始後に拡張を注入する。
 - 画面テキストでは問題を照合できないため、`window.config.question_no` と `questionNo` の一致で active question を特定する。
