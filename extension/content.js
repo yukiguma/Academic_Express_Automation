@@ -613,7 +613,9 @@
   function hasProgressAdvancedFrom(initialRange) {
     if (!isSingleQuestionProgress(initialRange)) return false;
     const currentRange = getCurrentProgressQuestionRange();
-    if (!currentRange) return true;
+    if (!currentRange) {
+      return !findTransitionButton(["採点", "判定", "続ける", "終了", "完了"]);
+    }
     return (
       currentRange.start !== initialRange.start ||
       currentRange.end !== initialRange.end ||

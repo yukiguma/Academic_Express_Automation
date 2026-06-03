@@ -213,6 +213,100 @@ test('content script applies fast-mode click wait before solving', { timeout: 20
     }
 });
 
+test('content script clicks manual transition when progress disappears after solving', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['correct'],
+                displayOrder: 1,
+                questionNo: '1',
+                rawText: 'Choose the correct answer.',
+                signature: 'choosethecorrectanswer',
+                type: 'multipleChoice'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div></div></div>
+            <main>
+                <div id="progress">1 / 1</div>
+                <div class="QuestionBuilder__question___visible">
+                    Choose the correct answer.
+                </div>
+                <button>correct</button>
+                <div id="transition-host"></div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.__transitionClicks = [];
+            window.simulateClick = element => {
+                const target = element.querySelector('button') || element;
+                for (const eventType of ['mousedown', 'mouseup', 'click']) {
+                    target.dispatchEvent(new MouseEvent(eventType, {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    }));
+                }
+            };
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.rawText);
+                document.getElementById('progress')?.remove();
+                const button = document.createElement('button');
+                button.textContent = '採点';
+                button.onclick = () => window.__transitionClicks.push('採点');
+                document.getElementById('transition-host').appendChild(button);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__transitionClicks.length > 0, { timeout: 10_000 });
+        assert.deepEqual(await page.evaluate(() => window.__solvedQuestions), [
+            'Choose the correct answer.'
+        ]);
+        assert.deepEqual(await page.evaluate(() => window.__transitionClicks), ['採点']);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 test('content script ignores offscreen stale normal question candidates', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [

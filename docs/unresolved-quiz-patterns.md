@@ -185,6 +185,7 @@ fixture から確認した例:
 - fast mode でも `CLICK_WAIT` を解答直前に適用し、solver 内の明示的な待機は短縮しない。単問自動遷移で操作が速くなりすぎると、画面更新前に次の解答へ進むことがある。
 - `multipleChoice` 選択後の DOM mutation が予定より早く `ensureSolveButton` を呼ぶことがあるため、自動進行後の再開時刻を gate し、MutationObserver 経由でも最低待機を守る。
 - 単問進捗で複数候補が見つかる場合や sorting list を探す場合は、画面外に残った古い問題 DOM を誤答しないよう、viewport 内で一意に決まる候補だけを解く。曖昧な場合は解答しない。
+- 解答後に `1 / N` の進捗が消えても「採点」「判定」「完了」などの手動遷移ボタンが表示されている場合は、自動遷移済みとは扱わず `handleTransition()` でクリックする。
 - 自動遷移の候補に「完了」を含め、Grammar Bank の単問確定を進める。
 
 fixture から確認した例:
