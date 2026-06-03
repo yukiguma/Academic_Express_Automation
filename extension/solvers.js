@@ -614,14 +614,19 @@ async function solveDictation(answers) {
 
     await dismissDictationStartModal();
 
-    console.log(`Dictation Strategy: Typing ${answer.length} characters.`);
-    for (const char of answer) {
+    const chars = dictationInputChars(answer);
+    console.log(`Dictation Strategy: Typing ${chars.length} characters.`);
+    for (const char of chars) {
         dispatchKeyboardChar(char, document);
         await sleep(5);
     }
 
     await sleep(500);
     return true;
+}
+
+function dictationInputChars(answer) {
+    return Array.from(String(answer || "")).filter(char => !/[.!?]/.test(char));
 }
 
 // Solver: Sorting

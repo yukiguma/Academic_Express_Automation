@@ -172,6 +172,33 @@ test('keyboard dispatch uses physical key codes for letters and punctuation', { 
     }
 });
 
+test('Dictation solver omits sentence punctuation that the player auto-completes', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const keys = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            await solve(["Don't be lazy. What's the matter with you?"], 'dictation', document);
+            return window.keypresses.join('');
+        });
+
+        assert.equal(keys, "Don't be lazy What's the matter with you");
+    } finally {
+        await browser.close();
+    }
+});
+
 test('FontBox sentence typing uses bracket text instead of the full sentence', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
