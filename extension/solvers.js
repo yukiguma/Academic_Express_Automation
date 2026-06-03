@@ -359,7 +359,7 @@ function extractBracketText(text) {
 
 function fontBoxInputText(text) {
     return Array.from(String(text || ""))
-        .filter(char => /[\p{L}\p{N}]|\s/u.test(char))
+        .filter(char => /[\p{L}\p{N}\p{P}\p{S}]|\s/u.test(char))
         .join('')
         .replace(/\s+/g, ' ');
 }
@@ -379,7 +379,9 @@ function restoreFontBoxInputSpacing(answer, rawText) {
     }
 
     const end = start + compactRaw.length - 1;
-    return fontBoxInputText(String(answer || "").slice(spans[start].start, spans[end].end));
+    const source = String(answer || "");
+    const endIndex = end === spans.length - 1 ? source.length : spans[end].end;
+    return fontBoxInputText(source.slice(spans[start].start, endIndex));
 }
 
 function inferMissingByHiddenBoxCount(answer, hiddenBoxCount) {
@@ -592,6 +594,7 @@ async function solveSorting(answers, scope) {
     const tokens = answers.flatMap(answer => {
         return String(answer || "").split('/').map(token => token.trim()).filter(Boolean);
     });
+    const roots = sortingTokenSearchRoots(scope);
 
     let clickedAny = false;
     for (const token of tokens) {
@@ -599,7 +602,10 @@ async function solveSorting(answers, scope) {
         let btn = null;
 
         for (let attempt = 0; attempt < 8 && !btn; attempt++) {
-            btn = findSortingToken(cleanToken, scope) || findSortingToken(cleanToken, document);
+            for (const root of roots) {
+                btn = findSortingToken(cleanToken, root);
+                if (btn) break;
+            }
             if (!btn) await sleep(100);
         }
 
@@ -616,6 +622,14 @@ async function solveSorting(answers, scope) {
     const expectedAnswer = compactText(tokens.join(''));
     const currentPageText = compactText(document.body?.innerText || document.body?.textContent || "");
     return clickedAny && expectedAnswer && currentPageText.includes(expectedAnswer);
+}
+
+function sortingTokenSearchRoots(scope) {
+    if (!scope?.querySelectorAll || scope === document) return [document];
+    if (scope.querySelector('[class*="sortStringList"]')) return [scope];
+
+    const visibleLists = Array.from(document.querySelectorAll('[class*="sortStringList"]')).filter(isVisible);
+    return visibleLists.length === 1 ? [scope, visibleLists[0]] : [scope];
 }
 
 function findSortingToken(token, root) {

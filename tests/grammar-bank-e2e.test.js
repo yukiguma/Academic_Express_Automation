@@ -38,6 +38,15 @@ function parseSavedAnswer(body) {
     };
 }
 
+function assertAllCorrect(writes) {
+    const wrongWrites = writes.filter(write => write.correctFlag !== '1');
+    assert.deepEqual(
+        wrongWrites,
+        [],
+        `Expected all writes to be correct; wrong writes: ${JSON.stringify(wrongWrites)}`
+    );
+}
+
 function createGrammarBankServer(payload) {
     return createFixtureServer({
         apiResponses: new Map([
@@ -96,7 +105,7 @@ test('GrammarBank sortingA fixture is auto-solved and submitted through completi
         .filter(answer => answer.method === 'save_answer_s');
 
     assert.deepEqual(writes.map(write => write.questionNo).sort(), expectedQuestionNos);
-    assert.ok(writes.every(write => write.correctFlag === '1'));
+    assertAllCorrect(writes);
     assert.ok(writes.every(write => write.correctValues.every(correct => correct === 'true')));
     assert.equal(writes.at(-1).saveType, '1');
 });
@@ -134,7 +143,7 @@ test('GrammarBank full shuffled fixture does not carry stale matches into later 
         .filter(answer => answer.method === 'save_answer_s');
 
     assert.deepEqual(writes.map(write => write.questionNo).sort(), expectedQuestionNos);
-    assert.ok(writes.every(write => write.correctFlag === '1'));
+    assertAllCorrect(writes);
     assert.ok(writes.every(write => write.correctValues.every(correct => correct === 'true')));
     assert.equal(writes.at(-1).saveType, '1');
 });
