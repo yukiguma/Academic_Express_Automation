@@ -337,13 +337,49 @@ function compactAnswerChars(text) {
     return String(text || "").replace(/[^\p{L}\p{N}]/gu, '');
 }
 
+function answerLetterSpans(text) {
+    const spans = [];
+    let offset = 0;
+
+    for (const char of String(text || "")) {
+        const start = offset;
+        offset += char.length;
+        if (/[\p{L}\p{N}]/u.test(char)) {
+            spans.push({ char, start, end: offset });
+        }
+    }
+
+    return spans;
+}
+
 function extractBracketText(text) {
     const matches = Array.from(String(text || "").matchAll(/\[([^\]]+)\]/g));
     return matches.map(match => match[1].trim()).filter(Boolean).join(' ');
 }
 
 function fontBoxInputText(text) {
-    return Array.from(String(text || "")).filter(char => /[\p{L}\p{N}]/u.test(char)).join('');
+    return Array.from(String(text || ""))
+        .filter(char => /[\p{L}\p{N}]|\s/u.test(char))
+        .join('')
+        .replace(/\s+/g, ' ');
+}
+
+function restoreFontBoxInputSpacing(answer, rawText) {
+    const compactRaw = compactAnswerChars(rawText);
+    const spans = answerLetterSpans(answer);
+    const compactAnswer = spans.map(span => span.char).join('');
+
+    if (!compactRaw || !compactAnswer) {
+        return fontBoxInputText(rawText);
+    }
+
+    const start = compactAnswer.toLowerCase().indexOf(compactRaw.toLowerCase());
+    if (start === -1) {
+        return fontBoxInputText(rawText);
+    }
+
+    const end = start + compactRaw.length - 1;
+    return fontBoxInputText(String(answer || "").slice(spans[start].start, spans[end].end));
 }
 
 function inferMissingByHiddenBoxCount(answer, hiddenBoxCount) {
@@ -416,7 +452,7 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
                 return String(label?.textContent || box.textContent || "").trim().slice(0, 1);
             })
             .join('');
-    const chars = fontBoxInputText(rawChars);
+    const chars = restoreFontBoxInputSpacing(answers?.[0], rawChars);
 
     if (!chars) return false;
 
@@ -424,7 +460,11 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
     for (const char of chars) {
         const before = fontBoxSnapshot();
         dispatchKeyboardChar(char, document);
-        await waitForFontBoxUpdate(before);
+        if (char === ' ') {
+            await waitForFontBoxUpdate(before, 350);
+        } else {
+            await waitForFontBoxUpdate(before);
+        }
     }
 
     await sleep(250);
@@ -438,9 +478,9 @@ function fontBoxSnapshot() {
         .join('|');
 }
 
-async function waitForFontBoxUpdate(previousSnapshot) {
+async function waitForFontBoxUpdate(previousSnapshot, timeoutMs = 250) {
     const startedAt = Date.now();
-    while (Date.now() - startedAt < 250) {
+    while (Date.now() - startedAt < timeoutMs) {
         await sleep(10);
         if (fontBoxSnapshot() !== previousSnapshot) {
             await sleep(15);
