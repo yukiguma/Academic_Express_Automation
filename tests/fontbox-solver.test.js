@@ -33,6 +33,45 @@ test('solver fast mode preserves explicit sorting waits', { timeout: 20_000 }, a
     }
 });
 
+test('sorting solver does not click tokens outside a scoped sorting list', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <section id="current">
+                    <ul class="SortingAQuestionBuilder__sortStringList___test">
+                        <li>alpha</li>
+                    </ul>
+                </section>
+                <section id="stale">
+                    <ul class="SortingAQuestionBuilder__sortStringList___test">
+                        <li>beta</li>
+                    </ul>
+                </section>
+                <script>
+                    window.clicked = [];
+                    document.querySelectorAll('li').forEach(item => {
+                        item.addEventListener('click', () => window.clicked.push(item.textContent.trim()));
+                    });
+                </script>
+            </main>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            await solve(['alpha', 'beta'], 'sorting', document.getElementById('current'));
+        });
+
+        const clicked = await page.evaluate(() => window.clicked);
+        assert.deepEqual(clicked, ['alpha']);
+    } finally {
+        await browser.close();
+    }
+});
+
 test('FontBox typing waits for each accepted key before sending the next', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
@@ -185,6 +224,171 @@ test('FontBox sentence typing joins multiple bracket blanks with spaces', { time
 
         const acceptedKeys = await page.evaluate(() => window.acceptedKeys.join(''));
         assert.equal(acceptedKeys, 'Both of');
+    } finally {
+        await browser.close();
+    }
+});
+
+test('FontBox spelling types spaces inside one bracket blank', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <style>
+                .FontBox__fontBox___1uhRR {
+                    display: inline-block;
+                    width: 12px;
+                    height: 18px;
+                }
+            </style>
+            <main id="scope">
+                ${Array.from('postoffice').map(() => `
+                    <div class="FontBox__fontBox___1uhRR FontBox__hide___1R5sG"></div>
+                `).join('')}
+            </main>
+            <script>
+                window.acceptedKeys = [];
+                let index = 0;
+                const boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'));
+
+                document.addEventListener('keydown', event => {
+                    const expected = 'post office'[index];
+                    if (event.key !== expected) return;
+
+                    window.acceptedKeys.push(event.key);
+                    if (event.key !== ' ') {
+                        const boxIndex = window.acceptedKeys.filter(key => key !== ' ').length - 1;
+                        boxes[boxIndex].className += ' FontBox__fontBox_ok___VnRUk';
+                        boxes[boxIndex].textContent = event.key;
+                    } else {
+                        boxes[0].className += ' FontBox__space_accepted___test';
+                    }
+                    index += 1;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        await page.evaluate(async () => {
+            await solve(
+                ['post office'],
+                'typing',
+                document.getElementById('scope'),
+                { rawText: '郵便局<br />[post office]' }
+            );
+        });
+
+        const acceptedKeys = await page.evaluate(() => window.acceptedKeys.join(''));
+        assert.equal(acceptedKeys, 'post office');
+    } finally {
+        await browser.close();
+    }
+});
+
+test('FontBox spelling restores spaces that are blank in DOM labels', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <style>
+                .FontBox__fontBox___1uhRR {
+                    display: inline-block;
+                    width: 12px;
+                    height: 18px;
+                }
+            </style>
+            <main id="scope">
+                ${Array.from('post office').map(char => `
+                    <div class="FontBox__fontBox___1uhRR">
+                        <div class="FontBox__label_txt___3GGpp FontBox__label_txt_hide___2FIdR">${char === ' ' ? '' : char}</div>
+                    </div>
+                `).join('')}
+            </main>
+            <script>
+                window.acceptedKeys = [];
+                let index = 0;
+                const boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'));
+
+                document.addEventListener('keydown', event => {
+                    const expected = 'post office'[index];
+                    if (event.key !== expected) return;
+
+                    window.acceptedKeys.push(event.key);
+                    boxes[index].className += ' FontBox__fontBox_ok___VnRUk';
+                    boxes[index].textContent = event.key;
+                    index += 1;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        await page.evaluate(async () => {
+            await solve(
+                ['post office'],
+                'typing',
+                document.getElementById('scope'),
+                { rawText: '郵便局' }
+            );
+        });
+
+        const acceptedKeys = await page.evaluate(() => window.acceptedKeys.join(''));
+        assert.equal(acceptedKeys, 'post office');
+    } finally {
+        await browser.close();
+    }
+});
+
+test('FontBox spelling preserves punctuation while restoring blank labels', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <style>
+                .FontBox__fontBox___1uhRR {
+                    display: inline-block;
+                    width: 12px;
+                    height: 18px;
+                }
+            </style>
+            <main id="scope">
+                ${Array.from('don\'t.').map(char => `
+                    <div class="FontBox__fontBox___1uhRR">
+                        <div class="FontBox__label_txt___3GGpp FontBox__label_txt_hide___2FIdR">${/[a-z]/i.test(char) ? char : ''}</div>
+                    </div>
+                `).join('')}
+            </main>
+            <script>
+                window.acceptedKeys = [];
+                let index = 0;
+                const boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'));
+
+                document.addEventListener('keydown', event => {
+                    const expected = "don't."[index];
+                    if (event.key !== expected) return;
+
+                    window.acceptedKeys.push(event.key);
+                    boxes[index].className += ' FontBox__fontBox_ok___VnRUk';
+                    boxes[index].textContent = event.key;
+                    index += 1;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        await page.evaluate(async () => {
+            await solve(
+                ["don't."],
+                'typing',
+                document.getElementById('scope'),
+                { rawText: 'しない' }
+            );
+        });
+
+        const acceptedKeys = await page.evaluate(() => window.acceptedKeys.join(''));
+        assert.equal(acceptedKeys, "don't.");
     } finally {
         await browser.close();
     }

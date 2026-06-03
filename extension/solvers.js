@@ -337,9 +337,51 @@ function compactAnswerChars(text) {
     return String(text || "").replace(/[^\p{L}\p{N}]/gu, '');
 }
 
+function answerLetterSpans(text) {
+    const spans = [];
+    let offset = 0;
+
+    for (const char of String(text || "")) {
+        const start = offset;
+        offset += char.length;
+        if (/[\p{L}\p{N}]/u.test(char)) {
+            spans.push({ char, start, end: offset });
+        }
+    }
+
+    return spans;
+}
+
 function extractBracketText(text) {
     const matches = Array.from(String(text || "").matchAll(/\[([^\]]+)\]/g));
     return matches.map(match => match[1].trim()).filter(Boolean).join(' ');
+}
+
+function fontBoxInputText(text) {
+    return Array.from(String(text || ""))
+        .filter(char => /[\p{L}\p{N}\p{P}\p{S}]|\s/u.test(char))
+        .join('')
+        .replace(/\s+/g, ' ');
+}
+
+function restoreFontBoxInputSpacing(answer, rawText) {
+    const compactRaw = compactAnswerChars(rawText);
+    const spans = answerLetterSpans(answer);
+    const compactAnswer = spans.map(span => span.char).join('');
+
+    if (!compactRaw || !compactAnswer) {
+        return fontBoxInputText(rawText);
+    }
+
+    const start = compactAnswer.toLowerCase().indexOf(compactRaw.toLowerCase());
+    if (start === -1) {
+        return fontBoxInputText(rawText);
+    }
+
+    const end = start + compactRaw.length - 1;
+    const source = String(answer || "");
+    const endIndex = end === spans.length - 1 ? source.length : spans[end].end;
+    return fontBoxInputText(source.slice(spans[start].start, endIndex));
 }
 
 function inferMissingByHiddenBoxCount(answer, hiddenBoxCount) {
@@ -401,10 +443,10 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
         const className = String(box.className || "");
         return className.includes('FontBox__hide') && !String(box.textContent || "").trim();
     }).length;
-    const chars = hasHiddenEmptyBoxes
+    const rawChars = hasHiddenEmptyBoxes
         ? extractBracketText(question.rawText) ||
-            inferMissingByHiddenBoxCount(answers?.[0], hiddenEmptyBoxCount) ||
-            inferMissingFontBoxText(answers?.[0], boxes)
+            inferMissingFontBoxText(answers?.[0], boxes) ||
+            inferMissingByHiddenBoxCount(answers?.[0], hiddenEmptyBoxCount)
         : boxes
             .filter(box => !String(box.className || "").includes('fontBox_ok'))
             .map(box => {
@@ -412,6 +454,7 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
                 return String(label?.textContent || box.textContent || "").trim().slice(0, 1);
             })
             .join('');
+    const chars = restoreFontBoxInputSpacing(answers?.[0], rawChars);
 
     if (!chars) return false;
 
@@ -419,7 +462,11 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
     for (const char of chars) {
         const before = fontBoxSnapshot();
         dispatchKeyboardChar(char, document);
-        await waitForFontBoxUpdate(before);
+        if (char === ' ') {
+            await waitForFontBoxUpdate(before, 350);
+        } else {
+            await waitForFontBoxUpdate(before);
+        }
     }
 
     await sleep(250);
@@ -433,9 +480,9 @@ function fontBoxSnapshot() {
         .join('|');
 }
 
-async function waitForFontBoxUpdate(previousSnapshot) {
+async function waitForFontBoxUpdate(previousSnapshot, timeoutMs = 250) {
     const startedAt = Date.now();
-    while (Date.now() - startedAt < 250) {
+    while (Date.now() - startedAt < timeoutMs) {
         await sleep(10);
         if (fontBoxSnapshot() !== previousSnapshot) {
             await sleep(15);
@@ -547,6 +594,7 @@ async function solveSorting(answers, scope) {
     const tokens = answers.flatMap(answer => {
         return String(answer || "").split('/').map(token => token.trim()).filter(Boolean);
     });
+    const roots = sortingTokenSearchRoots(scope);
 
     let clickedAny = false;
     for (const token of tokens) {
@@ -554,7 +602,10 @@ async function solveSorting(answers, scope) {
         let btn = null;
 
         for (let attempt = 0; attempt < 8 && !btn; attempt++) {
-            btn = findSortingToken(cleanToken, scope) || findSortingToken(cleanToken, document);
+            for (const root of roots) {
+                btn = findSortingToken(cleanToken, root);
+                if (btn) break;
+            }
             if (!btn) await sleep(100);
         }
 
@@ -571,6 +622,14 @@ async function solveSorting(answers, scope) {
     const expectedAnswer = compactText(tokens.join(''));
     const currentPageText = compactText(document.body?.innerText || document.body?.textContent || "");
     return clickedAny && expectedAnswer && currentPageText.includes(expectedAnswer);
+}
+
+function sortingTokenSearchRoots(scope) {
+    if (!scope?.querySelectorAll || scope === document) return [document];
+    if (scope.querySelector('[class*="sortStringList"]')) return [scope];
+
+    const visibleLists = Array.from(document.querySelectorAll('[class*="sortStringList"]')).filter(isVisible);
+    return visibleLists.length === 1 ? [scope, visibleLists[0]] : [scope];
 }
 
 function findSortingToken(token, root) {
