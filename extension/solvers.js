@@ -342,6 +342,10 @@ function extractBracketText(text) {
     return matches.map(match => match[1].trim()).filter(Boolean).join(' ');
 }
 
+function fontBoxInputText(text) {
+    return Array.from(String(text || "")).filter(char => /[\p{L}\p{N}]/u.test(char)).join('');
+}
+
 function inferMissingByHiddenBoxCount(answer, hiddenBoxCount) {
     if (!answer || hiddenBoxCount <= 0) return "";
     const tokens = String(answer).match(/[\p{L}\p{N}]+(?:['\u2019][\p{L}\p{N}]+)?|[^\s]/gu) || [];
@@ -401,10 +405,10 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
         const className = String(box.className || "");
         return className.includes('FontBox__hide') && !String(box.textContent || "").trim();
     }).length;
-    const chars = hasHiddenEmptyBoxes
+    const rawChars = hasHiddenEmptyBoxes
         ? extractBracketText(question.rawText) ||
-            inferMissingByHiddenBoxCount(answers?.[0], hiddenEmptyBoxCount) ||
-            inferMissingFontBoxText(answers?.[0], boxes)
+            inferMissingFontBoxText(answers?.[0], boxes) ||
+            inferMissingByHiddenBoxCount(answers?.[0], hiddenEmptyBoxCount)
         : boxes
             .filter(box => !String(box.className || "").includes('fontBox_ok'))
             .map(box => {
@@ -412,6 +416,7 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
                 return String(label?.textContent || box.textContent || "").trim().slice(0, 1);
             })
             .join('');
+    const chars = fontBoxInputText(rawChars);
 
     if (!chars) return false;
 
@@ -419,11 +424,7 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
     for (const char of chars) {
         const before = fontBoxSnapshot();
         dispatchKeyboardChar(char, document);
-        if (char === ' ') {
-            await sleep(50);
-        } else {
-            await waitForFontBoxUpdate(before);
-        }
+        await waitForFontBoxUpdate(before);
     }
 
     await sleep(250);

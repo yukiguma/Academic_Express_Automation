@@ -133,7 +133,7 @@ test('FontBox sentence typing uses bracket text instead of the full sentence', {
     }
 });
 
-test('FontBox sentence typing joins multiple bracket blanks with spaces', { timeout: 20_000 }, async () => {
+test('FontBox sentence typing skips spaces between multiple bracket blanks', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
@@ -157,17 +157,12 @@ test('FontBox sentence typing joins multiple bracket blanks with spaces', { time
                 const boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'));
 
                 document.addEventListener('keydown', event => {
-                    const expected = 'Both of'[index];
+                    const expected = 'Bothof'[index];
                     if (event.key !== expected) return;
 
                     window.acceptedKeys.push(event.key);
-                    if (event.key !== ' ') {
-                        const boxIndex = window.acceptedKeys.filter(key => key !== ' ').length - 1;
-                        boxes[boxIndex].className += ' FontBox__fontBox_ok___VnRUk';
-                        boxes[boxIndex].textContent = event.key;
-                    } else {
-                        boxes[0].className += ' FontBox__space_accepted___test';
-                    }
+                    boxes[index].className += ' FontBox__fontBox_ok___VnRUk';
+                    boxes[index].textContent = event.key;
                     index += 1;
                 });
             </script>
@@ -184,13 +179,13 @@ test('FontBox sentence typing joins multiple bracket blanks with spaces', { time
         });
 
         const acceptedKeys = await page.evaluate(() => window.acceptedKeys.join(''));
-        assert.equal(acceptedKeys, 'Both of');
+        assert.equal(acceptedKeys, 'Bothof');
     } finally {
         await browser.close();
     }
 });
 
-test('FontBox spelling types spaces inside one bracket blank', { timeout: 20_000 }, async () => {
+test('FontBox spelling skips spaces inside one bracket blank', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
@@ -214,15 +209,12 @@ test('FontBox spelling types spaces inside one bracket blank', { timeout: 20_000
                 const boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'));
 
                 document.addEventListener('keydown', event => {
-                    const expected = 'post office'[index];
+                    const expected = 'postoffice'[index];
                     if (event.key !== expected) return;
 
                     window.acceptedKeys.push(event.key);
-                    if (event.key !== ' ') {
-                        const boxIndex = window.acceptedKeys.filter(key => key !== ' ').length - 1;
-                        boxes[boxIndex].className += ' FontBox__fontBox_ok___VnRUk';
-                        boxes[boxIndex].textContent = event.key;
-                    }
+                    boxes[index].className += ' FontBox__fontBox_ok___VnRUk';
+                    boxes[index].textContent = event.key;
                     index += 1;
                 });
             </script>
@@ -239,7 +231,7 @@ test('FontBox spelling types spaces inside one bracket blank', { timeout: 20_000
         });
 
         const acceptedKeys = await page.evaluate(() => window.acceptedKeys.join(''));
-        assert.equal(acceptedKeys, 'post office');
+        assert.equal(acceptedKeys, 'postoffice');
     } finally {
         await browser.close();
     }
