@@ -635,7 +635,7 @@ async function solveDictation(answers, scope, question = {}) {
 
 function dictationInputChars(answer) {
     return Array.from(String(answer || "").replace(/\u2019/g, "'"))
-        .filter(char => /[\p{L}\p{N}]/u.test(char));
+        .filter(char => /\p{L}/u.test(char));
 }
 
 async function waitForDictationQuestionReady(expectedChars, question = {}) {

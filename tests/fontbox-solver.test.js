@@ -172,7 +172,7 @@ test('keyboard dispatch uses physical key codes for letters and punctuation', { 
     }
 });
 
-test('Dictation solver sends only input letters and digits', { timeout: 20_000 }, async () => {
+test('Dictation solver sends only input letters', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
@@ -200,6 +200,39 @@ test('Dictation solver sends only input letters and digits', { timeout: 20_000 }
         });
 
         assert.equal(keys, "DontbelazyWhatsthematterwithyou");
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver skips digits as player-completed boxes', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div class="QuestionArea__dictationArea___test">
+                    I   a m   1 3   y e a r s   o l d .
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    document.querySelector('[class*="dictationArea"]').textContent += event.key;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const keys = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            await solve(['I am 13 years old.'], 'dictation', document);
+            return window.keypresses.join('');
+        });
+
+        assert.equal(keys, 'Iamyearsold');
     } finally {
         await browser.close();
     }
