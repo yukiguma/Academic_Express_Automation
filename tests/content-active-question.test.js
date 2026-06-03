@@ -1024,7 +1024,7 @@ test('content script treats QuestionHeader dictation as auto-advance', { timeout
             <div class="QuestionHeader__innerContainer___2J16p">
                 <div class="QuestionHeader__left___24vuK"><button>前のページに戻る</button></div>
                 <div class="QuestionHeader__center___2GqF7">1/2</div>
-                <div class="QuestionHeader__right___2S11U"><button>次へ</button></div>
+                <div class="QuestionHeader__right___2S11U"><button id="nextButton">次へ</button></div>
             </div>
             <main>
                 <div class="QuestionArea__dictationArea___1EZet">
