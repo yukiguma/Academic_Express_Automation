@@ -20,6 +20,7 @@
   const QUESTION_HUB_SELECTION_MODE_KEY = "question-hub-selection-mode";
   const QUESTION_HUB_SELECTED_KEY = "question-hub-selected-links";
   const QUESTION_HUB_RUN_STATE_KEY = "question-hub-run-state";
+  const QUESTION_HUB_PENDING_AUTO_URL_KEY = "question-hub-pending-auto-url";
   let isQuestionHubSelectionMode =
     localStorage.getItem(QUESTION_HUB_SELECTION_MODE_KEY) === "true";
   let isQuestionHubLaunching = false;
@@ -36,6 +37,16 @@
     return isStudentPage() && getQuestionHubLinks().length > 0;
   }
 
+  function normalizeUrlForStorage(url) {
+    try {
+      const parsed = new URL(url, window.location.href);
+      parsed.hash = "";
+      return parsed.href;
+    } catch (e) {
+      return url || "";
+    }
+  }
+
   function clearAutoModeStorage() {
     localStorage.removeItem("auto-mode");
     localStorage.removeItem("auto-mode-url");
@@ -44,8 +55,21 @@
   try {
     const storedAuto = localStorage.getItem("auto-mode");
     const storedAutoUrl = localStorage.getItem("auto-mode-url");
+    const pendingQuestionHubAutoUrl = localStorage.getItem(
+      QUESTION_HUB_PENDING_AUTO_URL_KEY,
+    );
+    const currentUrl = normalizeUrlForStorage(window.location.href);
     if (isStudentPage()) {
       clearAutoModeStorage();
+    } else if (
+      isQuizPlayerPage() &&
+      pendingQuestionHubAutoUrl &&
+      normalizeUrlForStorage(pendingQuestionHubAutoUrl) === currentUrl
+    ) {
+      isAutoMode = true;
+      localStorage.removeItem(QUESTION_HUB_PENDING_AUTO_URL_KEY);
+      localStorage.setItem("auto-mode", "true");
+      localStorage.setItem("auto-mode-url", window.location.href);
     } else if (
       isQuizPlayerPage() &&
       storedAuto === "true" &&
@@ -221,7 +245,12 @@
   loadQuestionData();
 
   // Time Estimation Logic
-  function getEstimatedDurationMs(pairs, isFast, forceNew = null, options = {}) {
+  function getEstimatedDurationMs(
+    pairs,
+    isFast,
+    forceNew = null,
+    options = {},
+  ) {
     const mode = isFast ? "fastmode" : "slowmode";
     const config = SPEED_CONFIG[mode];
     let total = 0;
@@ -308,10 +337,7 @@
     const minimumDuration = Number.isFinite(options.minimumDurationMs)
       ? options.minimumDurationMs
       : HEADER_PROGRESS_MIN_DURATION[mode];
-    const duration = Math.max(
-      Number(durationMs) || 0,
-      minimumDuration,
-    );
+    const duration = Math.max(Number(durationMs) || 0, minimumDuration);
     const startTime = getNow();
 
     progressAnimation = {
@@ -403,17 +429,21 @@
       document.querySelectorAll('a[href*="/as/lplayer/index.cfm"]'),
     ).filter((link) => {
       const href = link.href || "";
-      return href && !href.startsWith("javascript:") && isVisibleElement(link);
+      return href && !href.startsWith("javascript:");
     });
   }
 
   function getQuestionHubSelectedHrefs() {
     const selected = parseJsonStorage(QUESTION_HUB_SELECTED_KEY, []);
-    return Array.isArray(selected) ? selected.filter(Boolean) : [];
+    return Array.isArray(selected)
+      ? selected.filter(Boolean).map(normalizeUrlForStorage)
+      : [];
   }
 
   function setQuestionHubSelectedHrefs(hrefs) {
-    const uniqueHrefs = Array.from(new Set(hrefs.filter(Boolean)));
+    const uniqueHrefs = Array.from(
+      new Set(hrefs.filter(Boolean).map(normalizeUrlForStorage)),
+    );
     localStorage.setItem(
       QUESTION_HUB_SELECTED_KEY,
       JSON.stringify(uniqueHrefs),
@@ -450,18 +480,16 @@
     return [unitTitle, text].filter(Boolean).join(" / ") || link.href;
   }
 
-  function clickQuestionHubLink(link) {
-    if (typeof simulateClick === "function") {
-      simulateClick(link);
-    } else {
-      link.click();
-    }
+  function navigateToQuestionHubUrl(href) {
+    const targetUrl = normalizeUrlForStorage(href);
+    localStorage.setItem(QUESTION_HUB_PENDING_AUTO_URL_KEY, targetUrl);
+    window.location.assign(targetUrl);
   }
 
   function updateQuestionHubLinkStates() {
     const selected = new Set(getQuestionHubSelectedHrefs());
     getQuestionHubLinks().forEach((link) => {
-      const isSelected = selected.has(link.href);
+      const isSelected = selected.has(normalizeUrlForStorage(link.href));
       link.classList.toggle("ae-question-hub-selected", isSelected);
       link.setAttribute("data-ae-question-hub-bound", "true");
       if (isSelected) {
@@ -487,29 +515,24 @@
       return false;
     }
 
-    const href = state.queue[state.index];
-    const link = getQuestionHubLinks().find((candidate) => candidate.href === href);
-    if (!link) {
-      state.index += 1;
-      setQuestionHubRunState(state);
-      return launchNextQuestionHubItem();
-    }
+    const href = normalizeUrlForStorage(state.queue[state.index]);
 
     state.index += 1;
     setQuestionHubRunState(state);
     isQuestionHubLaunching = true;
     setTimeout(() => {
       console.log("QuestionHub: launching selected question set.", href);
-      clickQuestionHubLink(link);
+      navigateToQuestionHubUrl(href);
     }, getWaitTime("TRANSITION_WAIT"));
     return true;
   }
 
   function toggleQuestionHubSelection(link) {
     const selected = getQuestionHubSelectedHrefs();
-    const index = selected.indexOf(link.href);
+    const href = normalizeUrlForStorage(link.href);
+    const index = selected.indexOf(href);
     if (index === -1) {
-      selected.push(link.href);
+      selected.push(href);
     } else {
       selected.splice(index, 1);
     }
@@ -595,20 +618,22 @@
         updateQuestionHubPanel();
       });
 
-    panel.querySelector("#question-hub-run-btn").addEventListener("click", () => {
-      const queue = getQuestionHubSelectedHrefs();
-      if (queue.length === 0) return;
-      isQuestionHubSelectionMode = false;
-      localStorage.setItem(QUESTION_HUB_SELECTION_MODE_KEY, "false");
-      setQuestionHubRunState({
-        active: true,
-        queue,
-        index: 0,
-        hubUrl: window.location.href,
+    panel
+      .querySelector("#question-hub-run-btn")
+      .addEventListener("click", () => {
+        const queue = getQuestionHubSelectedHrefs();
+        if (queue.length === 0) return;
+        isQuestionHubSelectionMode = false;
+        localStorage.setItem(QUESTION_HUB_SELECTION_MODE_KEY, "false");
+        setQuestionHubRunState({
+          active: true,
+          queue,
+          index: 0,
+          hubUrl: window.location.href,
+        });
+        updateQuestionHubPanel();
+        launchNextQuestionHubItem();
       });
-      updateQuestionHubPanel();
-      launchNextQuestionHubItem();
-    });
 
     panel
       .querySelector("#question-hub-clear-btn")
@@ -620,6 +645,12 @@
   }
 
   function ensureQuestionHubControls() {
+    const runState = getQuestionHubRunState();
+    if (isStudentPage() && runState?.active && !isQuestionHubSelectionMode) {
+      launchNextQuestionHubItem();
+      return true;
+    }
+
     if (!isQuestionHubPage()) return false;
     clearAutoModeStorage();
     bindQuestionHubLinks();
@@ -627,7 +658,6 @@
     updateQuestionHubPanel();
     updateQuestionHubLinkStates();
 
-    const runState = getQuestionHubRunState();
     if (runState?.active && !isQuestionHubSelectionMode) {
       launchNextQuestionHubItem();
     }
@@ -1045,7 +1075,9 @@
   }
 
   function isDictationPair(pair) {
-    return String(pair?.data?.type || "").toLowerCase().includes("dictation");
+    return String(pair?.data?.type || "")
+      .toLowerCase()
+      .includes("dictation");
   }
 
   function getPreSolveWait(pair) {
@@ -1999,7 +2031,9 @@
           pair.data,
         );
         if (solved === false && isDictationPair(pair)) {
-          console.warn("Solver deferred because the current question is not ready.");
+          console.warn(
+            "Solver deferred because the current question is not ready.",
+          );
           lastSolvedSignature = "";
           isSolving = false;
           scheduleAutoSolveResume(getWaitTime("DEBOUNCE_WAIT"));

@@ -1415,14 +1415,6 @@ test('content script runs selected question hub links in saved order', { timeout
 
     try {
         await page.addInitScript(() => {
-            document.addEventListener('click', event => {
-                const link = event.target.closest?.('a[href*="/as/lplayer/index.cfm"]');
-                if (!link) return;
-                event.preventDefault();
-                const launches = JSON.parse(localStorage.getItem('question-hub-test-launches') || '[]');
-                launches.push(link.href);
-                localStorage.setItem('question-hub-test-launches', JSON.stringify(launches));
-            });
             window.chrome = {
                 runtime: {
                     onMessage: { addListener() { } },
@@ -1446,16 +1438,94 @@ test('content script runs selected question hub links in saved order', { timeout
         await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
         await page.waitForSelector('#question-hub-control', { timeout: 10_000 });
         await page.click('#question-hub-run-btn');
-        await page.waitForFunction(() => JSON.parse(localStorage.getItem('question-hub-test-launches') || '[]').length === 1, { timeout: 10_000 });
+        await page.waitForURL('**/as/lplayer/index.cfm?uno=1', { timeout: 10_000 });
 
         await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
         await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
-        await page.waitForFunction(() => JSON.parse(localStorage.getItem('question-hub-test-launches') || '[]').length === 2, { timeout: 10_000 });
+        await page.waitForURL('**/as/lplayer/index.cfm?uno=2', { timeout: 10_000 });
 
-        const launches = await page.evaluate(() => {
-            return JSON.parse(localStorage.getItem('question-hub-test-launches')).map(url => new URL(url).search);
-        });
-        assert.deepEqual(launches, ['?uno=1', '?uno=2']);
+        const runState = await page.evaluate(() => JSON.parse(localStorage.getItem('question-hub-run-state')));
+        assert.equal(runState.index, 2);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
+test('content script starts auto mode after question hub direct navigation', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['correct'],
+                displayOrder: 1,
+                isAutoAdvance: false,
+                questionNo: '1',
+                rawText: 'Choose the correct answer.',
+                signature: 'choosethecorrectanswer',
+                type: 'choice'
+            }
+        ]
+    };
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div></div></div>
+            <main>
+                <div>1 / 1</div>
+                <div>Choose the correct answer.</div>
+                <button>correct</button>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.rawText);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        const quizUrl = `http://127.0.0.1:${port}/as/lplayer/index.cfm?uno=1`;
+        await page.goto(quizUrl, { waitUntil: 'domcontentloaded' });
+        await page.evaluate(url => {
+            localStorage.setItem('question-hub-pending-auto-url', url);
+        }, quizUrl);
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+
+        await page.waitForFunction(() => window.__solvedQuestions.length === 1, { timeout: 10_000 });
+        const state = await page.evaluate(() => ({
+            solved: window.__solvedQuestions,
+            autoMode: localStorage.getItem('auto-mode'),
+            autoUrl: localStorage.getItem('auto-mode-url'),
+            pending: localStorage.getItem('question-hub-pending-auto-url')
+        }));
+        assert.deepEqual(state.solved, ['Choose the correct answer.']);
+        assert.equal(state.autoMode, 'true');
+        assert.equal(state.autoUrl, quizUrl);
+        assert.equal(state.pending, null);
     } finally {
         await browser.close();
         await new Promise(resolve => server.close(resolve));
