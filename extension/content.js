@@ -13,6 +13,8 @@
   let isSolving = false;
   let isTransitioning = false;
   let debounceTimer = null;
+  let autoSolveResumeTimer = null;
+  let nextAutoSolveAllowedAt = 0;
   let isAutoMode = false;
   let lastAutoAdvanceSolvedAt = 0;
 
@@ -75,11 +77,11 @@
       READING_MIN: 0,
       READING_MAX: 0,
       WORD_WAIT: 0,
-      TRANSITION_WAIT: 100,
-      CLICK_WAIT: 0,
+      TRANSITION_WAIT: 50,
+      CLICK_WAIT: 50,
       OPTION_WAIT: 0,
-      SOLVE_INTERVAL: 25,
-      DEBOUNCE_WAIT: 30,
+      SOLVE_INTERVAL: 50,
+      DEBOUNCE_WAIT: 50,
       AUTO_ADVANCE_WAIT: 100,
     },
   };
@@ -123,6 +125,21 @@
     if (elapsed > 0 && elapsed < wait) {
       await sleep(wait - elapsed);
     }
+  }
+
+  function getAutoSolveResumeWait() {
+    return Math.max(getWaitTime("AUTO_ADVANCE_WAIT"), 500);
+  }
+
+  function scheduleAutoSolveResume(wait) {
+    if (autoSolveResumeTimer) clearTimeout(autoSolveResumeTimer);
+    autoSolveResumeTimer = setTimeout(
+      () => {
+        autoSolveResumeTimer = null;
+        ensureSolveButton();
+      },
+      Math.max(0, wait),
+    );
   }
 
   function getCompositeRunKey(pairs) {
@@ -196,13 +213,15 @@
       );
     }
 
-    // Solvers run nearly instantly, so answer count doesn't significantly add
-    // to duration. Auto-advance pages still need a small server-safe pace.
+    // Include a per-answer click pace. Auto-advance pages still need a small
+    // server-safe pace after solving.
+    const answerWait = config.CLICK_WAIT || 0;
     if (isVocabularyTest) {
       total +=
-        pairs.length * (config.AUTO_ADVANCE_WAIT || config.SOLVE_INTERVAL);
+        pairs.length *
+        (answerWait + (config.AUTO_ADVANCE_WAIT || config.SOLVE_INTERVAL));
     } else {
-      total += pairs.length * config.SOLVE_INTERVAL;
+      total += pairs.length * (answerWait + config.SOLVE_INTERVAL);
     }
 
     total += config.TRANSITION_WAIT;
@@ -584,6 +603,26 @@
     );
   }
 
+  function isSingleQuestionProgress(activeQuestionRange) {
+    return (
+      activeQuestionRange !== null &&
+      activeQuestionRange.start === activeQuestionRange.end
+    );
+  }
+
+  function hasProgressAdvancedFrom(initialRange) {
+    if (!isSingleQuestionProgress(initialRange)) return false;
+    const currentRange = getCurrentProgressQuestionRange();
+    if (!currentRange) {
+      return !findTransitionButton(["採点", "判定", "続ける", "終了", "完了"]);
+    }
+    return (
+      currentRange.start !== initialRange.start ||
+      currentRange.end !== initialRange.end ||
+      currentRange.total !== initialRange.total
+    );
+  }
+
   function findQuestionIndexForElement(
     el,
     usedIndices,
@@ -781,26 +820,39 @@
     );
   }
 
-  function getVisibleSortingLists(searchRoot) {
-    return Array.from(searchRoot.querySelectorAll('[class*="sortStringList"]'))
+  function getVisibleSortingLists(searchRoot, activeQuestionRange = null) {
+    const lists = Array.from(
+      searchRoot.querySelectorAll('[class*="sortStringList"]'),
+    )
       .filter(isVisibleElement)
       .filter((list) => list.querySelectorAll("li").length > 0);
+    if (!isSingleQuestionProgress(activeQuestionRange)) return lists;
+    return lists.filter(isInViewport);
   }
 
-  function hasVisibleSortingPrompt(searchRoot) {
+  function hasVisibleSortingPrompt(searchRoot, activeQuestionRange = null) {
+    const candidates = Array.from(
+      searchRoot.querySelectorAll(
+        '[class*="SortingAQuestionBuilder__questionBox"]',
+      ),
+    ).filter(isVisibleElement);
+
+    if (isSingleQuestionProgress(activeQuestionRange)) {
+      return (
+        candidates.some(isInViewport) ||
+        getVisibleSortingLists(searchRoot, activeQuestionRange).length > 0
+      );
+    }
+
     const text = searchRoot?.innerText || searchRoot?.textContent || "";
     return (
       text.includes("並べ替え") ||
-      Array.from(
-        searchRoot.querySelectorAll(
-          '[class*="SortingAQuestionBuilder__questionBox"]',
-        ),
-      ).some(isVisibleElement)
+      candidates.length > 0
     );
   }
 
   function findActiveSortingPair(searchRoot, activeQuestionRange = null) {
-    const lists = getVisibleSortingLists(searchRoot);
+    const lists = getVisibleSortingLists(searchRoot, activeQuestionRange);
     if (lists.length !== 1) return null;
 
     const list = lists[0];
@@ -840,12 +892,11 @@
     };
   }
 
-  function narrowAutoAdvancePairsToCurrentProgress(pairs, activeQuestionRange) {
+  function narrowPairsToCurrentProgress(pairs, activeQuestionRange) {
     if (
       !activeQuestionRange ||
       activeQuestionRange.start !== activeQuestionRange.end ||
-      pairs.length <= 1 ||
-      !pairs.every((pair) => pair.data?.isAutoAdvance)
+      pairs.length <= 1
     ) {
       return pairs;
     }
@@ -870,9 +921,6 @@
     });
     if (promptMatchedPairs.length === 1) return promptMatchedPairs;
 
-    const hasShuffledQuestions = pairs.some(
-      (pair) => pair.data?.shuffleQuestions === true,
-    );
     const viewportPairs = pairs.filter((pair) => isInViewport(pair.element));
     if (viewportPairs.length === 1) return viewportPairs;
 
@@ -884,14 +932,24 @@
     if (currentNumberViewportPairs.length === 1)
       return currentNumberViewportPairs;
 
-    if (hasShuffledQuestions && activeQuestionRange.totalMatchesQuestionList) {
-      return [];
+    if (pairs.every((pair) => pair.data?.isAutoAdvance)) {
+      const hasShuffledQuestions = pairs.some(
+        (pair) => pair.data?.shuffleQuestions === true,
+      );
+      if (
+        hasShuffledQuestions &&
+        activeQuestionRange.totalMatchesQuestionList
+      ) {
+        return [];
+      }
+
+      const currentPair = pairs.find(
+        (pair) => Number(pair.data.displayOrder) === activeQuestionRange.start,
+      );
+      return currentPair ? [currentPair] : pairs;
     }
 
-    const currentPair = pairs.find(
-      (pair) => Number(pair.data.displayOrder) === activeQuestionRange.start,
-    );
-    return currentPair ? [currentPair] : pairs;
+    return [];
   }
 
   function findActiveQuestions() {
@@ -903,8 +961,8 @@
     );
     if (activeSortingPair) return [activeSortingPair];
     if (
-      getVisibleSortingLists(searchRoot).length > 0 ||
-      hasVisibleSortingPrompt(searchRoot)
+      getVisibleSortingLists(searchRoot, activeQuestionRange).length > 0 ||
+      hasVisibleSortingPrompt(searchRoot, activeQuestionRange)
     )
       return [];
 
@@ -1057,7 +1115,7 @@
       }
     }
 
-    return narrowAutoAdvancePairsToCurrentProgress(
+    return narrowPairsToCurrentProgress(
       matchedPairs,
       activeQuestionRange,
     );
@@ -1248,6 +1306,12 @@
     };
 
     if (isAutoMode && isNewQuestion) {
+      const resumeWait = nextAutoSolveAllowedAt - Date.now();
+      if (resumeWait > 0) {
+        scheduleAutoSolveResume(resumeWait);
+        return;
+      }
+
       console.log("Auto-Mode: New questions detected. Triggering solver.");
       lastSolvedSignature = compositeSig;
       runSolver(activePairs, isNewQuestion);
@@ -1308,6 +1372,7 @@
   async function runSolver(matchedPairs, isNew) {
     if (isSolving) return;
     isSolving = true;
+    const initialProgressRange = getCurrentProgressQuestionRange();
 
     try {
       console.log(`Running solver for ${matchedPairs.length} questions...`);
@@ -1333,11 +1398,16 @@
       }
 
       let autoAdvance = false;
+      let progressedDuringSolve = false;
       for (let i = 0; i < matchedPairs.length; i++) {
         const pair = matchedPairs[i];
         if (pair.data.isAutoAdvance) autoAdvance = true;
         if (pair.data.isAutoAdvance) {
           await waitForAutoAdvancePace();
+        }
+        const preSolveWait = getWaitTime("CLICK_WAIT");
+        if (preSolveWait > 0) {
+          await sleep(preSolveWait);
         }
         await solve(pair.data.answers, pair.data.type, pair.element, pair.data);
         if (pair.data.isAutoAdvance) {
@@ -1349,20 +1419,23 @@
         if (postSolveWait > 0) {
           await sleep(postSolveWait);
         }
+        if (hasProgressAdvancedFrom(initialProgressRange)) {
+          progressedDuringSolve = true;
+          break;
+        }
       }
 
       if (isAutoMode) {
-        if (autoAdvance) {
+        if (autoAdvance || progressedDuringSolve) {
           console.log(
             "Detecting auto-advance question, skipping manual transition click.",
           );
+          const resumeWait = getAutoSolveResumeWait();
+          nextAutoSolveAllowedAt = Date.now() + resumeWait;
           isSolving = false;
           resetHeaderProgress();
           setGlobalLock(false);
-          setTimeout(
-            ensureSolveButton,
-            Math.max(getWaitTime("AUTO_ADVANCE_WAIT"), 500),
-          );
+          scheduleAutoSolveResume(resumeWait);
           return;
         }
         await handleTransition();

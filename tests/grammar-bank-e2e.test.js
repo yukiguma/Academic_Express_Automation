@@ -38,6 +38,22 @@ function parseSavedAnswer(body) {
     };
 }
 
+function createGrammarBankServer(payload) {
+    return createFixtureServer({
+        apiResponses: new Map([
+            ['/as/player_data/question_authoring.cfc', payload],
+            ['/as/flash/data_manipulate.cfc', '{"success":true,"result":""}']
+        ]),
+        fixtureDir,
+        returnPaths: ['/student/cw/unit/1332'],
+        routes: new Map([
+            ['/as/lplayer/index.cfm', 'Grammar Bank _ Academic Express3.html'],
+            ['/as/lplayer/player-supergrammar.js', 'player-supergrammar.js'],
+            ['/as/player_data/question_authoring.cfc', 'question_authoring.cfc']
+        ])
+    });
+}
+
 test('GrammarBank sortingA fixture is auto-solved and submitted through completion', { timeout: 75_000 }, async () => {
     const fullPayload = fs.readFileSync(path.join(fixtureDir, 'question_authoring.cfc'), 'utf8');
     const sortingQuestion = fullPayload.match(/<question no="20014317"[\s\S]*?<\/question>/)?.[0];
@@ -60,19 +76,45 @@ test('GrammarBank sortingA fixture is auto-solved and submitted through completi
         { sorting: 1 }
     );
 
-    const { saveRequests, server } = createFixtureServer({
-        apiResponses: new Map([
-            ['/as/player_data/question_authoring.cfc', singleQuestionPayload],
-            ['/as/flash/data_manipulate.cfc', '{"success":true,"result":""}']
-        ]),
-        fixtureDir,
-        returnPaths: ['/student/cw/unit/1332'],
-        routes: new Map([
-            ['/as/lplayer/index.cfm', 'Grammar Bank _ Academic Express3.html'],
-            ['/as/lplayer/player-supergrammar.js', 'player-supergrammar.js'],
-            ['/as/player_data/question_authoring.cfc', 'question_authoring.cfc']
-        ])
+    const { saveRequests, server } = createGrammarBankServer(singleQuestionPayload);
+
+    await runAutoSolve({
+        questionData,
+        server,
+        waitFor: async page => {
+            await waitForGrammarSaves(saveRequests, expectedQuestionNos.length);
+            await page.waitForFunction(() => {
+                const text = document.body.innerText || '';
+                return text.includes('解答・解説') || text.includes('点');
+            }, { timeout: 10_000 });
+        }
     });
+
+    const writes = saveRequests
+        .filter(request => request.method === 'POST')
+        .map(request => parseSavedAnswer(request.body))
+        .filter(answer => answer.method === 'save_answer_s');
+
+    assert.deepEqual(writes.map(write => write.questionNo).sort(), expectedQuestionNos);
+    assert.ok(writes.every(write => write.correctFlag === '1'));
+    assert.ok(writes.every(write => write.correctValues.every(correct => correct === 'true')));
+    assert.equal(writes.at(-1).saveType, '1');
+});
+
+test('GrammarBank full shuffled fixture does not carry stale matches into later questions', { timeout: 75_000 }, async () => {
+    const payload = fs.readFileSync(path.join(fixtureDir, 'question_authoring.cfc'), 'utf8');
+    const questionData = parser.parseQuestionData(payload).parsed;
+    const expectedQuestionNos = questionData.questions.map(question => question.questionNo).sort();
+
+    assert.deepEqual(
+        questionData.questions.map(question => question.type).reduce((counts, type) => {
+            counts[type] = (counts[type] || 0) + 1;
+            return counts;
+        }, {}),
+        { sorting: 15, multipleChoice: 8 }
+    );
+
+    const { saveRequests, server } = createGrammarBankServer(payload);
 
     await runAutoSolve({
         questionData,
