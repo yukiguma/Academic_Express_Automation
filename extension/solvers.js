@@ -620,8 +620,13 @@ async function solveDictation(answers, scope, question = {}) {
     }
     console.log(`Dictation Strategy: Typing ${chars.length} characters.`);
     for (const char of chars) {
+        const before = dictationInputSnapshot();
         dispatchKeyboardChar(char, document);
-        await sleep(5);
+        if (!await waitForDictationInputAccepted(before)) {
+            console.warn(`Dictation Strategy: Key "${char}" was not accepted; deferring typing.`);
+            return false;
+        }
+        await sleep(30);
     }
 
     await sleep(500);
@@ -630,7 +635,7 @@ async function solveDictation(answers, scope, question = {}) {
 
 function dictationInputChars(answer) {
     return Array.from(String(answer || "").replace(/\u2019/g, "'"))
-        .filter(char => /[\p{L}\p{N}']/u.test(char));
+        .filter(char => /[\p{L}\p{N}]/u.test(char));
 }
 
 async function waitForDictationQuestionReady(expectedChars, question = {}) {
@@ -674,6 +679,17 @@ function visibleDictationInputChars() {
 function hasHiddenDictationBoxes() {
     return Array.from(document.querySelectorAll('[class*="FontBox__hide"]'))
         .some(isVisible);
+}
+
+function dictationInputSnapshot() {
+    const hiddenCount = Array.from(document.querySelectorAll('[class*="FontBox__hide"]'))
+        .filter(isVisible)
+        .length;
+    return `${visibleDictationInputChars()}|hidden:${hiddenCount}`;
+}
+
+async function waitForDictationInputAccepted(previousSnapshot) {
+    return waitUntil(() => dictationInputSnapshot() !== previousSnapshot, 800, 20);
 }
 
 // Solver: Sorting

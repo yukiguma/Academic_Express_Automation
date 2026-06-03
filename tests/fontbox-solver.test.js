@@ -172,7 +172,7 @@ test('keyboard dispatch uses physical key codes for letters and punctuation', { 
     }
 });
 
-test('Dictation solver sends only input letters and apostrophes', { timeout: 20_000 }, async () => {
+test('Dictation solver sends only input letters and digits', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
@@ -187,6 +187,7 @@ test('Dictation solver sends only input letters and apostrophes', { timeout: 20_
                 window.keypresses = [];
                 document.addEventListener('keypress', event => {
                     window.keypresses.push(event.key);
+                    document.querySelector('[class*="dictationArea"]').textContent += event.key;
                 });
             </script>
         `);
@@ -198,7 +199,7 @@ test('Dictation solver sends only input letters and apostrophes', { timeout: 20_
             return window.keypresses.join('');
         });
 
-        assert.equal(keys, "Don'tbelazyWhat'sthematterwithyou");
+        assert.equal(keys, "DontbelazyWhatsthematterwithyou");
     } finally {
         await browser.close();
     }
@@ -222,6 +223,7 @@ test('Dictation solver waits for the current question text before typing', { tim
                 document.addEventListener('keypress', event => {
                     window.keypresses.push(event.key);
                     window.firstKeyAt = window.firstKeyAt || performance.now();
+                    document.getElementById('dictation-question').textContent += event.key;
                 });
                 setTimeout(() => {
                     document.getElementById('dictation-question').textContent =
@@ -244,6 +246,42 @@ test('Dictation solver waits for the current question text before typing', { tim
 
         assert.equal(result.keypresses, 'Thisteaistoohotformetodrink');
         assert.ok(result.firstKeyAt >= result.questionReadyAt);
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver defers when a dispatched key is not accepted', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div class="QuestionArea__dictationArea___test">
+                    T h i s   t e a   i s   t o o   h o t   f o r   m e   t o   d r i n k .
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const result = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            const solved = await solve(['This tea is too hot for me to drink.'], 'dictation', document);
+            return {
+                keypresses: window.keypresses.join(''),
+                solved
+            };
+        });
+
+        assert.equal(result.solved, false);
+        assert.equal(result.keypresses, 'T');
     } finally {
         await browser.close();
     }
