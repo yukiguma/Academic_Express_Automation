@@ -235,13 +235,16 @@
       }
     }
 
-    // Include a per-answer click pace. Auto-advance pages still need a small
-    // server-safe pace after solving.
+    // Include only the time until the current screen action completes.
+    // Auto-advance pages navigate as soon as the answer is clicked, so the
+    // post-click pace belongs to the next solve cycle, not this progress bar.
     const answerWait = config.CLICK_WAIT || 0;
     if (isVocabularyTest) {
-      total +=
-        pairs.length *
-        (answerWait + (config.AUTO_ADVANCE_WAIT || config.SOLVE_INTERVAL));
+      total += pairs.length * answerWait;
+      if (Number.isFinite(options.autoAdvancePaceWaitMs)) {
+        total += options.autoAdvancePaceWaitMs;
+      }
+      return total;
     } else {
       total += pairs.length * (answerWait + config.SOLVE_INTERVAL);
     }
@@ -289,19 +292,22 @@
     progressAnimation = null;
   }
 
-  function startHeaderAnimation(durationMs) {
+  function startHeaderAnimation(durationMs, options = {}) {
     stopHeaderAnimation();
     const mode = isFastMode ? "fastmode" : "slowmode";
+    const minimumDuration = Number.isFinite(options.minimumDurationMs)
+      ? options.minimumDurationMs
+      : HEADER_PROGRESS_MIN_DURATION[mode];
     const duration = Math.max(
       Number(durationMs) || 0,
-      HEADER_PROGRESS_MIN_DURATION[mode],
+      minimumDuration,
     );
     const startTime = getNow();
 
     progressAnimation = {
       startTime,
       duration,
-      minimumDuration: HEADER_PROGRESS_MIN_DURATION[mode],
+      minimumDuration,
     };
 
     setHeaderProgress(0);
@@ -310,10 +316,10 @@
       if (!progressAnimation) return;
 
       const elapsed = getNow() - progressAnimation.startTime;
-      const progress = Math.min(
-        (elapsed / progressAnimation.duration) * 100,
-        100,
-      );
+      const progress =
+        progressAnimation.duration > 0
+          ? Math.min((elapsed / progressAnimation.duration) * 100, 100)
+          : 100;
       setHeaderProgress(progress);
 
       if (progress >= 100) {
@@ -1567,13 +1573,26 @@
           .join(" ");
         readingWait = getWaitTime("READING_WAIT", totalText);
       }
+      let autoAdvancePaceWait = 0;
+      if (isVocabularyTest) {
+        const paceWait = getWaitTime("AUTO_ADVANCE_WAIT");
+        const elapsed = Date.now() - lastAutoAdvanceSolvedAt;
+        if (elapsed > 0 && elapsed < paceWait) {
+          autoAdvancePaceWait = paceWait - elapsed;
+        }
+      }
       const totalEstimatedMs = getEstimatedDurationMs(
         matchedPairs,
         isFastMode,
         isNew,
-        { readingWaitMs: readingWait },
+        {
+          autoAdvancePaceWaitMs: autoAdvancePaceWait,
+          readingWaitMs: readingWait,
+        },
       );
-      startHeaderAnimation(totalEstimatedMs);
+      startHeaderAnimation(totalEstimatedMs, {
+        minimumDurationMs: isVocabularyTest ? 0 : undefined,
+      });
       setGlobalLock(true);
 
       // Skip reading delay for vocabulary tests
