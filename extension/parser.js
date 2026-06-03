@@ -157,6 +157,38 @@ var AcademicExpressParser = (function () {
         return answers;
     }
 
+    function normalizeMediaSignature(value) {
+        const text = decodeEntities(String(value || "")
+            .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+            .trim());
+        const idMatch = text.match(/[?&]id=([^&#\s]+)/i);
+        const signature = idMatch ? idMatch[1] : text;
+        return signature.toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function collectXMLMediaSignatures(questionContent) {
+        const signatures = [];
+        const mediaRegex = /<(sound|image)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+        let match;
+
+        while ((match = mediaRegex.exec(questionContent)) !== null) {
+            const signature = normalizeMediaSignature(match[2]);
+            if (signature && !signatures.includes(signature)) {
+                signatures.push(signature);
+            }
+        }
+
+        return signatures;
+    }
+
+    function isSelectionQuestionType(type) {
+        const lowerType = String(type || "").toLowerCase();
+        return lowerType.includes('choice') ||
+            lowerType.includes('true') ||
+            lowerType.includes('select') ||
+            lowerType.includes('quiz');
+    }
+
     function splitSortingAnswerTokens(answers) {
         const tokens = [];
 
@@ -196,6 +228,8 @@ var AcademicExpressParser = (function () {
 
     function parseXML(xmlText) {
         const questionsList = [];
+        const bookAttrs = parseAttributes(xmlText.match(/<book\b([^>]*)>/i)?.[1] || "");
+        const shuffleQuestions = ['true', '1', 'yes'].includes(String(bookAttrs.shufflequestions || '').toLowerCase());
         const questionRegex = /<question\b([^>]*)>([\s\S]*?)<\/question>/gi;
         let questionMatch;
         let displayOrder = 0;
@@ -233,14 +267,21 @@ var AcademicExpressParser = (function () {
 
             if (rawText || answers.length > 0) {
                 displayOrder += 1;
-                questionsList.push({
+                const question = {
                     type: type,
                     answers: answers,
                     rawText: rawText,
                     signature: makeSignature(rawText),
                     displayOrder: displayOrder,
                     questionNo: attrs.no || ""
-                });
+                };
+                const mediaSignatures = isSelectionQuestionType(type)
+                    ? collectXMLMediaSignatures(questionContent)
+                    : [];
+                if (mediaSignatures.length > 0) {
+                    question.mediaSignatures = mediaSignatures;
+                }
+                questionsList.push(question);
             }
         }
 
@@ -255,6 +296,12 @@ var AcademicExpressParser = (function () {
             while ((blockMatch = genericBlockRegex.exec(xmlText)) !== null) {
                 pushQuestion(parseAttributes(blockMatch[2]), blockMatch[3]);
             }
+        }
+
+        if (shuffleQuestions && questionsList.length > 1) {
+            questionsList.forEach(question => {
+                question.shuffleQuestions = true;
+            });
         }
 
         return questionsList.length > 0 ? { questions: questionsList } : null;

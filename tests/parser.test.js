@@ -84,6 +84,47 @@ test('parses listening cloze CFC fixture with mixed question types', () => {
     ]);
 });
 
+test('parses media signatures for shuffled true-false XML questions', () => {
+    const response = `
+        <result>
+            <data>
+                <book shuffleQuestions="true">
+                    <questions>
+                        <question no="tf1" type="trueFalse">
+                            <questionText>Choose true or false.</questionText>
+                            <sound><![CDATA[/as/flash/materialSound.cfm?ver=0_0&id=ABCDEF1234567890ABCDEF1234567890]]></sound>
+                            <answers><answer>1</answer></answers>
+                            <choices>
+                                <choice no="1">True</choice>
+                                <choice no="2">False</choice>
+                            </choices>
+                        </question>
+                        <question no="tf2" type="trueFalse">
+                            <questionText>Choose true or false.</questionText>
+                            <image><![CDATA[/as/flash/materialImage.cfm?ver=0_0&id=1234567890ABCDEF1234567890ABCDEF]]></image>
+                            <answers><answer>2</answer></answers>
+                            <choices>
+                                <choice no="1">True</choice>
+                                <choice no="2">False</choice>
+                            </choices>
+                        </question>
+                    </questions>
+                </book>
+            </data>
+        </result>
+    `;
+
+    const { parsed, dataType } = parser.parseQuestionData(response);
+
+    assert.equal(dataType, 'xml');
+    assert.deepEqual(parsed.questions.map(question => question.type), ['trueFalse', 'trueFalse']);
+    assert.deepEqual(parsed.questions.map(question => question.mediaSignatures), [
+        ['abcdef1234567890abcdef1234567890'],
+        ['1234567890abcdef1234567890abcdef']
+    ]);
+    assert.ok(parsed.questions.every(question => question.shuffleQuestions === true));
+});
+
 test('parses dictation CFC fixture as document-level keyboard input', () => {
     const { parsed, dataType } = parser.parseQuestionData(readNestedFixture('Dictation', 'authoring.cfc'));
 

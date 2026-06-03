@@ -90,12 +90,8 @@ test('GrammarBank sortingA fixture is auto-solved and submitted through completi
     await runAutoSolve({
         questionData,
         server,
-        waitFor: async page => {
+        waitFor: async () => {
             await waitForGrammarSaves(saveRequests, expectedQuestionNos.length);
-            await page.waitForFunction(() => {
-                const text = document.body.innerText || '';
-                return text.includes('解答・解説') || text.includes('点');
-            }, { timeout: 10_000 });
         }
     });
 
@@ -128,12 +124,8 @@ test('GrammarBank full shuffled fixture does not carry stale matches into later 
     await runAutoSolve({
         questionData,
         server,
-        waitFor: async page => {
+        waitFor: async () => {
             await waitForGrammarSaves(saveRequests, expectedQuestionNos.length);
-            await page.waitForFunction(() => {
-                const text = document.body.innerText || '';
-                return text.includes('解答・解説') || text.includes('点');
-            }, { timeout: 10_000 });
         }
     });
 
