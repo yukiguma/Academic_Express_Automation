@@ -147,7 +147,15 @@ async function listen(server) {
     return server.address().port;
 }
 
-async function runAutoSolve({ fixtureUrlPath = '/as/lplayer/index.cfm', pageReadySelector = '[class*="AppHeader__fixed-top"]', preparePage, questionData, server, waitFor }) {
+async function runAutoSolve({
+    clickSolve = true,
+    fixtureUrlPath = '/as/lplayer/index.cfm',
+    pageReadySelector = '[class*="AppHeader__fixed-top"]',
+    preparePage,
+    questionData,
+    server,
+    waitFor
+}) {
     const port = await listen(server);
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
@@ -173,6 +181,8 @@ async function runAutoSolve({ fixtureUrlPath = '/as/lplayer/index.cfm', pageRead
             document.body.appendChild(document.createElement('div'));
         });
         await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        if (!clickSolve) return;
+        await page.waitForFunction(() => document.getElementById('solve-btn')?.textContent?.includes('自動入力'), { timeout: 10_000 });
         await page.click('#solve-btn');
         await waitFor(page);
     } finally {

@@ -1,0 +1,1964 @@
+<!doctype html>
+<!-- saved from url=(0170)https://supereigo.campus.kit.ac.jp/as/lplayer/index.cfm?tic=1506&ano=0&cw=1361&uno=7466&land=040311&cat=15002&backurl=%2Fstudent%2Fcw%2Funit%2F1361%3Fcat%3D15002%23uc7466 -->
+<html lang="ja">
+  <div
+    id="global-lock"
+    style="
+      position: fixed;
+      top: 0px;
+      left: 0px;
+      width: 100vw;
+      height: 100vh;
+      z-index: 99999;
+      display: none;
+      cursor: wait;
+      pointer-events: auto;
+      background: rgba(0, 0, 0, 0);
+    "
+  ></div>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <!--<base href="https://supereigo.campus.kit.ac.jp/as/playerjs_dictation_test/">-->
+    <base href="." />
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <link
+      rel="shortcut icon"
+      href="https://supereigo.campus.kit.ac.jp/as/custom/images/favicon.ico"
+      type="image/vnd.microsoft.icon"
+    />
+
+    <title>ディクタン | Academic Express3</title>
+
+    <script type="text/javascript">
+      (function () {
+        window.isDebug = false;
+        if (typeof console === "undefined") {
+          //IEはログはを出力しない
+          console = {
+            log: function () {},
+            error: function () {},
+          };
+        } else {
+          //
+        }
+
+        var config = {
+          /* サーバーから問題集を取得するためのキー */
+
+          au_token: "au_token7AEC37FC0E369C2D3448D26A77505DFB",
+          /* プレビューモードかどうか */
+          isPreview: false,
+          /*
+           * 	[previewType]
+           *  assign	理解度テスト ディクテーション
+           *
+           */
+          previewType: "assign",
+          cfc_method: "bookXml",
+          save_answer_url: "../flash/data_manipulate.cfc",
+
+          /*設問の取得関数パス*/
+          get_xml_url: "../player_data/authoring.cfc",
+
+          /*解説表示非表示フラグ*/
+          exposition_flag: false,
+          /*戻る表示非表示フラグ*/
+          prebtn_disp_flag: false,
+          /*続ける・再挑戦ボタン表示非表示フラグ*/
+          trybtn_disp_flag: false,
+
+          /*「終了」ボタンを押した時の戻り先url */
+
+          /*セッションなしの場合ログアウト 管理者の場合エラーメッセージを表示*/
+
+          closebtn_disp_flag: true,
+
+          return_url: "/student/cw/unit/1361?cat=15002#uc7466",
+
+          /*複数タブエラーのURL*/
+          multi_tab_error_url: "/student/error/multi_tab",
+
+          disableTypingSound: true,
+
+          /* セッションエラー時の戻り先url */
+          logout_url: "/as/lplayer/player_error.cfm?error_no=ERR565",
+          /* 言語設定 */
+          culture: "ja",
+          /**
+           * プレビュー呼び出しモード [index_waku.cfm]を経由した場合引数が変わる
+           * 'pc'
+           * 'mobile' スマートフォン
+           * 'tablet' タブレット
+           */
+          callMode: "pc",
+        };
+        window.config = config;
+
+        var require = {
+          urlArgs: "bust=v4.0.0",
+        };
+        window.require = require;
+      })();
+    </script>
+
+    <style type="text/css">
+      /*! normalize.css v7.0.0 | MIT License | github.com/necolas/normalize.css */
+
+      /* Document
+   ========================================================================== */
+
+      /**
+ * 1. Correct the line height in all browsers.
+ * 2. Prevent adjustments of font size after orientation changes in
+ *    IE on Windows Phone and in iOS.
+ */
+
+      html {
+        line-height: 1.15; /* 1 */
+        -ms-text-size-adjust: 100%; /* 2 */
+        -webkit-text-size-adjust: 100%; /* 2 */
+      }
+
+      /* Sections
+   ========================================================================== */
+
+      /**
+ * Remove the margin in all browsers (opinionated).
+ */
+
+      body {
+        margin: 0;
+      }
+
+      /**
+ * Add the correct display in IE 9-.
+ */
+
+      article,
+      aside,
+      footer,
+      header,
+      nav,
+      section {
+        display: block;
+      }
+
+      /**
+ * Correct the font size and margin on `h1` elements within `section` and
+ * `article` contexts in Chrome, Firefox, and Safari.
+ */
+
+      h1 {
+        font-size: 2em;
+        margin: 0.67em 0;
+      }
+
+      /* Grouping content
+   ========================================================================== */
+
+      /**
+ * Add the correct display in IE 9-.
+ * 1. Add the correct display in IE.
+ */
+
+      figcaption,
+      figure,
+      main {
+        /* 1 */
+        display: block;
+      }
+
+      /**
+ * Add the correct margin in IE 8.
+ */
+
+      figure {
+        margin: 1em 40px;
+      }
+
+      /**
+ * 1. Add the correct box sizing in Firefox.
+ * 2. Show the overflow in Edge and IE.
+ */
+
+      hr {
+        -webkit-box-sizing: content-box;
+        box-sizing: content-box; /* 1 */
+        height: 0; /* 1 */
+        overflow: visible; /* 2 */
+      }
+
+      /**
+ * 1. Correct the inheritance and scaling of font size in all browsers.
+ * 2. Correct the odd `em` font sizing in all browsers.
+ */
+
+      pre {
+        font-family: monospace, monospace; /* 1 */
+        font-size: 1em; /* 2 */
+      }
+
+      /* Text-level semantics
+   ========================================================================== */
+
+      /**
+ * 1. Remove the gray background on active links in IE 10.
+ * 2. Remove gaps in links underline in iOS 8+ and Safari 8+.
+ */
+
+      a {
+        background-color: transparent; /* 1 */
+        -webkit-text-decoration-skip: objects; /* 2 */
+      }
+
+      /**
+ * 1. Remove the bottom border in Chrome 57- and Firefox 39-.
+ * 2. Add the correct text decoration in Chrome, Edge, IE, Opera, and Safari.
+ */
+
+      abbr[title] {
+        border-bottom: none; /* 1 */
+        text-decoration: underline; /* 2 */
+        -webkit-text-decoration: underline dotted;
+        text-decoration: underline dotted; /* 2 */
+      }
+
+      /**
+ * Prevent the duplicate application of `bolder` by the next rule in Safari 6.
+ */
+
+      b,
+      strong {
+        font-weight: inherit;
+      }
+
+      /**
+ * Add the correct font weight in Chrome, Edge, and Safari.
+ */
+
+      b,
+      strong {
+        font-weight: bolder;
+      }
+
+      /**
+ * 1. Correct the inheritance and scaling of font size in all browsers.
+ * 2. Correct the odd `em` font sizing in all browsers.
+ */
+
+      code,
+      kbd,
+      samp {
+        font-family: monospace, monospace; /* 1 */
+        font-size: 1em; /* 2 */
+      }
+
+      /**
+ * Add the correct font style in Android 4.3-.
+ */
+
+      dfn {
+        font-style: italic;
+      }
+
+      /**
+ * Add the correct background and color in IE 9-.
+ */
+
+      mark {
+        background-color: #ff0;
+        color: #000;
+      }
+
+      /**
+ * Add the correct font size in all browsers.
+ */
+
+      small {
+        font-size: 80%;
+      }
+
+      /**
+ * Prevent `sub` and `sup` elements from affecting the line height in
+ * all browsers.
+ */
+
+      sub,
+      sup {
+        font-size: 75%;
+        line-height: 0;
+        position: relative;
+        vertical-align: baseline;
+      }
+
+      sub {
+        bottom: -0.25em;
+      }
+
+      sup {
+        top: -0.5em;
+      }
+
+      /* Embedded content
+   ========================================================================== */
+
+      /**
+ * Add the correct display in IE 9-.
+ */
+
+      audio,
+      video {
+        display: inline-block;
+      }
+
+      /**
+ * Add the correct display in iOS 4-7.
+ */
+
+      audio:not([controls]) {
+        display: none;
+        height: 0;
+      }
+
+      /**
+ * Remove the border on images inside links in IE 10-.
+ */
+
+      img {
+        border-style: none;
+      }
+
+      /**
+ * Hide the overflow in IE.
+ */
+
+      svg:not(:root) {
+        overflow: hidden;
+      }
+
+      /* Forms
+   ========================================================================== */
+
+      /**
+ * 1. Change the font styles in all browsers (opinionated).
+ * 2. Remove the margin in Firefox and Safari.
+ */
+
+      button,
+      input,
+      optgroup,
+      select,
+      textarea {
+        font-family: sans-serif; /* 1 */
+        font-size: 100%; /* 1 */
+        line-height: 1.15; /* 1 */
+        margin: 0; /* 2 */
+      }
+
+      /**
+ * Show the overflow in IE.
+ * 1. Show the overflow in Edge.
+ */
+
+      button,
+      input {
+        /* 1 */
+        overflow: visible;
+      }
+
+      /**
+ * Remove the inheritance of text transform in Edge, Firefox, and IE.
+ * 1. Remove the inheritance of text transform in Firefox.
+ */
+
+      button,
+      select {
+        /* 1 */
+        text-transform: none;
+      }
+
+      /**
+ * 1. Prevent a WebKit bug where (2) destroys native `audio` and `video`
+ *    controls in Android 4.
+ * 2. Correct the inability to style clickable types in iOS and Safari.
+ */
+
+      button,
+html [type="button"], /* 1 */
+[type="reset"],
+[type="submit"] {
+        -webkit-appearance: button; /* 2 */
+      }
+
+      /**
+ * Remove the inner border and padding in Firefox.
+ */
+
+      button::-moz-focus-inner,
+      [type="button"]::-moz-focus-inner,
+      [type="reset"]::-moz-focus-inner,
+      [type="submit"]::-moz-focus-inner {
+        border-style: none;
+        padding: 0;
+      }
+
+      /**
+ * Restore the focus styles unset by the previous rule.
+ */
+
+      button:-moz-focusring,
+      [type="button"]:-moz-focusring,
+      [type="reset"]:-moz-focusring,
+      [type="submit"]:-moz-focusring {
+        outline: 1px dotted ButtonText;
+      }
+
+      /**
+ * Correct the padding in Firefox.
+ */
+
+      fieldset {
+        padding: 0.35em 0.75em 0.625em;
+      }
+
+      /**
+ * 1. Correct the text wrapping in Edge and IE.
+ * 2. Correct the color inheritance from `fieldset` elements in IE.
+ * 3. Remove the padding so developers are not caught out when they zero out
+ *    `fieldset` elements in all browsers.
+ */
+
+      legend {
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box; /* 1 */
+        color: inherit; /* 2 */
+        display: table; /* 1 */
+        max-width: 100%; /* 1 */
+        padding: 0; /* 3 */
+        white-space: normal; /* 1 */
+      }
+
+      /**
+ * 1. Add the correct display in IE 9-.
+ * 2. Add the correct vertical alignment in Chrome, Firefox, and Opera.
+ */
+
+      progress {
+        display: inline-block; /* 1 */
+        vertical-align: baseline; /* 2 */
+      }
+
+      /**
+ * Remove the default vertical scrollbar in IE.
+ */
+
+      textarea {
+        overflow: auto;
+      }
+
+      /**
+ * 1. Add the correct box sizing in IE 10-.
+ * 2. Remove the padding in IE 10-.
+ */
+
+      [type="checkbox"],
+      [type="radio"] {
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box; /* 1 */
+        padding: 0; /* 2 */
+      }
+
+      /**
+ * Correct the cursor style of increment and decrement buttons in Chrome.
+ */
+
+      [type="number"]::-webkit-inner-spin-button,
+      [type="number"]::-webkit-outer-spin-button {
+        height: auto;
+      }
+
+      /**
+ * 1. Correct the odd appearance in Chrome and Safari.
+ * 2. Correct the outline style in Safari.
+ */
+
+      [type="search"] {
+        -webkit-appearance: textfield; /* 1 */
+        outline-offset: -2px; /* 2 */
+      }
+
+      /**
+ * Remove the inner padding and cancel buttons in Chrome and Safari on macOS.
+ */
+
+      [type="search"]::-webkit-search-cancel-button,
+      [type="search"]::-webkit-search-decoration {
+        -webkit-appearance: none;
+      }
+
+      /**
+ * 1. Correct the inability to style clickable types in iOS and Safari.
+ * 2. Change font properties to `inherit` in Safari.
+ */
+
+      ::-webkit-file-upload-button {
+        -webkit-appearance: button; /* 1 */
+        font: inherit; /* 2 */
+      }
+
+      /* Interactive
+   ========================================================================== */
+
+      /*
+ * Add the correct display in IE 9-.
+ * 1. Add the correct display in Edge, IE, and Firefox.
+ */
+
+      details, /* 1 */
+menu {
+        display: block;
+      }
+
+      /*
+ * Add the correct display in all browsers.
+ */
+
+      summary {
+        display: list-item;
+      }
+
+      /* Scripting
+   ========================================================================== */
+
+      /**
+ * Add the correct display in IE 9-.
+ */
+
+      canvas {
+        display: inline-block;
+      }
+
+      /**
+ * Add the correct display in IE.
+ */
+
+      template {
+        display: none;
+      }
+
+      /* Hidden
+   ========================================================================== */
+
+      /**
+ * Add the correct display in IE 10-.
+ */
+
+      [hidden] {
+        display: none;
+      }
+    </style>
+    <style type="text/css">
+      body {
+        background-color: #e8f0ff;
+      }
+
+      @media print {
+        body {
+          display: none;
+        }
+      }
+    </style>
+    <style type="text/css">
+      .App__root___1cMNh {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px;
+
+        /* 選択不可にする */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      .App__root___1cMNh.App__sp___1c--G {
+        padding: 10px;
+      }
+    </style>
+    <style type="text/css">
+      .NowLoading__root___2xwDk {
+        padding-top: 200px;
+        text-align: center;
+      }
+
+      .NowLoading__circularProgress___1lXAm {
+        vertical-align: middle;
+      }
+
+      .NowLoading__text___EvBKO {
+        font-size: 2em;
+        padding: 10px;
+        vertical-align: middle;
+      }
+    </style>
+    <style type="text/css">
+      .Question__mainArea___2Mt1z {
+        padding: 15px 30px 30px 30px;
+        background-color: #fff;
+      }
+
+      .Question__mainArea___2Mt1z.Question__sp___3fmlL {
+        padding: 5px 10px 10px 10px;
+      }
+
+      .Question__remainingTimer___16dY_ {
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-justify-content: flex-end;
+        -ms-flex-pack: end;
+        justify-content: flex-end;
+      }
+
+      .Question__direction___1YT_c {
+        line-height: 1.5;
+        margin-top: 15px;
+        padding: 15px 15px;
+        font-size: 18px;
+        border-bottom: 2px solid #00bcd4;
+      }
+
+      .Question__direction___1YT_c.Question__sp___3fmlL {
+        margin-top: 5px;
+        padding: 10px;
+        font-size: 14px;
+      }
+    </style>
+    <style type="text/css">
+      .QuestionHeader__root___nBhR6 {
+      }
+
+      .QuestionHeader__innerContainer___2J16p {
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        background-color: #00bcd4;
+        color: #ffffff;
+      }
+
+      .QuestionHeader__left___24vuK {
+        -webkit-flex: 1 1;
+        -ms-flex: 1 1;
+        flex: 1 1;
+        padding: 8px;
+      }
+
+      .QuestionHeader__center___2GqF7 {
+        -webkit-flex: 1 1;
+        -ms-flex: 1 1;
+        flex: 1 1;
+        font-size: 18px;
+
+        /* 上下左右中央寄せ */
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+      }
+
+      .QuestionHeader__right___2S11U {
+        -webkit-flex: 1 1;
+        -ms-flex: 1 1;
+        flex: 1 1;
+        padding: 8px;
+      }
+    </style>
+    <style type="text/css">
+      .QuestionArea__root___2bNEh {
+        padding: 30px;
+      }
+
+      .QuestionArea__root___2bNEh.QuestionArea__sp___1mSqr {
+        padding: 10px;
+      }
+
+      .QuestionArea__inner___L8_Ms {
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 970px;
+
+        display: -webkit-flex;
+
+        display: -ms-flexbox;
+
+        display: flex;
+      }
+
+      .QuestionArea__soundButtonArea___l1jhC {
+        -webkit-flex: 1 1;
+        -ms-flex: 1 1;
+        flex: 1 1;
+        min-width: 60px;
+      }
+
+      .QuestionArea__dictationArea___1EZet {
+        -webkit-flex: 7 1;
+        -ms-flex: 7 1;
+        flex: 7 1;
+      }
+    </style>
+    <style type="text/css">
+      .SoundButton__root___3X1IC {
+        display: inline-block;
+        background-color: black;
+        border-radius: 4px;
+        text-align: center;
+        padding: 5px 8px 5px 8px;
+        cursor: pointer;
+        margin: 5px;
+        outline: none;
+      }
+
+      .SoundButton__text___3P4gL {
+        font-size: 12px;
+        color: white;
+        margin: 0;
+      }
+
+      .SoundButton__icon___LIdBx {
+        color: white;
+      }
+    </style>
+    <style type="text/css">
+      .WordBox__root___OINr4 {
+        min-height: 30px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+    </style>
+    <style type="text/css">
+      .FontBox__root___23-B9 {
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        display: inline-block;
+        vertical-align: middle;
+        text-align: center;
+        margin: 2px 1px;
+        width: 18px;
+        height: 27px;
+        line-height: 27px;
+        font-size: 18px;
+      }
+
+      .FontBox__now___Gin7H {
+        border-bottom: 3px solid #000;
+      }
+
+      .FontBox__open___IoicP {
+        color: #000;
+      }
+
+      .FontBox__hide___1Hxe4 {
+        height: 24px;
+        width: 18px;
+        border-radius: 50%;
+        background-color: #ffab00;
+      }
+    </style>
+    <style type="text/css">
+      .TabletKeyboard__root___32zYq {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .TabletKeyboard__line___3nWjJ {
+        width: 100%;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-flex-wrap: wrap;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+      }
+
+      .TabletKeyboard__key___25aFX {
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+
+        margin: 0.5%;
+        width: 9%;
+        border: solid 1px #333;
+
+        cursor: pointer;
+
+        /* 文字の上下左右中央揃え */
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+      }
+
+      .TabletKeyboard__whiteSpace___1KREJ {
+        margin: 1%;
+        width: 3%;
+      }
+
+      .TabletKeyboard__key___25aFX:before,
+      .TabletKeyboard__whiteSpace___1KREJ:before {
+        content: "";
+        float: left;
+        padding-top: 100%;
+      }
+    </style>
+    <style type="text/css">
+      .SmartPhoneButtons__root___1u9iH {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+
+        display: -webkit-flex;
+
+        display: -ms-flexbox;
+
+        display: flex;
+      }
+
+      .SmartPhoneButtons__button___dJNnR {
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+
+        -webkit-flex: 1 1;
+
+        -ms-flex: 1 1;
+
+        flex: 1 1;
+        margin: 1%;
+        border: solid 1px #aaa;
+        border-radius: 4px;
+
+        font-size: 20px;
+        background: -webkit-gradient(
+          linear,
+          left top,
+          left bottom,
+          from(#fff),
+          to(#ccc)
+        );
+        background: -webkit-linear-gradient(top, #fff, #ccc);
+        background: -o-linear-gradient(top, #fff, #ccc);
+        background: linear-gradient(to bottom, #fff, #ccc);
+
+        cursor: pointer;
+
+        /* 文字の上下左右中央揃え */
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+      }
+
+      .SmartPhoneButtons__button___dJNnR:before {
+        content: "";
+        float: left;
+        padding-top: 100%;
+      }
+    </style>
+    <style type="text/css">
+      .RemainingTimer__text___V1p2e {
+        margin-left: 2px;
+        font-size: 20px;
+        vertical-align: 4px;
+        font-weight: 500;
+      }
+    </style>
+    <style type="text/css">
+      .TimeUpWindow__root___1LZJS {
+        background-color: #83e1e1;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+
+        display: -webkit-flex;
+
+        display: -ms-flexbox;
+
+        display: flex;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+      }
+
+      .TimeUpWindow__image___17ncI {
+        max-width: 100%;
+      }
+    </style>
+    <style type="text/css">
+      .Description__headerInnerContainer___19MtS {
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        background-color: #00bcd4;
+        color: #ffffff;
+      }
+
+      .Description__left___Hv_6p {
+        -webkit-flex: 1 1;
+        -ms-flex: 1 1;
+        flex: 1 1;
+        padding: 8px;
+      }
+
+      .Description__center___1XTSt {
+        -webkit-flex: 1 1;
+        -ms-flex: 1 1;
+        flex: 1 1;
+        padding: 8px;
+
+        /* 上下左右中央寄せ */
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+      }
+
+      .Description__right___1TWXw {
+        -webkit-flex: 1 1;
+        -ms-flex: 1 1;
+        flex: 1 1;
+        padding: 8px;
+
+        display: -webkit-flex;
+
+        display: -ms-flexbox;
+
+        display: flex;
+        -webkit-justify-content: flex-end;
+        -ms-flex-pack: end;
+        justify-content: flex-end;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+      }
+
+      .Description__contentsInnerContainer___sYbEo {
+        height: 300px;
+
+        /* 上下左右中央寄せ */
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        -webkit-align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
+      }
+
+      .Description__pointArea___eYW0Y {
+        height: 48px;
+      }
+
+      .Description__point___GA-vc {
+        font-size: 48px;
+      }
+
+      .Description__unit___1uHeb {
+        font-size: 24px;
+      }
+
+      .Description__descriptionArea___1bVMV {
+        margin-top: -50px;
+        padding: 20px;
+        /* width: 100%; */
+      }
+
+      .Description__descriptionArea___1bVMV table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        word-break: break-word;
+      }
+
+      .Description__descriptionArea___1bVMV td,
+      .Description__descriptionArea___1bVMV th {
+        border: solid 1px #000;
+        padding: 8px;
+      }
+
+      .Description__descriptionArea___1bVMV th {
+        background-color: #00bcd4;
+        color: #fff;
+      }
+
+      .Description__descriptionArea___1bVMV th:first-child {
+        width: 2em;
+      }
+
+      .Description__descriptionArea___1bVMV th:nth-child(2) {
+        width: 2.5em;
+      }
+
+      .Description__descriptionArea___1bVMV td {
+        vertical-align: top;
+      }
+
+      .Description__descriptionArea___1bVMV td:first-child,
+      .Description__descriptionArea___1bVMV td:nth-child(2) {
+        text-align: center;
+      }
+
+      .Description__notes___3lXW6 {
+        text-align: right;
+      }
+
+      .Description__circleIcon___ggsly {
+        color: #0000ff !important;
+      }
+
+      .Description__exIcon___26-PP {
+        color: #ff0000 !important;
+      }
+
+      .Description__sound___1HkHm {
+        max-width: 100%;
+      }
+
+      .Description__passage___1hiAK {
+        font-family:
+          Georgia, 游明朝, "Yu Mincho", YuMincho, "Hiragino Mincho ProN",
+          HGS明朝E, メイリオ, Meiryo, serif;
+        font-size: 1.1em;
+        margin: 0.5em;
+        line-height: 1.5em;
+      }
+
+      .Description__inputNG___3n7FB {
+        font-weight: bold;
+        background-color: #ffff00;
+        color: #ff0000;
+      }
+
+      .Description__inputOK___gOUiy {
+        font-weight: bold;
+        background-color: #ffff00;
+        color: #0000ff;
+      }
+
+      .Description__japaneseText____9mRP {
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body class="notranslate" style="">
+    <div id="root">
+      <div data-reactroot="" class="App__root___1cMNh">
+        <div>
+          <div
+            style="
+              color: rgba(0, 0, 0, 0.87);
+              background-color: rgb(255, 255, 255);
+              transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+              box-sizing: border-box;
+              font-family:
+                &quot;Helvetica Neue&quot;, &quot;Segoe UI&quot;,
+                &quot;ヒラギノ角ゴ ProN&quot;,
+                &quot;Hiragino Kaku Gothic ProN&quot;, メイリオ, Meiryo,
+                &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;, sans-serif;
+              -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+              box-shadow:
+                rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                rgba(0, 0, 0, 0.12) 0px 1px 4px;
+              border-radius: 2px;
+            "
+          >
+            <div class="QuestionHeader__innerContainer___2J16p">
+              <div class="QuestionHeader__left___24vuK">
+                <div
+                  style="
+                    color: rgba(0, 0, 0, 0.87);
+                    background-color: rgb(255, 255, 255);
+                    transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                    box-sizing: border-box;
+                    font-family:
+                      &quot;Helvetica Neue&quot;, &quot;Segoe UI&quot;,
+                      &quot;ヒラギノ角ゴ ProN&quot;,
+                      &quot;Hiragino Kaku Gothic ProN&quot;, メイリオ, Meiryo,
+                      &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                      sans-serif;
+                    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                    border-radius: 2px;
+                    display: inline-block;
+                    min-width: 100%;
+                    box-shadow:
+                      rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                      rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                  "
+                >
+                  <button
+                    tabindex="0"
+                    type="button"
+                    style="
+                      border: 10px;
+                      box-sizing: border-box;
+                      display: inline-block;
+                      font-family:
+                        &quot;Helvetica Neue&quot;, &quot;Segoe UI&quot;,
+                        &quot;ヒラギノ角ゴ ProN&quot;,
+                        &quot;Hiragino Kaku Gothic ProN&quot;, メイリオ, Meiryo,
+                        &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                        sans-serif;
+                      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                      cursor: pointer;
+                      text-decoration: none;
+                      margin: 0px;
+                      padding: 0px;
+                      outline: none;
+                      font-size: inherit;
+                      font-weight: inherit;
+                      position: relative;
+                      z-index: 1;
+                      height: 36px;
+                      line-height: 36px;
+                      width: 100%;
+                      border-radius: 2px;
+                      transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                      background-color: rgb(255, 255, 255);
+                      text-align: center;
+                    "
+                  >
+                    <div>
+                      <div
+                        style="
+                          height: 36px;
+                          border-radius: 2px;
+                          transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                          top: 0px;
+                        "
+                      >
+                        <span
+                          style="
+                            position: relative;
+                            opacity: 1;
+                            font-size: 14px;
+                            letter-spacing: 0px;
+                            text-transform: none;
+                            font-weight: 500;
+                            margin: 0px;
+                            user-select: none;
+                            padding-left: 16px;
+                            padding-right: 16px;
+                            color: rgba(0, 0, 0, 0.87);
+                          "
+                          >前のページに戻る</span
+                        >
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <div class="QuestionHeader__center___2GqF7">
+                <!-- react-text: 17 -->1<!-- /react-text --><!-- react-text: 18 -->/<!-- /react-text --><!-- react-text: 19 -->10<!-- /react-text -->
+              </div>
+              <div class="QuestionHeader__right___2S11U">
+                <div
+                  style="
+                    color: rgba(0, 0, 0, 0.87);
+                    background-color: rgb(255, 255, 255);
+                    transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                    box-sizing: border-box;
+                    font-family:
+                      &quot;Helvetica Neue&quot;, &quot;Segoe UI&quot;,
+                      &quot;ヒラギノ角ゴ ProN&quot;,
+                      &quot;Hiragino Kaku Gothic ProN&quot;, メイリオ, Meiryo,
+                      &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                      sans-serif;
+                    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                    border-radius: 2px;
+                    display: inline-block;
+                    min-width: 100%;
+                    box-shadow:
+                      rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                      rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                  "
+                >
+                  <button
+                    tabindex="0"
+                    type="button"
+                    style="
+                      border: 10px;
+                      box-sizing: border-box;
+                      display: inline-block;
+                      font-family:
+                        &quot;Helvetica Neue&quot;, &quot;Segoe UI&quot;,
+                        &quot;ヒラギノ角ゴ ProN&quot;,
+                        &quot;Hiragino Kaku Gothic ProN&quot;, メイリオ, Meiryo,
+                        &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                        sans-serif;
+                      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                      cursor: pointer;
+                      text-decoration: none;
+                      margin: 0px;
+                      padding: 0px;
+                      outline: none;
+                      font-size: inherit;
+                      font-weight: inherit;
+                      position: relative;
+                      z-index: 1;
+                      height: 36px;
+                      line-height: 36px;
+                      width: 100%;
+                      border-radius: 2px;
+                      transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                      background-color: rgb(255, 255, 255);
+                      text-align: center;
+                    "
+                  >
+                    <div>
+                      <div
+                        style="
+                          height: 36px;
+                          border-radius: 2px;
+                          transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                          top: 0px;
+                        "
+                      >
+                        <span
+                          style="
+                            position: relative;
+                            opacity: 1;
+                            font-size: 14px;
+                            letter-spacing: 0px;
+                            text-transform: none;
+                            font-weight: 500;
+                            margin: 0px;
+                            user-select: none;
+                            padding-left: 16px;
+                            padding-right: 16px;
+                            color: rgba(0, 0, 0, 0.87);
+                          "
+                          >次へ</span
+                        >
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="Question__mainArea___2Mt1z"
+            style="
+              color: rgba(0, 0, 0, 0.87);
+              background-color: rgb(255, 255, 255);
+              transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+              box-sizing: border-box;
+              font-family:
+                &quot;Helvetica Neue&quot;, &quot;Segoe UI&quot;,
+                &quot;ヒラギノ角ゴ ProN&quot;,
+                &quot;Hiragino Kaku Gothic ProN&quot;, メイリオ, Meiryo,
+                &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;, sans-serif;
+              -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+              box-shadow:
+                rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                rgba(0, 0, 0, 0.12) 0px 1px 4px;
+              border-radius: 2px;
+            "
+          >
+            <div class="Question__remainingTimer___16dY_">
+              <div style="color: rgb(0, 0, 0)">
+                <svg
+                  viewBox="0 0 24 24"
+                  style="
+                    display: inline-block;
+                    color: rgba(0, 0, 0, 0.87);
+                    fill: rgb(0, 0, 0);
+                    height: 24px;
+                    width: 24px;
+                    user-select: none;
+                    transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                  "
+                >
+                  <path
+                    d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"
+                  ></path></svg
+                ><span class="RemainingTimer__text___V1p2e"
+                  ><!-- react-text: 31 -->03<!-- /react-text --><span
+                    style="visibility: hidden"
+                    >:</span
+                  ><!-- react-text: 33 -->49<!-- /react-text --></span
+                >
+              </div>
+            </div>
+            <div
+              class="Question__direction___1YT_c"
+              style="
+                color: rgba(0, 0, 0, 0.87);
+                background-color: rgb(255, 255, 255);
+                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                box-sizing: border-box;
+                font-family:
+                  &quot;Helvetica Neue&quot;, &quot;Segoe UI&quot;,
+                  &quot;ヒラギノ角ゴ ProN&quot;,
+                  &quot;Hiragino Kaku Gothic ProN&quot;, メイリオ, Meiryo,
+                  &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                  sans-serif;
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                box-shadow:
+                  rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                  rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                border-radius: 2px;
+              "
+            >
+              <!-- react-text: 35 -->流れた音声をタイピングしてください。音声ボタンかエンターキーを押すと、音声が再生されます。<!-- /react-text --><br /><!-- react-text: 37 -->音声は<!-- /react-text --><!-- react-text: 38 -->4<!-- /react-text --><!-- react-text: 39 -->回までしか再生できません。<!-- /react-text -->
+            </div>
+            <div
+              class="QuestionArea__root___2bNEh"
+              style="
+                color: rgba(0, 0, 0, 0.87);
+                background-color: rgb(255, 255, 255);
+                transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                box-sizing: border-box;
+                font-family:
+                  &quot;Helvetica Neue&quot;, &quot;Segoe UI&quot;,
+                  &quot;ヒラギノ角ゴ ProN&quot;,
+                  &quot;Hiragino Kaku Gothic ProN&quot;, メイリオ, Meiryo,
+                  &quot;ＭＳ Ｐゴシック&quot;, &quot;MS PGothic&quot;,
+                  sans-serif;
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+                box-shadow:
+                  rgba(0, 0, 0, 0.12) 0px 1px 6px,
+                  rgba(0, 0, 0, 0.12) 0px 1px 4px;
+                border-radius: 2px;
+              "
+            >
+              <div class="QuestionArea__inner___L8_Ms">
+                <div class="QuestionArea__soundButtonArea___l1jhC">
+                  <span
+                    class="SoundButton__root___3X1IC"
+                    role="button"
+                    tabindex="0"
+                    ><svg
+                      viewBox="0 0 24 24"
+                      style="
+                        display: inline-block;
+                        color: rgba(0, 0, 0, 0.87);
+                        fill: rgb(255, 255, 255);
+                        height: 24px;
+                        width: 24px;
+                        user-select: none;
+                        transition: 450ms cubic-bezier(0.23, 1, 0.32, 1);
+                      "
+                    >
+                      <path
+                        d="M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"
+                      ></path>
+                    </svg>
+                    <p class="SoundButton__text___3P4gL">音声</p></span
+                  >
+                </div>
+                <div class="QuestionArea__dictationArea___1EZet">
+                  <div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9 FontBox__now___Gin7H"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                    <div class="WordBox__root___OINr4">
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                      <div
+                        class="FontBox__root___23-B9"
+                        style="
+                          font-family:
+                            Georgia, &quot;Hiragino Mincho ProN&quot;, HGS明朝E,
+                            メイリオ, Meiryo, serif;
+                        "
+                      >
+                        <div class="FontBox__hide___1Hxe4"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- react-empty: 144 --><!-- react-empty: 145 -->
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+    </div>
+    <script src="./bundle.js"></script>
+
+    <style>
+      button::-moz-focus-inner,
+      input::-moz-focus-inner {
+        border: 0;
+        padding: 0;
+      }
+    </style>
+    <div>
+      <div
+        data-reactroot=""
+        style="
+          position: fixed;
+          box-sizing: border-box;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+          z-index: 1500;
+          top: 0px;
+          left: -10000px;
+          width: 100%;
+          height: 100%;
+          transition: left cubic-bezier(0.23, 1, 0.32, 1) 450ms;
+        "
+      >
+        <div></div>
+        <div
+          style="
+            position: fixed;
+            height: 100%;
+            width: 100%;
+            top: 0px;
+            left: -100%;
+            opacity: 0;
+            background-color: rgba(0, 0, 0, 0.54);
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            will-change: opacity;
+            transform: translateZ(0px);
+            transition:
+              left cubic-bezier(0.23, 1, 0.32, 1) 400ms,
+              opacity 400ms cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 1400;
+          "
+        >
+          <!-- react-empty: 4 -->
+        </div>
+      </div>
+    </div>
+    <div>
+      <div
+        data-reactroot=""
+        style="
+          position: fixed;
+          box-sizing: border-box;
+          -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+          z-index: 1500;
+          top: 0px;
+          left: -10000px;
+          width: 100%;
+          height: 100%;
+          transition: left cubic-bezier(0.23, 1, 0.32, 1) 450ms;
+          padding-top: 337px;
+        "
+      >
+        <div></div>
+        <div
+          style="
+            position: fixed;
+            height: 100%;
+            width: 100%;
+            top: 0px;
+            left: -100%;
+            opacity: 0;
+            background-color: rgba(0, 0, 0, 0.54);
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            will-change: opacity;
+            transform: translateZ(0px);
+            transition:
+              left cubic-bezier(0.23, 1, 0.32, 1) 400ms,
+              opacity 400ms cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 1400;
+          "
+        >
+          <!-- react-empty: 14 -->
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

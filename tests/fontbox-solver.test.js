@@ -120,6 +120,206 @@ test('FontBox typing waits for each accepted key before sending the next', { tim
     }
 });
 
+test('keyboard dispatch uses physical key codes for letters and punctuation', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <script>
+                window.events = [];
+                for (const name of ['keydown', 'keypress', 'keyup']) {
+                    document.addEventListener(name, event => {
+                        window.events.push({
+                            type: event.type,
+                            key: event.key,
+                            code: event.code,
+                            charCode: event.charCode,
+                            keyCode: event.keyCode,
+                            shiftKey: event.shiftKey,
+                            which: event.which
+                        });
+                    });
+                }
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const events = await page.evaluate(() => {
+            dispatchKeyboardChar('o', document);
+            dispatchKeyboardChar('?', document);
+            dispatchKeyboardChar("'", document);
+            return window.events;
+        });
+
+        assert.deepEqual(events.slice(0, 3), [
+            { type: 'keydown', key: 'o', code: 'KeyO', charCode: 0, keyCode: 79, shiftKey: false, which: 79 },
+            { type: 'keypress', key: 'o', code: 'KeyO', charCode: 111, keyCode: 111, shiftKey: false, which: 111 },
+            { type: 'keyup', key: 'o', code: 'KeyO', charCode: 0, keyCode: 79, shiftKey: false, which: 79 }
+        ]);
+        assert.deepEqual(events.slice(3, 6), [
+            { type: 'keydown', key: '?', code: 'Slash', charCode: 0, keyCode: 191, shiftKey: true, which: 191 },
+            { type: 'keypress', key: '?', code: 'Slash', charCode: 63, keyCode: 63, shiftKey: true, which: 63 },
+            { type: 'keyup', key: '?', code: 'Slash', charCode: 0, keyCode: 191, shiftKey: true, which: 191 }
+        ]);
+        assert.deepEqual(events.slice(6, 9), [
+            { type: 'keydown', key: "'", code: 'Quote', charCode: 0, keyCode: 222, shiftKey: false, which: 222 },
+            { type: 'keypress', key: "'", code: 'Quote', charCode: 39, keyCode: 39, shiftKey: false, which: 39 },
+            { type: 'keyup', key: "'", code: 'Quote', charCode: 0, keyCode: 222, shiftKey: false, which: 222 }
+        ]);
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver sends only input letters', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div class="QuestionArea__dictationArea___test">
+                    D o n ' t   b e   l a z y .   W h a t ' s   t h e   m a t t e r   w i t h   y o u ?
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    document.querySelector('[class*="dictationArea"]').textContent += event.key;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const keys = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            await solve(["Don't be lazy. What's the matter with you?"], 'dictation', document);
+            return window.keypresses.join('');
+        });
+
+        assert.equal(keys, "DontbelazyWhatsthematterwithyou");
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver skips digits as player-completed boxes', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div class="QuestionArea__dictationArea___test">
+                    I   a m   1 3   y e a r s   o l d .
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    document.querySelector('[class*="dictationArea"]').textContent += event.key;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const keys = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            await solve(['I am 13 years old.'], 'dictation', document);
+            return window.keypresses.join('');
+        });
+
+        assert.equal(keys, 'Iamyearsold');
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver waits for the current question text before typing', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div id="dictation-question" class="QuestionArea__dictationArea___test">
+                    O l d   q u e s t i o n .
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                window.firstKeyAt = null;
+                window.questionReadyAt = null;
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    window.firstKeyAt = window.firstKeyAt || performance.now();
+                    document.getElementById('dictation-question').textContent += event.key;
+                });
+                setTimeout(() => {
+                    document.getElementById('dictation-question').textContent =
+                        'T h i s   t e a   i s   t o o   h o t   f o r   m e   t o   d r i n k .';
+                    window.questionReadyAt = performance.now();
+                }, 250);
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const result = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            await solve(['This tea is too hot for me to drink.'], 'dictation', document);
+            return {
+                firstKeyAt: window.firstKeyAt,
+                keypresses: window.keypresses.join(''),
+                questionReadyAt: window.questionReadyAt
+            };
+        });
+
+        assert.equal(result.keypresses, 'Thisteaistoohotformetodrink');
+        assert.ok(result.firstKeyAt >= result.questionReadyAt);
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver defers when a dispatched key is not accepted', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div class="QuestionArea__dictationArea___test">
+                    T h i s   t e a   i s   t o o   h o t   f o r   m e   t o   d r i n k .
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const result = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            const solved = await solve(['This tea is too hot for me to drink.'], 'dictation', document);
+            return {
+                keypresses: window.keypresses.join(''),
+                solved
+            };
+        });
+
+        assert.equal(result.solved, false);
+        assert.equal(result.keypresses, 'T');
+    } finally {
+        await browser.close();
+    }
+});
+
 test('FontBox sentence typing uses bracket text instead of the full sentence', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();

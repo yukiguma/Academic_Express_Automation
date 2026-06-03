@@ -37,6 +37,15 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, Math.max(0, ms)));
 }
 
+async function waitUntil(predicate, timeoutMs = 3000, intervalMs = 50) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        if (predicate()) return true;
+        await sleep(intervalMs);
+    }
+    return predicate();
+}
+
 function normalizeText(text) {
     return String(text || "")
         .replace(/[\u2018\u2019\u02bc]/g, "'")
@@ -498,20 +507,22 @@ function keyboardInfoForChar(char) {
     const upper = key.toUpperCase();
     const specialKeys = {
         ' ': { code: 'Space', keyCode: 32 },
-        '.': { code: 'Period' },
-        ',': { code: 'Comma' },
-        '?': { code: 'Slash', shiftKey: true },
-        '!': { code: 'Digit1', shiftKey: true },
-        "'": { code: 'Quote' },
-        '"': { code: 'Quote', shiftKey: true },
-        '-': { code: 'Minus' }
+        '.': { code: 'Period', keyCode: 190 },
+        ',': { code: 'Comma', keyCode: 188 },
+        '?': { code: 'Slash', keyCode: 191, shiftKey: true },
+        '!': { code: 'Digit1', keyCode: 49, shiftKey: true },
+        "'": { code: 'Quote', keyCode: 222 },
+        '"': { code: 'Quote', keyCode: 222, shiftKey: true },
+        '-': { code: 'Minus', keyCode: 189 },
+        ';': { code: 'Semicolon', keyCode: 186 },
+        ':': { code: 'Semicolon', keyCode: 186, shiftKey: true }
     };
 
     if (specialKeys[key]) {
         return {
             charCode: key.charCodeAt(0),
             code: specialKeys[key].code,
-            keyCode: key.charCodeAt(0),
+            keyCode: specialKeys[key].keyCode,
             shiftKey: Boolean(specialKeys[key].shiftKey)
         };
     }
@@ -520,7 +531,7 @@ function keyboardInfoForChar(char) {
         return {
             charCode: key.charCodeAt(0),
             code: `Key${upper}`,
-            keyCode: key.charCodeAt(0),
+            keyCode: upper.charCodeAt(0),
             shiftKey: key !== key.toLowerCase()
         };
     }
@@ -544,7 +555,7 @@ function keyboardInfoForChar(char) {
 
 function dispatchKeyboardChar(char, target = document) {
     const info = keyboardInfoForChar(char);
-    const base = {
+    const physicalKeyEvent = {
         bubbles: true,
         cancelable: true,
         charCode: 0,
@@ -555,37 +566,130 @@ function dispatchKeyboardChar(char, target = document) {
         which: info.keyCode
     };
 
-    target.dispatchEvent(new KeyboardEvent('keydown', base));
+    target.dispatchEvent(new KeyboardEvent('keydown', physicalKeyEvent));
     target.dispatchEvent(new KeyboardEvent('keypress', {
-        ...base,
-        charCode: info.charCode
+        ...physicalKeyEvent,
+        charCode: info.charCode,
+        keyCode: info.charCode,
+        which: info.charCode
     }));
-    target.dispatchEvent(new KeyboardEvent('keyup', base));
+    target.dispatchEvent(new KeyboardEvent('keyup', physicalKeyEvent));
 }
 
 // Solver: Dictation player. This layout has no input element; it listens for
 // document-level keyboard events and opens character boxes as keys arrive.
-async function solveDictation(answers) {
+async function dismissDictationStartModal() {
+    const startButton = findVisibleByText('button, [role="button"], span', 'スタート');
+    if (!startButton) return;
+
+    const button = startButton.closest('button') || startButton;
+    const lockOverlay = document.getElementById('global-lock');
+    const previousDisplay = lockOverlay?.style.display;
+    const previousPointerEvents = lockOverlay?.style.pointerEvents;
+
+    if (lockOverlay) {
+        lockOverlay.style.display = 'none';
+        lockOverlay.style.pointerEvents = 'none';
+    }
+
+    simulateClick(button);
+
+    await waitUntil(
+        () => !findVisibleByText('button, [role="button"], span', 'スタート'),
+        3000,
+        50
+    );
+
+    if (lockOverlay) {
+        lockOverlay.style.display = previousDisplay;
+        lockOverlay.style.pointerEvents = previousPointerEvents;
+    }
+
+    await sleep(300);
+}
+
+async function solveDictation(answers, scope, question = {}) {
     const answer = answers.join(' ').trim();
     if (!answer) return false;
 
-    const startButton = findVisibleByText('button, [role="button"], span', 'スタート');
-    if (startButton) {
-        const button = startButton.closest('button') || startButton;
-        if (isElementTopmost(button)) {
-            simulateClick(button);
-            await sleep(250);
-        }
-    }
+    await dismissDictationStartModal();
 
-    console.log(`Dictation Strategy: Typing ${answer.length} characters.`);
-    for (const char of answer) {
+    const chars = dictationInputChars(answer);
+    if (!await waitForDictationQuestionReady(chars, question)) {
+        return false;
+    }
+    console.log(`Dictation Strategy: Typing ${chars.length} characters.`);
+    for (const char of chars) {
+        const before = dictationInputSnapshot();
         dispatchKeyboardChar(char, document);
-        await sleep(5);
+        if (!await waitForDictationInputAccepted(before)) {
+            console.warn(`Dictation Strategy: Key "${char}" was not accepted; deferring typing.`);
+            return false;
+        }
+        await sleep(30);
     }
 
     await sleep(500);
     return true;
+}
+
+function dictationInputChars(answer) {
+    return Array.from(String(answer || "").replace(/\u2019/g, "'"))
+        .filter(char => /\p{L}/u.test(char));
+}
+
+async function waitForDictationQuestionReady(expectedChars, question = {}) {
+    const expected = expectedChars.join('').toLowerCase();
+    const questionTextChars = dictationInputChars(question.rawText || "").join('').toLowerCase();
+    if (!expected) return true;
+
+    const ready = await waitUntil(() => {
+        const visibleChars = visibleDictationInputChars().toLowerCase();
+        if (visibleChars.includes(expected)) return true;
+        if (visibleChars && expected.startsWith(visibleChars)) return true;
+        if (visibleChars && questionTextChars.startsWith(visibleChars)) return true;
+        if (visibleChars.length < expected.length && hasHiddenDictationBoxes()) return true;
+
+        // Some Dictation layouts render blank boxes before typing, so there is
+        // no current-answer text to compare against. In that case readiness has
+        // to be delegated to the player listener rather than blocked forever.
+        const minimumComparableLength = Math.min(6, expected.length);
+        return visibleChars.length < minimumComparableLength;
+    }, 5000, 50);
+
+    if (!ready) {
+        console.warn("Dictation Strategy: Current question text is not ready; deferring typing.");
+    }
+    return ready;
+}
+
+function visibleDictationInputChars() {
+    const roots = Array.from(document.querySelectorAll([
+        '[class*="dictationArea"]',
+        '[class*="dictationBox"]',
+        '[class*="DictationBox"]',
+        '[class*="FontBox__root"]'
+    ].join(','))).filter(isVisible);
+    const text = (roots.length ? roots : [document.body])
+        .map(root => root?.innerText || root?.textContent || "")
+        .join(' ');
+    return dictationInputChars(text).join('');
+}
+
+function hasHiddenDictationBoxes() {
+    return Array.from(document.querySelectorAll('[class*="FontBox__hide"]'))
+        .some(isVisible);
+}
+
+function dictationInputSnapshot() {
+    const hiddenCount = Array.from(document.querySelectorAll('[class*="FontBox__hide"]'))
+        .filter(isVisible)
+        .length;
+    return `${visibleDictationInputChars()}|hidden:${hiddenCount}`;
+}
+
+async function waitForDictationInputAccepted(previousSnapshot) {
+    return waitUntil(() => dictationInputSnapshot() !== previousSnapshot, 800, 20);
 }
 
 // Solver: Sorting
@@ -710,7 +814,7 @@ async function solve(answers, type, scope, question = {}) {
         return solveFillBlank(answers, scope);
     }
     if (normalizedType.includes('dictation') || normalizedType.includes('dectation')) {
-        return solveDictation(answers, scope);
+        return solveDictation(answers, scope, question);
     }
     if (normalizedType.includes('choice') || normalizedType.includes('true') || normalizedType.includes('select') || normalizedType.includes('quiz')) {
         return solveMultipleChoice(answers, scope);
