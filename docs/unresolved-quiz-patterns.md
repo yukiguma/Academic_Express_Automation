@@ -8,7 +8,7 @@
 - 選択肢の表示順は `shuffleChoices="true"` で変わるため、番号や位置ではなく、解決済みの選択肢テキストでクリックする。
 - 自動実行で「すでに解いた問題か」を判定するキーは、問題文だけではなく `displayOrder + questionNo + signature` を使う。
 - 画面上に複数の問題コンポーネントが残る場合があるため、進捗表示と画面中の問題番号を使って、現在表示中の問題だけを対象にする。
-- `shuffleQuestions="true"` の場合、画面の `1 / 23` は XML 上の1問目とは限らない。問題文がユニークなら画面テキスト照合を優先し、同じ問題文が重複している場合だけ進捗番号で絞り込む。
+- `shuffleQuestions="true"` の場合、画面の `1 / 23` は XML 上の1問目とは限らない。問題文がユニークなら画面テキスト照合を優先し、同じ問題文が重複していて音声・画像の素材 ID が取れる場合は現在読み込まれた素材 ID で絞り込む。
 - `/student/` を含む選択画面では自動入力状態を必ず解除する。自動回答中の更新や中断後に選択画面へ戻った場合でも、次の教材を勝手に開始しないようにするため。
 
 ## 確認済みパターン一覧
@@ -17,6 +17,7 @@
 | --- | --- | --- | --- |
 | `tests/fixtures/ListeningTest` | Listening | `listeningComprehension`、重複する `questionText`、番号参照の選択肢、単問進行 | parser / E2E |
 | `tests/fixtures/ListeningTest2` | Listening | `listeningComprehension`、`trueFalse`、`multipleChoice`、`anaumeFilIn initialLetterShown="true"`、複数 blank の `ClozeTest` | parser / E2E |
+| `tests/fixtures/ListeningTest3` | Listening | `shuffleQuestions="true"`、重複する `questionText`、音声・画像の素材 ID による現在問照合 | parser / E2E |
 | `tests/fixtures/Dictation` / `Dictation2` | Listening | `typing` XML だが画面は Dictation 専用。input 要素なし、document の keyboard event で文字枠を開く。一部 prefix が最初から開いている場合あり | parser / E2E |
 | `tests/fixtures/Scanning` | Reading | 開始画面つき `scanning`、本文中の該当英文クリック、複数問同時保存 | parser / E2E |
 | `tests/fixtures/VocabraryMatching` | Reading | `matching`、本文中の複数 blank に候補語句を投入、複数 `<answer>` 保存 | parser / E2E |
@@ -84,6 +85,39 @@ fixture の期待正答:
 
 - 複数 blank の `ClozeTest`。typing 系として扱い、10個の blank を入力して採点完走できることを E2E で確認済み。
 - `initialLetterShown="true"` つき `anaumeFilIn`。正答の先頭文字が画面に表示される可能性があるが、parser は完全な正答文字列を保持する。
+
+## `tests/fixtures/ListeningTest3`
+
+保存済みの Listening Test 画面と `question_authoring.cfc` payload を使う fixture。
+
+特徴:
+
+- `<book shuffleQuestions="true">` のため、XML 上の順番と画面上の出題順が一致しない。
+- 複数問の `questionText` が `Click your answer on the screen.` で同一。
+- 同一問題文の設問は選択肢も `a` / `b` / `c` / `d` だけで、画面テキストと進捗番号だけでは現在問を一意にできない。
+- 各 `<question>` の `<sound>` / `<image>` URL には一意な `id` があり、プレイヤーは現在問の音声素材を resource として読み込む。
+
+実装上の対応:
+
+- parser は multiple choice XML の `<sound>` / `<image>` から `mediaSignatures` を保持する。
+- parser は book の `shuffleQuestions="true"` を各 question に保持する。
+- content 側は DOM 上の media URL と `performance.getEntriesByType("resource")` の直近 `materialSound.cfm` / `materialImage.cfm` から素材 ID を読み、`mediaSignatures` と一致した question を現在問として優先する。
+- 素材 ID で現在問が決まった場合は、重複する問題文に対する進捗番号 fallback を使わず、その1問だけを解く。
+
+fixture の期待正答:
+
+| `question_no` | 正答保存値 |
+| --- | --- |
+| `1489` | `4` |
+| `14948` | `1` |
+| `1594` | `2` |
+| `14866` | `4` |
+| `15006` | `1` |
+| `14768` | `2` |
+| `1596` | `3` |
+| `1494` | `4` |
+| `1597` | `2` |
+| `1591` | `4` |
 
 ## `tests/fixtures/Dictation` / `tests/fixtures/Dictation2`
 

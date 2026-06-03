@@ -393,6 +393,91 @@
       .filter((signature, idx, values) => values.indexOf(signature) === idx);
   }
 
+  function normalizeMediaSignature(value) {
+    const text = String(value || "");
+    const idMatch =
+      text.match(/[?&]id=([^&#\s]+)/i) ||
+      text.match(/([a-f0-9]{24,})(?:\.[a-z0-9]+)?(?:[?#]|$)/i);
+    const signature = idMatch ? idMatch[1] : text;
+    return signature.toLowerCase().replace(/[^a-z0-9]/g, "");
+  }
+
+  function getQuestionMediaSignatures(question) {
+    return (Array.isArray(question?.mediaSignatures)
+      ? question.mediaSignatures
+      : []
+    )
+      .map(normalizeMediaSignature)
+      .filter(Boolean)
+      .filter((signature, idx, values) => values.indexOf(signature) === idx);
+  }
+
+  function pushMediaSignature(target, value) {
+    const signature = normalizeMediaSignature(value);
+    if (signature && signature.length <= 80 && !target.includes(signature)) {
+      target.push(signature);
+    }
+  }
+
+  function getCurrentMediaSignatures(searchRoot = document.body) {
+    const signatures = [];
+    const mediaRoot = searchRoot?.querySelectorAll ? searchRoot : document;
+
+    Array.from(
+      mediaRoot.querySelectorAll?.("audio, source, img, object, embed") || [],
+    ).forEach((el) => {
+      pushMediaSignature(
+        signatures,
+        el.currentSrc ||
+          el.src ||
+          el.data ||
+          el.getAttribute?.("src") ||
+          el.getAttribute?.("data") ||
+          "",
+      );
+    });
+
+    const entries =
+      typeof performance?.getEntriesByType === "function"
+        ? performance.getEntriesByType("resource")
+        : [];
+    entries
+      .filter((entry) => {
+        const name = String(entry?.name || "");
+        return /material(?:Sound|Image)\.cfm/i.test(name) || /[?&]id=/i.test(name);
+      })
+      .sort((a, b) => {
+        const bTime = b.responseEnd || b.startTime || 0;
+        const aTime = a.responseEnd || a.startTime || 0;
+        return bTime - aTime;
+      })
+      .slice(0, 8)
+      .forEach((entry) => pushMediaSignature(signatures, entry.name));
+
+    return signatures;
+  }
+
+  function findQuestionIndexByMediaSignatures(
+    mediaSignatures,
+    usedIndices,
+    activeQuestionRange,
+  ) {
+    for (const mediaSignature of mediaSignatures) {
+      const idx = questionsList.findIndex((question, i) => {
+        if (usedIndices.has(i)) return false;
+        if (!getQuestionMediaSignatures(question).includes(mediaSignature))
+          return false;
+        return (
+          question.shuffleQuestions === true ||
+          questionMatchesActiveOrder(question, activeQuestionRange)
+        );
+      });
+      if (idx !== -1) return idx;
+    }
+
+    return -1;
+  }
+
   function isVisibleElement(el) {
     if (!el || !el.isConnected) return false;
     const tagName = el.tagName;
@@ -969,6 +1054,33 @@
     const matchedPairs = [];
     const usedIndices = new Set();
     const usedElements = new Set();
+
+    const currentMediaSignatures = getCurrentMediaSignatures(searchRoot);
+    const mediaMatchedIndex = findQuestionIndexByMediaSignatures(
+      currentMediaSignatures,
+      usedIndices,
+      activeQuestionRange,
+    );
+    if (mediaMatchedIndex !== -1) {
+      const question = questionsList[mediaMatchedIndex];
+      const numberedElement = isSingleQuestionProgress(activeQuestionRange)
+        ? findQuestionElementByNumber(
+            activeQuestionRange.start,
+            usedElements,
+            searchRoot,
+          )
+        : null;
+      const textElement =
+        numberedElement ||
+        findQuestionElementByText(question, usedElements, searchRoot);
+      const container = textElement
+        ? findQuestionContainer(textElement, question.type)
+        : document.body;
+      return narrowPairsToCurrentProgress(
+        [{ element: container, data: question }],
+        activeQuestionRange,
+      );
+    }
 
     // Phase 1: Exact Signature Match
     for (const el of visibleElements) {

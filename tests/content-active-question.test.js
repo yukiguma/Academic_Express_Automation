@@ -135,6 +135,113 @@ test('content script solves only the visible auto-advance question in the active
     }
 });
 
+test('content script uses current media signatures for shuffled duplicate prompts', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['a'],
+                displayOrder: 1,
+                mediaSignatures: ['11111111111111111111111111111111'],
+                questionNo: 'first',
+                rawText: 'Click your answer on the screen.',
+                shuffleQuestions: true,
+                signature: 'clickyouransweronthescreen',
+                type: 'multipleChoice'
+            },
+            {
+                answers: ['b'],
+                displayOrder: 2,
+                mediaSignatures: ['22222222222222222222222222222222'],
+                questionNo: 'second',
+                rawText: 'Click your answer on the screen.',
+                shuffleQuestions: true,
+                signature: 'clickyouransweronthescreen',
+                type: 'multipleChoice'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div></div></div>
+            <main>
+                <div>1 / 2</div>
+                <div class="QuestionBuilder__questionBox___visible">
+                    <div class="QuestionBuilder__question___visible">
+                        Click your answer on the screen.
+                    </div>
+                    <button>a</button>
+                    <button>b</button>
+                </div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solvedQuestions = [];
+            Object.defineProperty(performance, 'getEntriesByType', {
+                value(type) {
+                    if (type !== 'resource') return [];
+                    return [
+                        {
+                            name: 'http://example.test/as/flash/materialSound.cfm?id=11111111111111111111111111111111',
+                            responseEnd: 10,
+                            startTime: 5
+                        },
+                        {
+                            name: 'http://example.test/as/flash/materialSound.cfm?id=22222222222222222222222222222222',
+                            responseEnd: 20,
+                            startTime: 15
+                        }
+                    ];
+                }
+            });
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solvedQuestions.push(question.questionNo);
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'true');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => window.__solvedQuestions.length > 0, { timeout: 10_000 });
+        const solvedQuestions = await page.evaluate(() => window.__solvedQuestions);
+        assert.deepEqual(solvedQuestions, ['second']);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 test('content script applies fast-mode click wait before solving', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
