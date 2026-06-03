@@ -419,7 +419,11 @@ async function solveFontBoxTyping(answers, scope, question = {}) {
     for (const char of chars) {
         const before = fontBoxSnapshot();
         dispatchKeyboardChar(char, document);
-        await waitForFontBoxUpdate(before);
+        if (char === ' ') {
+            await sleep(50);
+        } else {
+            await waitForFontBoxUpdate(before);
+        }
     }
 
     await sleep(250);

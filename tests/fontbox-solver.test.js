@@ -189,3 +189,58 @@ test('FontBox sentence typing joins multiple bracket blanks with spaces', { time
         await browser.close();
     }
 });
+
+test('FontBox spelling types spaces inside one bracket blank', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <style>
+                .FontBox__fontBox___1uhRR {
+                    display: inline-block;
+                    width: 12px;
+                    height: 18px;
+                }
+            </style>
+            <main id="scope">
+                ${Array.from('postoffice').map(() => `
+                    <div class="FontBox__fontBox___1uhRR FontBox__hide___1R5sG"></div>
+                `).join('')}
+            </main>
+            <script>
+                window.acceptedKeys = [];
+                let index = 0;
+                const boxes = Array.from(document.querySelectorAll('[class*="FontBox__fontBox"]'));
+
+                document.addEventListener('keydown', event => {
+                    const expected = 'post office'[index];
+                    if (event.key !== expected) return;
+
+                    window.acceptedKeys.push(event.key);
+                    if (event.key !== ' ') {
+                        const boxIndex = window.acceptedKeys.filter(key => key !== ' ').length - 1;
+                        boxes[boxIndex].className += ' FontBox__fontBox_ok___VnRUk';
+                        boxes[boxIndex].textContent = event.key;
+                    }
+                    index += 1;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        await page.evaluate(async () => {
+            await solve(
+                ['post office'],
+                'typing',
+                document.getElementById('scope'),
+                { rawText: '郵便局<br />[post office]' }
+            );
+        });
+
+        const acceptedKeys = await page.evaluate(() => window.acceptedKeys.join(''));
+        assert.equal(acceptedKeys, 'post office');
+    } finally {
+        await browser.close();
+    }
+});

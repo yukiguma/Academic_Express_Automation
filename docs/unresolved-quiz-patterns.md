@@ -287,6 +287,7 @@ E2E での確認:
 - 単語 spelling では先頭など一部文字がヒント表示済みになることがあり、未入力の文字枠だけを送る。
 - `sentenceTyping` では画面上の英文から bracket 内の単語だけが空欄になり、保存 payload 上の正答は全文になる。solver は parser が保持した bracket 付き `rawText` から空欄語を取り出して入力する。
 - `VocabrarySpelling3` では `[Both] [of]` のように複数 bracket が連続し、空欄入力にスペースが必要になる。solver は bracket 群をスペースで結合して `Both of` のように入力する。
+- spelling では `[post office]` のように1つの bracket 内にスペースを含む正答があり、スペースも keyboard event として送る。画面上はスペース用の `FontBox` がない場合があるため、スペース入力後は文字枠の変化を必須にしない。
 - 画面 DOM に空欄語の hidden label が含まれない場合があるため、`sentenceTyping` の照合では bracket 内を除いた文の骨格も使う。例: `David was badly [injured] in the accident.` は `David was badly in the accident.` とも一致させる。
 - `VocabrarySpelling4` のように `sentenceTyping` の画面テキストが日本語例文だけになる場合がある。parser は解答抽出用の bracket 付き英文 `rawText` を保持しつつ、content 側の現在問照合用に日本語例文の `matchSignatures` も保持する。
 - 実環境ではキー入力が速すぎると React 側の文字枠更新が追いつかず誤答になることがあるため、solver は1文字ごとに `FontBox` の状態変化を待ってから次の文字を送る。反映後の固定待機は短くし、状態変化の検知を主な同期条件にする。
