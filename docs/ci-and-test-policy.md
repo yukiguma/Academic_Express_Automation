@@ -37,7 +37,7 @@
 
 通常の機能追加・修正 PR では、原則としてバージョン番号を変更しない。リリースするタイミングで GitHub Actions の `Prepare Release` workflow を手動実行し、`1.2.3` のように `v` なしのバージョンを入力する。この workflow は `release/v1.2.3` ブランチを作成し、`package.json`、`package-lock.json`、`extension/manifest.json` を更新した Release PR を発行する。
 
-Release PR をレビューして `main` にマージした後、`Publish Release` workflow を手動実行する。この workflow は `main` の `package.json` からバージョンを読み取り、`extension/manifest.json` との一致を確認してから `v1.2.3` タグを作成し、`extension/` の内容だけを `academic-express-automation-v1.2.3.zip` として GitHub Release に添付する。
+Release PR をレビューして `main` にマージした後、`Publish Release` workflow を手動実行する。この workflow は `main` の `package.json` からバージョンを読み取り、`extension/manifest.json` との一致を確認してから `v1.2.3` タグを作成し、`extension/` の内容だけを `academic-express-automation.zip` として GitHub Release に添付する。導入手順では GitHub Releases の `latest/download` URL からこの zip を取得する。
 
 ローカルでは次のコマンドでバージョン同期と確認を行う。
 

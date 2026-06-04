@@ -56,7 +56,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           cd extension
-          zip -r "../academic-express-automation-v$VERSION.zip" .
+          zip -r ../academic-express-automation.zip .
 
       - name: Create tag and GitHub Release
         env:
@@ -69,6 +69,6 @@ jobs:
           git tag -a "$TAG" -m "Release $TAG"
           git push origin "$TAG"
           gh release create "$TAG" \
-            "academic-express-automation-v$VERSION.zip" \
+            "academic-express-automation.zip" \
             --title "$TAG" \
             --notes "Academic Express Automation $TAG"
