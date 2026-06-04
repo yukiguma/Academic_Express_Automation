@@ -84,6 +84,7 @@ npm test
 - 音声アセットの読み込み失敗が画面進行を止める fixture では、テスト用サーバーが無音 WAV を返す。`materialSound.cfm` に加えて、Dictation の `sounds/typing/sprite.mp3` もこの扱いにする。
 - 解答結果の検証は、画面の見た目だけではなく、保存 API に送られる `question_no`、`answer`、`correct_flag`、`totalscore` を優先する。
 - Grammar Bank のように問題順がシャッフルされる E2E fixture は、保存順ではなく送信された `question_no` の集合と `correct_flag` を検証する。
+- questionHub のように複数の問題セットを選択して実行する画面は、実サイトへの遷移ではなく、選択状態の保存・選択済み表示・保存順での保存 URL 直接遷移をローカル fixture で検証する。
 
 ## ドキュメント更新ルール
 

@@ -1,0 +1,100 @@
+.drill_lock {
+    background-color: #d4d4d4;
+}
+
+.not_go_button img {
+	margin-top: 5px;
+	max-width: 50px;
+	-webkit-transform: translateX(1);
+	transform: translateX(1);
+	-webkit-transition: 0.4s ease-in-out;
+	transition: 0.4s ease-in-out;
+}
+
+/*
+.btn_not_learn{
+	background-color:#d4d4d4!important;
+	background-image:none!important;
+}
+
+.btn_not_learn:hover{
+	background-color:#d4d4d4!important;
+	background-image:none!important;
+}
+*/
+
+.btn_learn_locked {
+    border-radius: 6px;
+    font-weight: 700!important;
+    padding: 10px;
+    text-shadow: none!important;
+    font-size: 14px;
+    line-height: 1.6em;
+    text-align: center;
+    display: block;
+    margin-top: 5px;
+
+    border: 2px solid #a0a0a0!important;
+    background: #d4d4d4!important;
+    color: #a0a0a0!important;
+	
+	cursor:pointer;
+}
+
+.btn_learn_locked i.fa-pencil {
+    font-size: 16px!important;
+	color: #a0a0a0!important;
+}
+
+.btn_tango_small_locked {
+    background-repeat: no-repeat;
+    background-position: right 3px top 12px;
+    -moz-background-size: 40px 18px;
+    background-size: 40px 18px;
+    width: 150px;
+    height: 44px;
+    text-align: center;
+    border: 2px solid #a0a0a0;
+    background-color: #d4d4d4!important;
+    text-shadow: none!important;
+    padding: 6px 10px;
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
+    border-radius: 6px;
+}
+
+.btn_tango_small_sm_locked {
+    width: 50px;
+    height: 40px;
+    background-position: right 18px top 20px;
+    padding: 0;
+    text-align: center;
+    font-size: 12px;
+    border: 2px solid #a0a0a0;
+    background-color: #d4d4d4!important;
+    border-radius: 6px;
+    vertical-align: central;
+}
+
+.btn.btn-locked {
+    background-color: #abbac3;
+    border: 5px solid #abbac3;
+    white-space: nowrap;
+    border-radius: 0;
+	color: #fff;
+	cursor:pointer!important;
+}
+
+.mytangoBtn_locked {
+    background-color: #d4d4d4!important;
+    color: #a0a0a0!important;
+    font-weight: 700;
+    position: relative;
+    border: 2px solid #a0a0a0!important;
+    padding: 10px 40px 10px 30px;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+	font-size: 1.3em;
+}
+

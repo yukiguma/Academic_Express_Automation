@@ -17,6 +17,14 @@
   let nextAutoSolveAllowedAt = 0;
   let isAutoMode = false;
   let lastAutoAdvanceSolvedAt = 0;
+  const QUESTION_HUB_SELECTION_MODE_KEY = "question-hub-selection-mode";
+  const QUESTION_HUB_SELECTED_KEY = "question-hub-selected-links";
+  const QUESTION_HUB_RUN_STATE_KEY = "question-hub-run-state";
+  const QUESTION_HUB_PENDING_AUTO_URL_KEY = "question-hub-pending-auto-url";
+  let isQuestionHubSelectionMode =
+    localStorage.getItem(QUESTION_HUB_SELECTION_MODE_KEY) === "true";
+  let isQuestionHubLaunching = false;
+  let questionHubLaunchTimer = null;
 
   function isQuizPlayerPage() {
     return window.location.pathname.includes("/as/lplayer/");
@@ -24,6 +32,20 @@
 
   function isStudentPage() {
     return window.location.pathname.includes("/student/");
+  }
+
+  function isQuestionHubPage() {
+    return isStudentPage() && getQuestionHubLinks().length > 0;
+  }
+
+  function normalizeUrlForStorage(url) {
+    try {
+      const parsed = new URL(url, window.location.href);
+      parsed.hash = "";
+      return parsed.href;
+    } catch (e) {
+      return url || "";
+    }
   }
 
   function clearAutoModeStorage() {
@@ -34,8 +56,21 @@
   try {
     const storedAuto = localStorage.getItem("auto-mode");
     const storedAutoUrl = localStorage.getItem("auto-mode-url");
+    const pendingQuestionHubAutoUrl = localStorage.getItem(
+      QUESTION_HUB_PENDING_AUTO_URL_KEY,
+    );
+    const currentUrl = normalizeUrlForStorage(window.location.href);
     if (isStudentPage()) {
       clearAutoModeStorage();
+    } else if (
+      isQuizPlayerPage() &&
+      pendingQuestionHubAutoUrl &&
+      normalizeUrlForStorage(pendingQuestionHubAutoUrl) === currentUrl
+    ) {
+      isAutoMode = true;
+      localStorage.removeItem(QUESTION_HUB_PENDING_AUTO_URL_KEY);
+      localStorage.setItem("auto-mode", "true");
+      localStorage.setItem("auto-mode-url", window.location.href);
     } else if (
       isQuizPlayerPage() &&
       storedAuto === "true" &&
@@ -58,6 +93,13 @@
     } else {
       clearAutoModeStorage();
     }
+  }
+
+  function setFastMode(value) {
+    isFastMode = value === true;
+    localStorage.setItem("fast-mode", isFastMode);
+    updateQuestionHubPanel();
+    updateUIStates();
   }
 
   // Speed configuration (ms)
@@ -211,7 +253,12 @@
   loadQuestionData();
 
   // Time Estimation Logic
-  function getEstimatedDurationMs(pairs, isFast, forceNew = null, options = {}) {
+  function getEstimatedDurationMs(
+    pairs,
+    isFast,
+    forceNew = null,
+    options = {},
+  ) {
     const mode = isFast ? "fastmode" : "slowmode";
     const config = SPEED_CONFIG[mode];
     let total = 0;
@@ -298,10 +345,7 @@
     const minimumDuration = Number.isFinite(options.minimumDurationMs)
       ? options.minimumDurationMs
       : HEADER_PROGRESS_MIN_DURATION[mode];
-    const duration = Math.max(
-      Number(durationMs) || 0,
-      minimumDuration,
-    );
+    const duration = Math.max(Number(durationMs) || 0, minimumDuration);
     const startTime = getNow();
 
     progressAnimation = {
@@ -377,6 +421,359 @@
       container.style.position = "relative";
       container.style.zIndex = active ? "100001" : "";
     }
+  }
+
+  function parseJsonStorage(key, fallback) {
+    try {
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function getQuestionHubLinks() {
+    return Array.from(
+      document.querySelectorAll('a[href*="/as/lplayer/index.cfm"]'),
+    ).filter((link) => {
+      const href = link.href || "";
+      return href && !href.startsWith("javascript:");
+    });
+  }
+
+  function findNearestQuestionHubLink(start) {
+    const directLink = start?.closest?.('a[href*="/as/lplayer/index.cfm"]');
+    if (directLink) return directLink;
+
+    const unitBox = start?.closest?.(".unit-box");
+    const scopedLink = unitBox?.querySelector?.(
+      'a[href*="/as/lplayer/index.cfm"]',
+    );
+    if (scopedLink) return scopedLink;
+
+    const clickable = start?.closest?.(
+      [
+        ".btn",
+        ".level_img",
+        ".study_text",
+        ".unit-box-body",
+        ".lesson-list",
+        '[role="button"]',
+      ].join(", "),
+    );
+    return (
+      clickable?.querySelector?.('a[href*="/as/lplayer/index.cfm"]') || null
+    );
+  }
+
+  function getQuestionHubSelectedHrefs() {
+    const selected = parseJsonStorage(QUESTION_HUB_SELECTED_KEY, []);
+    return Array.isArray(selected)
+      ? selected.filter(Boolean).map(normalizeUrlForStorage)
+      : [];
+  }
+
+  function setQuestionHubSelectedHrefs(hrefs) {
+    const uniqueHrefs = Array.from(
+      new Set(hrefs.filter(Boolean).map(normalizeUrlForStorage)),
+    );
+    localStorage.setItem(
+      QUESTION_HUB_SELECTED_KEY,
+      JSON.stringify(uniqueHrefs),
+    );
+    return uniqueHrefs;
+  }
+
+  function getQuestionHubRunState() {
+    const state = parseJsonStorage(QUESTION_HUB_RUN_STATE_KEY, null);
+    if (!state || !Array.isArray(state.queue)) return null;
+    const total = Math.max(
+      Number(state.total) || state.queue.length,
+      state.queue.length,
+    );
+    const completed = Math.min(Math.max(Number(state.completed) || 0, 0), total);
+    return {
+      active: state.active === true,
+      queue: state.queue.filter(Boolean),
+      completed,
+      total,
+      hubUrl: state.hubUrl || "",
+    };
+  }
+
+  function setQuestionHubRunState(state) {
+    if (!state || !state.active) {
+      localStorage.removeItem(QUESTION_HUB_RUN_STATE_KEY);
+      return;
+    }
+    localStorage.setItem(QUESTION_HUB_RUN_STATE_KEY, JSON.stringify(state));
+  }
+
+  function getQuestionHubLinkLabel(link) {
+    const text = (link.textContent || "").replace(/\s+/g, " ").trim();
+    const unitTitle = link
+      .closest(".unit-box")
+      ?.querySelector(".unit-title-char")
+      ?.textContent?.replace(/\s+/g, " ")
+      .trim();
+    return [unitTitle, text].filter(Boolean).join(" / ") || link.href;
+  }
+
+  function navigateToQuestionHubUrl(href) {
+    const targetUrl = normalizeUrlForStorage(href);
+    localStorage.setItem(QUESTION_HUB_PENDING_AUTO_URL_KEY, targetUrl);
+    window.location.assign(targetUrl);
+  }
+
+  function updateQuestionHubLinkStates() {
+    const selected = new Set(getQuestionHubSelectedHrefs());
+    getQuestionHubLinks().forEach((link) => {
+      const isSelected = selected.has(normalizeUrlForStorage(link.href));
+      link.classList.toggle("ae-question-hub-selected", isSelected);
+      link.setAttribute("data-ae-question-hub-bound", "true");
+      if (isSelected) {
+        link.setAttribute("aria-pressed", "true");
+        link.title = "選択済み: " + getQuestionHubLinkLabel(link);
+      } else {
+        link.removeAttribute("aria-pressed");
+        link.removeAttribute("title");
+      }
+    });
+  }
+
+  function launchNextQuestionHubItem() {
+    if (isQuestionHubLaunching) return true;
+
+    const state = getQuestionHubRunState();
+    if (!state?.active) return false;
+
+    if (state.queue.length === 0) {
+      setQuestionHubRunState(null);
+      updateQuestionHubPanel();
+      updateQuestionHubLinkStates();
+      return false;
+    }
+
+    const [href, ...remainingQueue] = state.queue.map(normalizeUrlForStorage);
+    const nextState = {
+      ...state,
+      queue: remainingQueue,
+      completed: state.completed + 1,
+    };
+
+    setQuestionHubRunState(nextState);
+    setQuestionHubSelectedHrefs(remainingQueue);
+    updateQuestionHubPanel();
+    updateQuestionHubLinkStates();
+    isQuestionHubLaunching = true;
+    questionHubLaunchTimer = setTimeout(() => {
+      questionHubLaunchTimer = null;
+      if (!getQuestionHubRunState()?.active) {
+        isQuestionHubLaunching = false;
+        return;
+      }
+      console.log("QuestionHub: launching selected question set.", href);
+      navigateToQuestionHubUrl(href);
+    }, getWaitTime("TRANSITION_WAIT"));
+    return true;
+  }
+
+  function toggleQuestionHubSelection(link) {
+    const selected = getQuestionHubSelectedHrefs();
+    const href = normalizeUrlForStorage(link.href);
+    const index = selected.indexOf(href);
+    if (index === -1) {
+      selected.push(href);
+    } else {
+      selected.splice(index, 1);
+    }
+    setQuestionHubSelectedHrefs(selected);
+    updateQuestionHubPanel();
+    updateQuestionHubLinkStates();
+  }
+
+  function bindQuestionHubLinks() {
+    if (document.body.dataset.aeQuestionHubDelegatedClickBound === "true")
+      return;
+    document.body.dataset.aeQuestionHubDelegatedClickBound = "true";
+
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (!isQuestionHubSelectionMode) return;
+
+        const link = findNearestQuestionHubLink(event.target);
+        if (!link) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        toggleQuestionHubSelection(link);
+      },
+      true,
+    );
+  }
+
+  function updateQuestionHubPanel() {
+    const panel = document.getElementById("question-hub-control");
+    if (!panel) return;
+
+    const selected = getQuestionHubSelectedHrefs();
+    const runState = getQuestionHubRunState();
+    const modeBtn = panel.querySelector("#question-hub-mode-btn");
+    const runBtn = panel.querySelector("#question-hub-run-btn");
+    const clearBtn = panel.querySelector("#question-hub-clear-btn");
+    const stopBtn = panel.querySelector("#question-hub-stop-btn");
+    const speedSlowBtn = panel.querySelector("#question-hub-speed-slow");
+    const speedFastBtn = panel.querySelector("#question-hub-speed-fast");
+    const status = panel.querySelector("#question-hub-status");
+    const isRunning = runState?.active === true;
+
+    if (modeBtn) {
+      modeBtn.textContent = isQuestionHubSelectionMode
+        ? "選択モード中"
+        : "問題選択モード";
+      modeBtn.disabled = isRunning;
+      modeBtn.classList.toggle(
+        "ae-question-hub-primary",
+        isQuestionHubSelectionMode && !isRunning,
+      );
+    }
+    if (runBtn) {
+      runBtn.disabled = selected.length === 0 || isRunning;
+    }
+    if (clearBtn) {
+      clearBtn.disabled = selected.length === 0 || isRunning;
+    }
+    if (stopBtn) {
+      stopBtn.style.display = isRunning ? "" : "none";
+    }
+    if (speedSlowBtn) {
+      speedSlowBtn.disabled = isRunning;
+      speedSlowBtn.classList.toggle("active", !isFastMode);
+    }
+    if (speedFastBtn) {
+      speedFastBtn.disabled = isRunning;
+      speedFastBtn.classList.toggle("active", isFastMode);
+    }
+    if (status) {
+      status.textContent = isRunning
+        ? `実行中 ${runState.completed} / ${runState.total}`
+        : `選択 ${selected.length}件`;
+    }
+  }
+
+  function createQuestionHubPanel() {
+    if (document.getElementById("question-hub-control")) return;
+    injectStyles();
+
+    const panel = document.createElement("div");
+    panel.id = "question-hub-control";
+    panel.innerHTML = `
+      <div id="question-hub-speed-control" aria-label="速度設定">
+        <button type="button" id="question-hub-speed-slow">低速</button>
+        <button type="button" id="question-hub-speed-fast">高速</button>
+      </div>
+      <button type="button" id="question-hub-mode-btn"></button>
+      <button type="button" id="question-hub-run-btn">実行</button>
+      <button type="button" id="question-hub-stop-btn">停止</button>
+      <button type="button" id="question-hub-clear-btn">クリア</button>
+      <span id="question-hub-status"></span>
+    `;
+    document.body.appendChild(panel);
+
+    panel
+      .querySelector("#question-hub-mode-btn")
+      .addEventListener("click", () => {
+        isQuestionHubSelectionMode = !isQuestionHubSelectionMode;
+        localStorage.setItem(
+          QUESTION_HUB_SELECTION_MODE_KEY,
+          String(isQuestionHubSelectionMode),
+        );
+        updateQuestionHubPanel();
+      });
+
+    panel
+      .querySelector("#question-hub-speed-slow")
+      .addEventListener("click", () => {
+        if (getQuestionHubRunState()?.active) return;
+        setFastMode(false);
+      });
+
+    panel
+      .querySelector("#question-hub-speed-fast")
+      .addEventListener("click", () => {
+        if (getQuestionHubRunState()?.active) return;
+        setFastMode(true);
+      });
+
+    panel
+      .querySelector("#question-hub-run-btn")
+      .addEventListener("click", () => {
+        const queue = getQuestionHubSelectedHrefs();
+        if (queue.length === 0) return;
+        isQuestionHubSelectionMode = false;
+        localStorage.setItem(QUESTION_HUB_SELECTION_MODE_KEY, "false");
+        setQuestionHubRunState({
+          active: true,
+          queue,
+          completed: 0,
+          total: queue.length,
+          hubUrl: window.location.href,
+        });
+        updateQuestionHubPanel();
+        launchNextQuestionHubItem();
+      });
+
+    panel
+      .querySelector("#question-hub-stop-btn")
+      .addEventListener("click", () => {
+        if (questionHubLaunchTimer) {
+          clearTimeout(questionHubLaunchTimer);
+          questionHubLaunchTimer = null;
+        }
+        setQuestionHubRunState(null);
+        localStorage.removeItem(QUESTION_HUB_PENDING_AUTO_URL_KEY);
+        setAutoMode(false);
+        isQuestionHubLaunching = false;
+        updateQuestionHubPanel();
+        updateQuestionHubLinkStates();
+      });
+
+    panel
+      .querySelector("#question-hub-clear-btn")
+      .addEventListener("click", () => {
+        setQuestionHubSelectedHrefs([]);
+        updateQuestionHubPanel();
+        updateQuestionHubLinkStates();
+      });
+  }
+
+  function ensureQuestionHubControls() {
+    const runState = getQuestionHubRunState();
+    if (isQuizPlayerPage() && runState?.active) {
+      createQuestionHubPanel();
+      updateQuestionHubPanel();
+      return false;
+    }
+
+    if (isStudentPage() && runState?.active && !isQuestionHubSelectionMode) {
+      createQuestionHubPanel();
+      updateQuestionHubPanel();
+      launchNextQuestionHubItem();
+      return true;
+    }
+
+    if (!isQuestionHubPage()) return false;
+    clearAutoModeStorage();
+    bindQuestionHubLinks();
+    createQuestionHubPanel();
+    updateQuestionHubPanel();
+    updateQuestionHubLinkStates();
+
+    if (runState?.active && !isQuestionHubSelectionMode) {
+      launchNextQuestionHubItem();
+    }
+    return true;
   }
 
   // Robust Observer Callback with Debounce
@@ -790,7 +1187,9 @@
   }
 
   function isDictationPair(pair) {
-    return String(pair?.data?.type || "").toLowerCase().includes("dictation");
+    return String(pair?.data?.type || "")
+      .toLowerCase()
+      .includes("dictation");
   }
 
   function getPreSolveWait(pair) {
@@ -1382,6 +1781,122 @@
             .segment:hover:not(.active) {
                 background-color: #e8e8e8;
             }
+            #question-hub-control {
+                position: fixed;
+                right: 16px;
+                bottom: 16px;
+                z-index: 100003;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 12px;
+                background: #fff;
+                border: 1px solid #d8d8d8;
+                border-radius: 6px;
+                box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+                font-family: inherit;
+                max-width: min(560px, calc(100vw - 32px));
+            }
+            #question-hub-control button {
+                height: 32px;
+                padding: 0 12px;
+                border: 1px solid #d4d4d4;
+                border-radius: 4px;
+                background: #fff;
+                color: #4b5563;
+                font-size: 12px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+            }
+            #question-hub-speed-control {
+                display: flex;
+                align-items: center;
+                gap: 0;
+                padding: 2px;
+                border: 1px solid #c9c9c9;
+                border-radius: 5px;
+                background: #f5f5f5;
+            }
+            #question-hub-speed-control button {
+                height: 28px;
+                min-width: 44px;
+                padding: 0 10px;
+                border: 0;
+                border-radius: 3px;
+                background: transparent;
+                color: #555;
+                box-shadow: none;
+            }
+            #question-hub-speed-control button.active {
+                background: #2b2b2b;
+                color: #fff;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+            }
+            #question-hub-control button:hover:not(:disabled) {
+                background: #f3f4f6;
+                border-color: #9ca3af;
+                color: #111827;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+            }
+            #question-hub-speed-control button.active:hover:not(:disabled) {
+                background: #111827;
+                color: #fff;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
+            }
+            #question-hub-control button:disabled {
+                cursor: default;
+                opacity: 0.55;
+            }
+            #question-hub-control .ae-question-hub-primary,
+            #question-hub-run-btn:not(:disabled) {
+                background: #ff0000;
+                border-color: #ff0000;
+                color: #fff;
+                box-shadow: 0 1px 5px rgba(255,0,0,0.22);
+            }
+            #question-hub-control .ae-question-hub-primary:hover:not(:disabled),
+            #question-hub-run-btn:hover:not(:disabled) {
+                background: #d90000;
+                border-color: #d90000;
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(255,0,0,0.28);
+            }
+            #question-hub-control #question-hub-run-btn:hover:not(:disabled) {
+                background: #d90000 !important;
+                border-color: #d90000 !important;
+                color: #fff !important;
+                box-shadow: 0 2px 8px rgba(255,0,0,0.28) !important;
+            }
+            #question-hub-status {
+                min-width: 64px;
+                color: #555;
+                font-size: 12px;
+                font-weight: bold;
+                white-space: nowrap;
+            }
+            a.ae-question-hub-selected {
+                position: relative;
+                outline: 3px solid #ff0000 !important;
+                outline-offset: 2px;
+                background-color: #fff2f2 !important;
+                box-shadow: 0 0 0 4px rgba(255,0,0,0.12) !important;
+            }
+            a.ae-question-hub-selected::after {
+                content: "選択済み";
+                position: absolute;
+                right: 4px;
+                top: -18px;
+                padding: 2px 6px;
+                border-radius: 3px;
+                background: #ff0000;
+                color: #fff;
+                font-size: 10px;
+                line-height: 1.2;
+                white-space: nowrap;
+                pointer-events: none;
+            }
         `;
     document.head.appendChild(style);
   }
@@ -1439,9 +1954,7 @@
     slowSeg.onclick = (e) => {
       e.stopPropagation();
       if (isAutoMode || isSolving) return;
-      isFastMode = false;
-      localStorage.setItem("fast-mode", isFastMode);
-      updateUIStates();
+      setFastMode(false);
     };
 
     const fastSeg = document.createElement("div");
@@ -1451,9 +1964,7 @@
     fastSeg.onclick = (e) => {
       e.stopPropagation();
       if (isAutoMode || isSolving) return;
-      isFastMode = true;
-      localStorage.setItem("fast-mode", isFastMode);
-      updateUIStates();
+      setFastMode(true);
     };
 
     control.appendChild(slowSeg);
@@ -1560,6 +2071,8 @@
   }
 
   function ensureSolveButton() {
+    if (ensureQuestionHubControls()) return;
+
     const finishLink = document.querySelector("a.btn");
     if (finishLink) {
       const speedCtrl = document.getElementById("speed-control");
@@ -1675,7 +2188,9 @@
           pair.data,
         );
         if (solved === false && isDictationPair(pair)) {
-          console.warn("Solver deferred because the current question is not ready.");
+          console.warn(
+            "Solver deferred because the current question is not ready.",
+          );
           lastSolvedSignature = "";
           isSolving = false;
           scheduleAutoSolveResume(getWaitTime("DEBOUNCE_WAIT"));
@@ -1832,4 +2347,6 @@
       return keywords.some((keyword) => text.includes(keyword));
     });
   }
+
+  setTimeout(() => ensureSolveButton(), 0);
 })();
