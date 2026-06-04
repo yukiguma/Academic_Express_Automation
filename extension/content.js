@@ -1863,6 +1863,12 @@
                 color: #fff;
                 box-shadow: 0 2px 8px rgba(255,0,0,0.28);
             }
+            #question-hub-control #question-hub-run-btn:hover:not(:disabled) {
+                background: #d90000 !important;
+                border-color: #d90000 !important;
+                color: #fff !important;
+                box-shadow: 0 2px 8px rgba(255,0,0,0.28) !important;
+            }
             #question-hub-status {
                 min-width: 64px;
                 color: #555;
