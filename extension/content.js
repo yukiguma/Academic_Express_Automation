@@ -24,6 +24,7 @@
   let isQuestionHubSelectionMode =
     localStorage.getItem(QUESTION_HUB_SELECTION_MODE_KEY) === "true";
   let isQuestionHubLaunching = false;
+  let questionHubLaunchTimer = null;
 
   function isQuizPlayerPage() {
     return window.location.pathname.includes("/as/lplayer/");
@@ -92,6 +93,13 @@
     } else {
       clearAutoModeStorage();
     }
+  }
+
+  function setFastMode(value) {
+    isFastMode = value === true;
+    localStorage.setItem("fast-mode", isFastMode);
+    updateQuestionHubPanel();
+    updateUIStates();
   }
 
   // Speed configuration (ms)
@@ -433,6 +441,31 @@
     });
   }
 
+  function findNearestQuestionHubLink(start) {
+    const directLink = start?.closest?.('a[href*="/as/lplayer/index.cfm"]');
+    if (directLink) return directLink;
+
+    const unitBox = start?.closest?.(".unit-box");
+    const scopedLink = unitBox?.querySelector?.(
+      'a[href*="/as/lplayer/index.cfm"]',
+    );
+    if (scopedLink) return scopedLink;
+
+    const clickable = start?.closest?.(
+      [
+        ".btn",
+        ".level_img",
+        ".study_text",
+        ".unit-box-body",
+        ".lesson-list",
+        '[role="button"]',
+      ].join(", "),
+    );
+    return (
+      clickable?.querySelector?.('a[href*="/as/lplayer/index.cfm"]') || null
+    );
+  }
+
   function getQuestionHubSelectedHrefs() {
     const selected = parseJsonStorage(QUESTION_HUB_SELECTED_KEY, []);
     return Array.isArray(selected)
@@ -454,10 +487,16 @@
   function getQuestionHubRunState() {
     const state = parseJsonStorage(QUESTION_HUB_RUN_STATE_KEY, null);
     if (!state || !Array.isArray(state.queue)) return null;
+    const total = Math.max(
+      Number(state.total) || state.queue.length,
+      state.queue.length,
+    );
+    const completed = Math.min(Math.max(Number(state.completed) || 0, 0), total);
     return {
       active: state.active === true,
       queue: state.queue.filter(Boolean),
-      index: Math.max(0, Number(state.index) || 0),
+      completed,
+      total,
       hubUrl: state.hubUrl || "",
     };
   }
@@ -508,19 +547,31 @@
     const state = getQuestionHubRunState();
     if (!state?.active) return false;
 
-    if (state.index >= state.queue.length) {
+    if (state.queue.length === 0) {
       setQuestionHubRunState(null);
       updateQuestionHubPanel();
       updateQuestionHubLinkStates();
       return false;
     }
 
-    const href = normalizeUrlForStorage(state.queue[state.index]);
+    const [href, ...remainingQueue] = state.queue.map(normalizeUrlForStorage);
+    const nextState = {
+      ...state,
+      queue: remainingQueue,
+      completed: state.completed + 1,
+    };
 
-    state.index += 1;
-    setQuestionHubRunState(state);
+    setQuestionHubRunState(nextState);
+    setQuestionHubSelectedHrefs(remainingQueue);
+    updateQuestionHubPanel();
+    updateQuestionHubLinkStates();
     isQuestionHubLaunching = true;
-    setTimeout(() => {
+    questionHubLaunchTimer = setTimeout(() => {
+      questionHubLaunchTimer = null;
+      if (!getQuestionHubRunState()?.active) {
+        isQuestionHubLaunching = false;
+        return;
+      }
       console.log("QuestionHub: launching selected question set.", href);
       navigateToQuestionHubUrl(href);
     }, getWaitTime("TRANSITION_WAIT"));
@@ -542,20 +593,24 @@
   }
 
   function bindQuestionHubLinks() {
-    getQuestionHubLinks().forEach((link) => {
-      if (link.dataset.aeQuestionHubClickBound === "true") return;
-      link.dataset.aeQuestionHubClickBound = "true";
-      link.addEventListener(
-        "click",
-        (event) => {
-          if (!isQuestionHubSelectionMode) return;
-          event.preventDefault();
-          event.stopPropagation();
-          toggleQuestionHubSelection(link);
-        },
-        true,
-      );
-    });
+    if (document.body.dataset.aeQuestionHubDelegatedClickBound === "true")
+      return;
+    document.body.dataset.aeQuestionHubDelegatedClickBound = "true";
+
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (!isQuestionHubSelectionMode) return;
+
+        const link = findNearestQuestionHubLink(event.target);
+        if (!link) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        toggleQuestionHubSelection(link);
+      },
+      true,
+    );
   }
 
   function updateQuestionHubPanel() {
@@ -567,28 +622,42 @@
     const modeBtn = panel.querySelector("#question-hub-mode-btn");
     const runBtn = panel.querySelector("#question-hub-run-btn");
     const clearBtn = panel.querySelector("#question-hub-clear-btn");
+    const stopBtn = panel.querySelector("#question-hub-stop-btn");
+    const speedSlowBtn = panel.querySelector("#question-hub-speed-slow");
+    const speedFastBtn = panel.querySelector("#question-hub-speed-fast");
     const status = panel.querySelector("#question-hub-status");
+    const isRunning = runState?.active === true;
 
     if (modeBtn) {
       modeBtn.textContent = isQuestionHubSelectionMode
         ? "選択モード中"
         : "問題選択モード";
+      modeBtn.disabled = isRunning;
       modeBtn.classList.toggle(
         "ae-question-hub-primary",
-        isQuestionHubSelectionMode,
+        isQuestionHubSelectionMode && !isRunning,
       );
     }
     if (runBtn) {
-      runBtn.disabled = selected.length === 0 || runState?.active;
+      runBtn.disabled = selected.length === 0 || isRunning;
     }
     if (clearBtn) {
-      clearBtn.disabled = selected.length === 0 || runState?.active;
+      clearBtn.disabled = selected.length === 0 || isRunning;
+    }
+    if (stopBtn) {
+      stopBtn.style.display = isRunning ? "" : "none";
+    }
+    if (speedSlowBtn) {
+      speedSlowBtn.disabled = isRunning;
+      speedSlowBtn.classList.toggle("active", !isFastMode);
+    }
+    if (speedFastBtn) {
+      speedFastBtn.disabled = isRunning;
+      speedFastBtn.classList.toggle("active", isFastMode);
     }
     if (status) {
-      status.textContent = runState?.active
-        ? `実行中 ${Math.min(runState.index, runState.queue.length)} / ${
-            runState.queue.length
-          }`
+      status.textContent = isRunning
+        ? `実行中 ${runState.completed} / ${runState.total}`
         : `選択 ${selected.length}件`;
     }
   }
@@ -600,8 +669,13 @@
     const panel = document.createElement("div");
     panel.id = "question-hub-control";
     panel.innerHTML = `
+      <div id="question-hub-speed-control" aria-label="速度設定">
+        <button type="button" id="question-hub-speed-slow">低速</button>
+        <button type="button" id="question-hub-speed-fast">高速</button>
+      </div>
       <button type="button" id="question-hub-mode-btn"></button>
       <button type="button" id="question-hub-run-btn">実行</button>
+      <button type="button" id="question-hub-stop-btn">停止</button>
       <button type="button" id="question-hub-clear-btn">クリア</button>
       <span id="question-hub-status"></span>
     `;
@@ -619,6 +693,20 @@
       });
 
     panel
+      .querySelector("#question-hub-speed-slow")
+      .addEventListener("click", () => {
+        if (getQuestionHubRunState()?.active) return;
+        setFastMode(false);
+      });
+
+    panel
+      .querySelector("#question-hub-speed-fast")
+      .addEventListener("click", () => {
+        if (getQuestionHubRunState()?.active) return;
+        setFastMode(true);
+      });
+
+    panel
       .querySelector("#question-hub-run-btn")
       .addEventListener("click", () => {
         const queue = getQuestionHubSelectedHrefs();
@@ -628,11 +716,27 @@
         setQuestionHubRunState({
           active: true,
           queue,
-          index: 0,
+          completed: 0,
+          total: queue.length,
           hubUrl: window.location.href,
         });
         updateQuestionHubPanel();
         launchNextQuestionHubItem();
+      });
+
+    panel
+      .querySelector("#question-hub-stop-btn")
+      .addEventListener("click", () => {
+        if (questionHubLaunchTimer) {
+          clearTimeout(questionHubLaunchTimer);
+          questionHubLaunchTimer = null;
+        }
+        setQuestionHubRunState(null);
+        localStorage.removeItem(QUESTION_HUB_PENDING_AUTO_URL_KEY);
+        setAutoMode(false);
+        isQuestionHubLaunching = false;
+        updateQuestionHubPanel();
+        updateQuestionHubLinkStates();
       });
 
     panel
@@ -646,7 +750,15 @@
 
   function ensureQuestionHubControls() {
     const runState = getQuestionHubRunState();
+    if (isQuizPlayerPage() && runState?.active) {
+      createQuestionHubPanel();
+      updateQuestionHubPanel();
+      return false;
+    }
+
     if (isStudentPage() && runState?.active && !isQuestionHubSelectionMode) {
+      createQuestionHubPanel();
+      updateQuestionHubPanel();
       launchNextQuestionHubItem();
       return true;
     }
@@ -1675,6 +1787,7 @@
                 bottom: 16px;
                 z-index: 100003;
                 display: flex;
+                flex-wrap: wrap;
                 align-items: center;
                 gap: 8px;
                 padding: 10px 12px;
@@ -1683,20 +1796,54 @@
                 border-radius: 6px;
                 box-shadow: 0 4px 18px rgba(0,0,0,0.18);
                 font-family: inherit;
+                max-width: min(560px, calc(100vw - 32px));
             }
             #question-hub-control button {
                 height: 32px;
                 padding: 0 12px;
-                border: 1px solid #c9c9c9;
+                border: 1px solid #d4d4d4;
                 border-radius: 4px;
-                background: #f7f7f7;
-                color: #333;
+                background: #fff;
+                color: #4b5563;
                 font-size: 12px;
                 font-weight: bold;
                 cursor: pointer;
+                transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+            }
+            #question-hub-speed-control {
+                display: flex;
+                align-items: center;
+                gap: 0;
+                padding: 2px;
+                border: 1px solid #c9c9c9;
+                border-radius: 5px;
+                background: #f5f5f5;
+            }
+            #question-hub-speed-control button {
+                height: 28px;
+                min-width: 44px;
+                padding: 0 10px;
+                border: 0;
+                border-radius: 3px;
+                background: transparent;
+                color: #555;
+                box-shadow: none;
+            }
+            #question-hub-speed-control button.active {
+                background: #2b2b2b;
+                color: #fff;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
             }
             #question-hub-control button:hover:not(:disabled) {
-                background: #eee;
+                background: #f3f4f6;
+                border-color: #9ca3af;
+                color: #111827;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+            }
+            #question-hub-speed-control button.active:hover:not(:disabled) {
+                background: #111827;
+                color: #fff;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
             }
             #question-hub-control button:disabled {
                 cursor: default;
@@ -1704,9 +1851,17 @@
             }
             #question-hub-control .ae-question-hub-primary,
             #question-hub-run-btn:not(:disabled) {
-                background: #ff0000;
-                border-color: #ff0000;
+                background: #fff5f7;
+                border-color: #ff4d6d;
+                color: #ff4d6d;
+                box-shadow: inset 0 0 0 1px rgba(255,77,109,0.16);
+            }
+            #question-hub-control .ae-question-hub-primary:hover:not(:disabled),
+            #question-hub-run-btn:hover:not(:disabled) {
+                background: #ff4d6d;
+                border-color: #ff4d6d;
                 color: #fff;
+                box-shadow: 0 2px 8px rgba(255,77,109,0.26);
             }
             #question-hub-status {
                 min-width: 64px;
@@ -1793,9 +1948,7 @@
     slowSeg.onclick = (e) => {
       e.stopPropagation();
       if (isAutoMode || isSolving) return;
-      isFastMode = false;
-      localStorage.setItem("fast-mode", isFastMode);
-      updateUIStates();
+      setFastMode(false);
     };
 
     const fastSeg = document.createElement("div");
@@ -1805,9 +1958,7 @@
     fastSeg.onclick = (e) => {
       e.stopPropagation();
       if (isAutoMode || isSolving) return;
-      isFastMode = true;
-      localStorage.setItem("fast-mode", isFastMode);
-      updateUIStates();
+      setFastMode(true);
     };
 
     control.appendChild(slowSeg);

@@ -1333,7 +1333,8 @@ test('content script keeps selected question hub links visually marked', { timeo
             <main>
                 <div class="unit-box">
                     <div class="unit-title"><span class="unit-title-char">リスタン</span></div>
-                    <a class="btn" href="/as/lplayer/index.cfm?uno=1">Q1.学習する</a>
+                    <a class="btn" href="/as/lplayer/index.cfm?uno=1" style="width:0;height:0;overflow:hidden;display:block;"></a>
+                    <span class="study_text">Q1.学習する</span>
                 </div>
                 <div class="unit-box">
                     <div class="unit-title"><span class="unit-title-char">Review</span></div>
@@ -1368,14 +1369,19 @@ test('content script keeps selected question hub links visually marked', { timeo
         await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
 
         await page.waitForSelector('#question-hub-control', { timeout: 10_000 });
+        await page.click('#question-hub-speed-fast');
         await page.click('#question-hub-mode-btn');
         await page.getByText('Q1.学習する').click();
 
         const selected = await page.evaluate(() => ({
+            fastMode: localStorage.getItem('fast-mode'),
+            fastActive: document.getElementById('question-hub-speed-fast').classList.contains('active'),
             stored: JSON.parse(localStorage.getItem('question-hub-selected-links')),
             marked: document.querySelectorAll('.ae-question-hub-selected').length,
             status: document.getElementById('question-hub-status').textContent
         }));
+        assert.equal(selected.fastMode, 'true');
+        assert.equal(selected.fastActive, true);
         assert.equal(selected.stored.length, 1);
         assert.equal(selected.marked, 1);
         assert.equal(selected.status, '選択 1件');
@@ -1439,13 +1445,89 @@ test('content script runs selected question hub links in saved order', { timeout
         await page.waitForSelector('#question-hub-control', { timeout: 10_000 });
         await page.click('#question-hub-run-btn');
         await page.waitForURL('**/as/lplayer/index.cfm?uno=1', { timeout: 10_000 });
+        const afterFirstLaunch = await page.evaluate(() => ({
+            selected: JSON.parse(localStorage.getItem('question-hub-selected-links')),
+            runState: JSON.parse(localStorage.getItem('question-hub-run-state'))
+        }));
+        assert.deepEqual(afterFirstLaunch.selected.map(url => new URL(url).search), ['?uno=2']);
+        assert.equal(afterFirstLaunch.runState.completed, 1);
+        assert.equal(afterFirstLaunch.runState.total, 2);
 
         await page.goto(hubUrl, { waitUntil: 'domcontentloaded' });
         await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
         await page.waitForURL('**/as/lplayer/index.cfm?uno=2', { timeout: 10_000 });
 
         const runState = await page.evaluate(() => JSON.parse(localStorage.getItem('question-hub-run-state')));
-        assert.equal(runState.index, 2);
+        const selected = await page.evaluate(() => JSON.parse(localStorage.getItem('question-hub-selected-links')));
+        assert.equal(runState.completed, 2);
+        assert.equal(runState.total, 2);
+        assert.deepEqual(selected, []);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
+test('content script can stop a running question hub queue', { timeout: 20_000 }, async () => {
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <main>
+                <div class="unit-box">
+                    <a class="btn" href="/as/lplayer/index.cfm?uno=1">Q1.学習する</a>
+                </div>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(() => {
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage() {
+                        return Promise.resolve({});
+                    }
+                }
+            };
+        });
+
+        await page.goto(`http://127.0.0.1:${port}/student/`, { waitUntil: 'domcontentloaded' });
+        await page.evaluate(() => {
+            localStorage.setItem(
+                'question-hub-run-state',
+                JSON.stringify({
+                    active: true,
+                    queue: [`${location.origin}/as/lplayer/index.cfm?uno=1`],
+                    completed: 0,
+                    total: 1,
+                    hubUrl: location.href
+                })
+            );
+        });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.waitForSelector('#question-hub-control', { timeout: 10_000 });
+        await page.click('#question-hub-stop-btn');
+
+        const state = await page.evaluate(() => ({
+            runState: localStorage.getItem('question-hub-run-state'),
+            pending: localStorage.getItem('question-hub-pending-auto-url'),
+            status: document.getElementById('question-hub-status').textContent
+        }));
+        assert.equal(state.runState, null);
+        assert.equal(state.pending, null);
+        assert.equal(state.status, '選択 0件');
+        assert.match(page.url(), /\/student\/$/);
     } finally {
         await browser.close();
         await new Promise(resolve => server.close(resolve));
