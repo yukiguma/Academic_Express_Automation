@@ -1851,17 +1851,17 @@
             }
             #question-hub-control .ae-question-hub-primary,
             #question-hub-run-btn:not(:disabled) {
-                background: #fff5f7;
-                border-color: #ff4d6d;
-                color: #ff4d6d;
-                box-shadow: inset 0 0 0 1px rgba(255,77,109,0.16);
+                background: #ff0000;
+                border-color: #ff0000;
+                color: #fff;
+                box-shadow: 0 1px 5px rgba(255,0,0,0.22);
             }
             #question-hub-control .ae-question-hub-primary:hover:not(:disabled),
             #question-hub-run-btn:hover:not(:disabled) {
-                background: #ff4d6d;
-                border-color: #ff4d6d;
+                background: #d90000;
+                border-color: #d90000;
                 color: #fff;
-                box-shadow: 0 2px 8px rgba(255,77,109,0.26);
+                box-shadow: 0 2px 8px rgba(255,0,0,0.28);
             }
             #question-hub-status {
                 min-width: 64px;
