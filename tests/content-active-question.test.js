@@ -678,6 +678,108 @@ test('content script resumes auto-mode after automatic progress changes', { time
     }
 });
 
+test('content script keeps the solve button busy while auto-mode waits for the next question', { timeout: 20_000 }, async () => {
+    const questionData = {
+        questions: [
+            {
+                answers: ['first'],
+                displayOrder: 1,
+                isAutoAdvance: true,
+                questionNo: '1',
+                rawText: 'First prompt.',
+                signature: 'firstprompt',
+                type: 'multipleChoice'
+            },
+            {
+                answers: ['second'],
+                displayOrder: 2,
+                isAutoAdvance: true,
+                questionNo: '2',
+                rawText: 'Second prompt.',
+                signature: 'secondprompt',
+                type: 'multipleChoice'
+            }
+        ]
+    };
+
+    const html = `
+        <!doctype html>
+        <html>
+        <body>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div></div></div>
+            <main>
+                <div id="progress">1 / 2</div>
+                <div id="prompt" class="QuestionBuilder__question___visible">First prompt.</div>
+                <button id="answer">first</button>
+            </main>
+        </body>
+        </html>
+    `;
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        response.end(html);
+    });
+    const port = await listen(server);
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.addInitScript(data => {
+            window.__solveEvents = [];
+            window.solve = async (_answers, _type, _scope, question) => {
+                window.__solveEvents.push(question.questionNo);
+                if (question.questionNo === '1') {
+                    document.getElementById('progress').textContent = '2 / 2';
+                    document.getElementById('prompt').textContent = 'Second prompt.';
+                    document.getElementById('answer').textContent = 'second';
+                    document.body.appendChild(document.createElement('div'));
+                }
+            };
+            window.chrome = {
+                runtime: {
+                    onMessage: { addListener() { } },
+                    sendMessage(message) {
+                        if (message?.type === 'GET_QUESTION_DATA') {
+                            return Promise.resolve({ questionData: data });
+                        }
+                        return Promise.resolve({});
+                    }
+                }
+            };
+            localStorage.setItem('fast-mode', 'false');
+        }, questionData);
+
+        await page.goto(`http://127.0.0.1:${port}/as/lplayer/index.cfm`, { waitUntil: 'domcontentloaded' });
+        await page.addScriptTag({ path: path.join(extensionDir, 'content.js') });
+        await page.evaluate(() => {
+            document.body.appendChild(document.createElement('div'));
+        });
+        await page.waitForSelector('#solve-btn', { timeout: 10_000 });
+        await page.click('#solve-btn');
+
+        await page.waitForFunction(() => {
+            const button = document.getElementById('solve-btn');
+            return window.__solveEvents.length === 1 && button?.textContent?.includes('処理中');
+        }, { timeout: 10_000 });
+        await page.waitForTimeout(200);
+
+        const midWaitState = await page.evaluate(() => ({
+            events: window.__solveEvents,
+            text: document.getElementById('solve-btn')?.textContent
+        }));
+        assert.deepEqual(midWaitState.events, ['1']);
+        assert.match(midWaitState.text, /処理中/);
+
+        await page.waitForFunction(() => window.__solveEvents.length === 2, { timeout: 10_000 });
+        const events = await page.evaluate(() => window.__solveEvents);
+        assert.deepEqual(events, ['1', '2']);
+    } finally {
+        await browser.close();
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 test('content script waits for clickable sorting tokens before using the visible prompt fallback', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [

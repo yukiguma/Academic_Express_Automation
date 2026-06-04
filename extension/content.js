@@ -2019,17 +2019,18 @@
     if (slowSeg) slowSeg.className = "segment" + (!isFastMode ? " active" : "");
     if (fastSeg) fastSeg.className = "segment" + (isFastMode ? " active" : "");
 
-    if (isSolving) {
+    if (isSolving || isAutoMode) {
       btn.textContent = "処理中...";
       btn.style.backgroundColor = "#666";
       btn.onclick = null;
       btn.style.cursor = "wait";
-      return;
+      if (isSolving) return;
     }
 
     const activePairs = findActiveQuestions();
 
     if (!activePairs || activePairs.length === 0) {
+      if (isAutoMode) return;
       btn.textContent = "検索中...";
       btn.style.backgroundColor = "#999";
       btn.onclick = null;
@@ -2045,6 +2046,21 @@
       isNewQuestion,
     );
 
+    if (isAutoMode) {
+      const resumeWait = nextAutoSolveAllowedAt - Date.now();
+      if (resumeWait > 0) {
+        scheduleAutoSolveResume(resumeWait);
+        return;
+      }
+
+      if (isNewQuestion) {
+        console.log("Auto-Mode: New questions detected. Triggering solver.");
+        lastSolvedSignature = compositeSig;
+        runSolver(activePairs, isNewQuestion);
+      }
+      return;
+    }
+
     btn.textContent = isFastMode
       ? "自動入力"
       : `自動入力 (~${estimatedSeconds}秒)`;
@@ -2056,18 +2072,6 @@
       lastSolvedSignature = compositeSig;
       runSolver(activePairs, isNewQuestion);
     };
-
-    if (isAutoMode && isNewQuestion) {
-      const resumeWait = nextAutoSolveAllowedAt - Date.now();
-      if (resumeWait > 0) {
-        scheduleAutoSolveResume(resumeWait);
-        return;
-      }
-
-      console.log("Auto-Mode: New questions detected. Triggering solver.");
-      lastSolvedSignature = compositeSig;
-      runSolver(activePairs, isNewQuestion);
-    }
   }
 
   function ensureSolveButton() {
