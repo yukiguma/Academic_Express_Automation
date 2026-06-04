@@ -36,6 +36,16 @@ test('manifest is valid Manifest V3 and references existing files', () => {
     assert.ok(manifest.permissions.includes('scripting'));
 });
 
+test('manifest version matches package version', () => {
+    const manifest = readJSON(path.join(extensionDir, 'manifest.json'));
+    const packageJson = readJSON(path.join(rootDir, 'package.json'));
+    const packageLock = readJSON(path.join(rootDir, 'package-lock.json'));
+
+    assert.equal(manifest.version, packageJson.version);
+    assert.equal(packageLock.version, packageJson.version);
+    assert.equal(packageLock.packages[''].version, packageJson.version);
+});
+
 test('background imports parser file that exists', () => {
     const background = fs.readFileSync(path.join(extensionDir, 'background.js'), 'utf8');
     const imports = [...background.matchAll(/importScripts\(([^)]+)\)/g)]

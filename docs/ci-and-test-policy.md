@@ -31,6 +31,21 @@
 
 現在の workflow は `.github/workflows/ci.yml` に置き、Node.js 24 で `npm ci`、`npx playwright install --with-deps chromium`、`npm test` を実行する。
 
+## リリースバージョン運用
+
+拡張機能の表示バージョン、`package.json` のバージョン、Git タグのバージョンは一致させる。ファイル上の正本は `package.json` の `version` とし、`package-lock.json` と `extension/manifest.json` の `version` も同じ値にする。Git タグだけは慣例として `v` プレフィックスを付け、`v1.2.3` のようにする。
+
+通常の機能追加・修正 PR では、原則としてバージョン番号を変更しない。リリースするタイミングで GitHub Actions の `Prepare Release` workflow を手動実行し、`1.2.3` のように `v` なしのバージョンを入力する。この workflow は `release/v1.2.3` ブランチを作成し、`package.json`、`package-lock.json`、`extension/manifest.json` を更新した Release PR を発行する。
+
+Release PR をレビューして `main` にマージした後、`Publish Release` workflow を手動実行する。この workflow は `main` の `package.json` からバージョンを読み取り、`extension/manifest.json` との一致を確認してから `v1.2.3` タグを作成し、`extension/` の内容だけを `academic-express-automation-v1.2.3.zip` として GitHub Release に添付する。
+
+ローカルでは次のコマンドでバージョン同期と確認を行う。
+
+```powershell
+npm run version:sync -- 1.2.3
+npm run version:check
+```
+
 ## 最初に実装するテスト
 
 最初の CI では、`extension/parser.js` に分離したパース処理を、Chrome API 依存なしで Node.js から直接テストする。拡張機能の Service Worker である `extension/background.js` は同じ parser を `importScripts('parser.js')` で読み込む。

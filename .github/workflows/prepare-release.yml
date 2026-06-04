@@ -1,0 +1,78 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without v prefix, e.g. 1.2.3
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate release version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          npm run version:sync -- "$VERSION"
+          npm run version:check
+          if git diff --quiet -- package.json package-lock.json extension/manifest.json; then
+            echo "Version is already $VERSION; no release PR changes would be created."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "Tag already exists: v$VERSION"
+            exit 1
+          fi
+          if git ls-remote --exit-code --heads origin "release/v$VERSION" >/dev/null 2>&1; then
+            echo "Release branch already exists: release/v$VERSION"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: npm test
+
+      - name: Create release pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "release/v$VERSION"
+          git add package.json package-lock.json extension/manifest.json
+          git commit -m "add: release v$VERSION"
+          git push --set-upstream origin "release/v$VERSION"
+          {
+            echo "リリース準備PRです。"
+            echo
+            echo "- package.json、package-lock.json、extension/manifest.json を v$VERSION に更新"
+            echo "- マージ後、Publish Release workflow で v$VERSION タグと配布用 zip を作成します。"
+          } > pr-body.md
+          gh pr create \
+            --base main \
+            --head "release/v$VERSION" \
+            --title "add: release v$VERSION" \
+            --body-file pr-body.md
