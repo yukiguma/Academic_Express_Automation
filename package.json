@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "version:check": "node scripts/check-release-version.js",
+    "version:sync": "node scripts/set-release-version.js",
     "test": "node --test \"tests/**/*.test.js\""
   },
   "devDependencies": {
