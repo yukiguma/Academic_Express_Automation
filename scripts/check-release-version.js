@@ -28,7 +28,7 @@ if (mismatched.length > 0) {
 
 const refType = process.env.GITHUB_REF_TYPE;
 const refName = process.env.GITHUB_REF_NAME;
-if (refType === 'tag' || (refName && refName.startsWith('v'))) {
+if (refType === 'tag') {
     const expectedTag = `v${packageJson.version}`;
     if (refName !== expectedTag) {
         fail(`Tag mismatch: expected ${expectedTag}, got ${refName}`);
