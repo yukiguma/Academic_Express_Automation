@@ -803,6 +803,17 @@
 
   function findQuestionContainer(el, type = "") {
     const lowerType = String(type || "").toLowerCase();
+    if (lowerType === "listan") {
+      return (
+        el.closest?.(
+          '[class*="AppPc__app_root"], [class*="AppSp__app_root"]',
+        ) ||
+        document.querySelector(
+          '[class*="AppPc__app_root"], [class*="AppSp__app_root"]',
+        ) ||
+        document.body
+      );
+    }
     if (lowerType.includes("dictation") || lowerType.includes("dectation")) {
       return (
         document.querySelector(

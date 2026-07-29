@@ -55,6 +55,7 @@ Academic Express の問題ページで解答補助を行う Chrome / Edge 向け
 | anaumeFilIn | 対応 | 穴埋め |
 | ClozeTest | 対応 | 穴埋めテスト |
 | Sorting | 対応 | 並び替え |
+| Listan | 対応 | 音声スクリプトから聞き取り対象語を一括入力 |
 | Vocabulary Bank | 対応 | 語彙データの蓄積と活用 |
 
 ## 開発者向け

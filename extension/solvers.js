@@ -342,6 +342,36 @@ async function solveTyping(answers, scope, question = {}) {
     return targets.length > 0;
 }
 
+// Solver: Listan transcript entry
+async function solveListan(answers, scope) {
+    const searchRoot = scope?.querySelector ? scope : document;
+    const input = searchRoot.querySelector(
+        '#listan_box, textarea[class*="TypingBox__listan_box"]'
+    ) || document.querySelector(
+        '#listan_box, textarea[class*="TypingBox__listan_box"]'
+    );
+    const transcript = answers.map(answer => String(answer || "").trim())
+        .filter(Boolean)
+        .join("\n");
+
+    if (!input || !isVisible(input) || !transcript) {
+        console.warn("Listan transcript input is not ready.");
+        return false;
+    }
+
+    input.focus();
+    try {
+        simulateType(input, transcript);
+    } catch (e) {
+        input.value = transcript;
+    }
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.blur();
+
+    return normalizeText(input.value) === normalizeText(transcript);
+}
+
 function compactAnswerChars(text) {
     return String(text || "").replace(/[^\p{L}\p{N}]/gu, '');
 }
@@ -812,6 +842,9 @@ async function solve(answers, type, scope, question = {}) {
 
     if (normalizedType === 'matching' || normalizedType === 'insertion') {
         return solveFillBlank(answers, scope);
+    }
+    if (normalizedType === 'listan') {
+        return solveListan(answers, scope);
     }
     if (normalizedType.includes('dictation') || normalizedType.includes('dectation')) {
         return solveDictation(answers, scope, question);
