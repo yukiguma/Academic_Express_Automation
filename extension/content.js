@@ -1147,6 +1147,13 @@
     );
   }
 
+  function hasListanQuestionData() {
+    return questionsList.some(
+      (question) =>
+        String(question?.type || "").toLowerCase() === "listan",
+    );
+  }
+
   function hasDuplicateSignature(question) {
     if (!question.signature) return false;
     return (
@@ -2087,6 +2094,28 @@
 
   function ensureSolveButton() {
     if (ensureQuestionHubControls()) return;
+
+    const listanFinishButton = findTransitionButton(["終了する"]);
+    if (
+      isAutoMode &&
+      !isSolving &&
+      !isTransitioning &&
+      hasListanQuestionData() &&
+      listanFinishButton &&
+      !document.querySelector(
+        '#listan_box, textarea[class*="TypingBox__listan_box"]',
+      )
+    ) {
+      console.log(
+        'Auto-Mode: Listan result page detected. Clicking "終了する".',
+      );
+      isTransitioning = true;
+      simulateClick(listanFinishButton);
+      setTimeout(() => {
+        isTransitioning = false;
+      }, getWaitTime("TRANSITION_WAIT"));
+      return;
+    }
 
     const finishLink = document.querySelector("a.btn");
     if (finishLink) {

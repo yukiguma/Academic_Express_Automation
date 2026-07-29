@@ -25,8 +25,18 @@
     </div>
     <script>
         window.__judgedValue = null;
+        window.__listanExited = false;
         document.getElementById('judge-button').addEventListener('click', () => {
             window.__judgedValue = document.getElementById('listan_box').value;
+            document.querySelector('main').innerHTML = `
+                <h3>見つけた単語（17）</h3>
+                <h3>入力したスクリプト</h3>
+                <p>${window.__judgedValue}</p>
+                <button id="listan-finish-button" type="button">終了する</button>
+            `;
+            document.getElementById('listan-finish-button').addEventListener('click', () => {
+                window.__listanExited = true;
+            });
         });
     </script>
 </body>

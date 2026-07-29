@@ -144,6 +144,7 @@ E2E での確認:
 - parser が `<answers>` のない payload から英文スクリプト全文を正答として復元すること。
 - solver が `#listan_box` に全文を設定すること。
 - 共通遷移処理が「判定」を押し、判定時に textarea の値が全文と一致すること。
+- 問題一覧の実行キューから自動モードを引き継ぎ、点数表示のない結果画面でも「終了する」を押して次の問題へ戻れること。
 
 ## `tests/fixtures/Dictation` / `tests/fixtures/Dictation2` / `tests/fixtures/Dictation3`
 
