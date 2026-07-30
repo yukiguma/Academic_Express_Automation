@@ -161,7 +161,20 @@ async function waitForQuestionData(worker, diagnostics) {
 }
 
 async function startCurrentQuestion(page) {
-    const startButton = page.getByRole('button', { name: /スタート|開始/ }).first();
+    const startButton = page.locator([
+        'button',
+        'a',
+        '[role="button"]',
+        'input[type="button"]',
+        'input[type="submit"]'
+    ].join(', ')).filter({ hasText: /スタート|開始|学習する/ }).or(
+        page.locator([
+            'input[type="button"][value*="スタート"]',
+            'input[type="button"][value*="開始"]',
+            'input[type="submit"][value*="スタート"]',
+            'input[type="submit"][value*="開始"]'
+        ].join(', '))
+    ).first();
     const hasStartButton = await startButton
         .waitFor({ state: 'visible', timeout: 5_000 })
         .then(() => true)
