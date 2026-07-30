@@ -190,7 +190,7 @@ async function openRandomPlayer(page, area, random) {
                 element.removeAttribute('target');
                 element.closest('form')?.removeAttribute('target');
             });
-            await launcher.click({ timeout: 10_000 });
+            await launcher.click({ noWaitAfter: true, timeout: 10_000 });
             const deadline = Date.now() + 10_000;
             while (Date.now() < deadline) {
                 if (new URL(page.url()).pathname.startsWith('/as/lplayer/')) {
@@ -213,7 +213,7 @@ async function openRandomPlayer(page, area, random) {
             if (!await control.isVisible().catch(() => false)) continue;
             const previousUrl = page.url();
             await control.evaluate(element => element.removeAttribute('target'));
-            await control.click({ timeout: 10_000 });
+            await control.click({ noWaitAfter: true, timeout: 10_000 });
             const deadline = Date.now() + 10_000;
             while (Date.now() < deadline) {
                 const currentUrl = page.url();
