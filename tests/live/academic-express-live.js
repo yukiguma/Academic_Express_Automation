@@ -169,6 +169,13 @@ async function openRandomPlayer(page, area, random) {
                 return { action: action.pathname, method: (form.method || 'get').toLowerCase() };
             }).slice(0, 10),
             path: location.pathname,
+            scripted: Array.from(root.querySelectorAll('a, button'))
+                .filter(element => /Stage\s*\d+/i.test(element.textContent || ''))
+                .map(element => ({
+                    href: (element.getAttribute('href') || '').slice(0, 200),
+                    onclick: (element.getAttribute('onclick') || '').slice(0, 200)
+                }))
+                .slice(0, 5),
             selects: Array.from(document.querySelectorAll('select'))
                 .map(select => select.name || select.id || '(unnamed)')
                 .slice(0, 15)
