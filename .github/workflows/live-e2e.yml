@@ -1,9 +1,6 @@
 name: Academic Express Live E2E
 
 on:
-  push:
-    branches:
-      - codex/add-extension-playwright-ci
   workflow_dispatch:
     inputs:
       sample_count:

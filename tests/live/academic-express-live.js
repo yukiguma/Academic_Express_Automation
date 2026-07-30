@@ -137,7 +137,6 @@ async function collectLinks(page, area) {
 async function openRandomPlayer(page, area, random) {
     const pending = [{ loaded: false, url: new URL(area.path, baseUrl).href }];
     const visited = new Set();
-    const menuDiagnostics = [];
 
     while (pending.length > 0 && visited.size < 30) {
         const item = pending.shift();
@@ -150,40 +149,6 @@ async function openRandomPlayer(page, area, random) {
             } catch {
                 continue;
             }
-        }
-
-        const menuState = await page.evaluate(() => {
-            const root = document.querySelector(
-                'main, [role="main"], .main-content, .page-content, #main-content, #content'
-            ) || document.body;
-            return {
-            controls: Array.from(root.querySelectorAll(
-                'a, button, input[type="button"], input[type="submit"]'
-            ))
-                .filter(element => element.offsetParent !== null)
-                .map(element => (element.textContent || element.value || '').trim().slice(0, 30))
-                .filter(text => text && !text.includes('ようこそ'))
-                .slice(0, 15),
-            forms: Array.from(document.forms).map(form => {
-                const action = new URL(form.action || location.href, location.href);
-                return { action: action.pathname, method: (form.method || 'get').toLowerCase() };
-            }).slice(0, 10),
-            path: location.pathname,
-            scripted: Array.from(root.querySelectorAll('a, button'))
-                .filter(element => /Stage\s*\d+/i.test(element.textContent || ''))
-                .map(element => ({
-                    href: (element.getAttribute('href') || '').slice(0, 200),
-                    onclick: (element.getAttribute('onclick') || '').slice(0, 200)
-                }))
-                .slice(0, 5),
-            selects: Array.from(document.querySelectorAll('select'))
-                .map(select => select.name || select.id || '(unnamed)')
-                .slice(0, 15)
-        };
-        });
-        if ((menuState.controls.length > 0 || menuState.forms.length > 0 || menuState.selects.length > 0) &&
-            menuDiagnostics.length < 3) {
-            menuDiagnostics.push(menuState);
         }
 
         const launchers = page.locator([
@@ -288,10 +253,7 @@ async function openRandomPlayer(page, area, random) {
         }
     }
 
-    throw new Error(
-        `${area.name}: no playable question was found after checking ${visited.size} pages; ` +
-        `menus=${JSON.stringify(menuDiagnostics)}`
-    );
+    throw new Error(`${area.name}: no playable question was found after checking ${visited.size} pages`);
 }
 
 async function waitForQuestionData(worker, diagnostics) {
