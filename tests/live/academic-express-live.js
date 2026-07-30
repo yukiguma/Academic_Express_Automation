@@ -151,6 +151,15 @@ async function openRandomPlayer(page, area, random) {
             }
         }
 
+        if (area.name === 'Vocabulary Bank' &&
+            new URL(page.url()).pathname.startsWith('/student/dictan-r/start/')) {
+            fs.mkdirSync(resultDir, { recursive: true });
+            await page.screenshot({
+                path: path.join(resultDir, 'vocabulary-stage-before-click.png'),
+                fullPage: true
+            });
+        }
+
         const launchers = page.locator([
             'form[action*="/as/lplayer/"] button',
             'form[action*="/as/lplayer/"] input[type="button"]',
@@ -210,7 +219,16 @@ async function openRandomPlayer(page, area, random) {
             const deadline = Date.now() + 10_000;
             while (Date.now() < deadline) {
                 const currentUrl = page.url();
-                if (new URL(currentUrl).pathname.startsWith('/as/lplayer/')) return currentUrl;
+                if (new URL(currentUrl).pathname.startsWith('/as/lplayer/')) {
+                    if (area.name === 'Vocabulary Bank') {
+                        fs.mkdirSync(resultDir, { recursive: true });
+                        await page.screenshot({
+                            path: path.join(resultDir, 'vocabulary-stage-after-click.png'),
+                            fullPage: true
+                        });
+                    }
+                    return currentUrl;
+                }
                 if (currentUrl !== previousUrl) {
                     await page.waitForLoadState('domcontentloaded', { timeout: 15_000 }).catch(() => {});
                     await page.waitForFunction(
@@ -223,6 +241,13 @@ async function openRandomPlayer(page, area, random) {
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 250));
+            }
+            if (area.name === 'Vocabulary Bank') {
+                fs.mkdirSync(resultDir, { recursive: true });
+                await page.screenshot({
+                    path: path.join(resultDir, 'vocabulary-stage-after-click.png'),
+                    fullPage: true
+                });
             }
             if (followedControl) break;
         }

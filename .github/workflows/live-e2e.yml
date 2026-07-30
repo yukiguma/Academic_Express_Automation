@@ -1,6 +1,9 @@
 name: Academic Express Live E2E
 
 on:
+  push:
+    branches:
+      - codex/add-extension-playwright-ci
   workflow_dispatch:
     inputs:
       sample_count:
@@ -57,6 +60,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: academic-express-live-summary
-          path: test-results/academic-express-live-summary.json
+          path: test-results/
           if-no-files-found: warn
           retention-days: 7
