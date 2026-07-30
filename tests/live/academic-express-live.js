@@ -151,8 +151,15 @@ async function openRandomPlayer(page, area, random) {
             }
         }
 
-        if (area.name === 'Vocabulary Bank' &&
-            new URL(page.url()).pathname.startsWith('/student/dictan-r/start/')) {
+        const currentPath = new URL(page.url()).pathname;
+        const isBankStage = (
+            area.name === 'Vocabulary Bank' &&
+            currentPath.startsWith('/student/dictan-r/start/')
+        ) || (
+            area.name === 'Grammar Bank' &&
+            currentPath.startsWith('/student/sorting/start/')
+        );
+        if (isBankStage) {
             fs.mkdirSync(resultDir, { recursive: true });
             await page.screenshot({
                 path: path.join(resultDir, 'vocabulary-stage-before-click.png'),
@@ -199,7 +206,7 @@ async function openRandomPlayer(page, area, random) {
 
             if (availableButtons.length > 0) {
                 const selected = shuffle(availableButtons, random)[0];
-                console.log(`Vocabulary mode selected: ${selected.mode} (remaining=${selected.remaining})`);
+                console.log(`${area.name} mode selected: ${selected.mode} (remaining=${selected.remaining})`);
                 await page.mouse.click(selected.point.x, selected.point.y);
                 await new Promise(resolve => setTimeout(resolve, 3_000));
                 await page.screenshot({
@@ -208,6 +215,14 @@ async function openRandomPlayer(page, area, random) {
                 });
                 return page.url();
             }
+        }
+
+        if (['ディクタン', 'リスタン'].includes(area.name)) {
+            await page.waitForFunction(
+                () => !(document.body?.innerText || '').includes('Loading...'),
+                undefined,
+                { timeout: 20_000 }
+            ).catch(() => {});
         }
 
         const launchers = page.locator([
@@ -306,6 +321,35 @@ async function openRandomPlayer(page, area, random) {
                 });
             }
             if (followedControl) break;
+        }
+        if (followedControl) continue;
+
+        if (['ディクタン', 'リスタン'].includes(area.name)) {
+            const dojoCards = page.locator(
+                'img[src*="dictan" i], img[src*="listan" i], img[alt*="ディクタン"], img[alt*="リスタン"]'
+            );
+            const cardIndexes = shuffle(
+                Array.from({ length: await dojoCards.count() }, (_, index) => index),
+                random
+            );
+            for (const index of cardIndexes) {
+                const card = dojoCards.nth(index);
+                if (!await card.isVisible().catch(() => false)) continue;
+                const previousUrl = page.url();
+                await card.click({ noWaitAfter: true, timeout: 10_000 }).catch(() => {});
+                const deadline = Date.now() + 10_000;
+                while (Date.now() < deadline) {
+                    if (page.url() !== previousUrl) {
+                        const currentUrl = page.url();
+                        if (new URL(currentUrl).pathname.startsWith('/as/lplayer/')) return currentUrl;
+                        pending.unshift({ loaded: true, url: currentUrl });
+                        followedControl = true;
+                        break;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                }
+                if (followedControl) break;
+            }
         }
         if (followedControl) continue;
 
