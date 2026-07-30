@@ -397,7 +397,10 @@ async function openRandomPlayer(page, area, random) {
         }
     }
 
-    throw new Error(`${area.name}: no playable question was found after checking ${visited.size} pages`);
+    const visitedPaths = [...visited].map(value => new URL(value).pathname).join(', ');
+    throw new Error(
+        `${area.name}: no playable question was found after checking ${visited.size} pages (${visitedPaths})`
+    );
 }
 
 async function waitForQuestionData(worker, diagnostics) {
