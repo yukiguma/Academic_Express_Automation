@@ -355,6 +355,10 @@ async function openRandomPlayer(page, area, random) {
                 const card = dojoCards.nth(index);
                 if (!await card.isVisible().catch(() => false)) continue;
                 const previousUrl = page.url();
+                await card.evaluate(element => {
+                    const link = element.closest('a') || element.querySelector('a');
+                    link?.removeAttribute('target');
+                });
                 await card.click({ noWaitAfter: true, timeout: 10_000 }).catch(() => {});
                 const deadline = Date.now() + 10_000;
                 while (Date.now() < deadline) {
