@@ -260,6 +260,12 @@ var AcademicExpressParser = (function () {
             if (isDictationQuestion(type, questionContent, questionText)) {
                 type = 'dictation';
             }
+            if (String(type || "").toLowerCase() === 'listan' && answers.length === 0 && questionText) {
+                // Listan does not expose an <answers> element. The player derives
+                // its judge-word set from the transcript itself, so preserving the
+                // full transcript is both the source of truth and the solver input.
+                answers = [questionText];
+            }
             if (String(type || "").toLowerCase().includes('sort')) {
                 answers = splitSortingAnswerTokens(answers);
             }

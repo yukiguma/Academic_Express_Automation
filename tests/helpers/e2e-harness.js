@@ -181,7 +181,10 @@ async function runAutoSolve({
             document.body.appendChild(document.createElement('div'));
         });
         await page.waitForSelector('#solve-btn', { timeout: 10_000 });
-        if (!clickSolve) return;
+        if (!clickSolve) {
+            if (waitFor) await waitFor(page);
+            return;
+        }
         await page.waitForFunction(() => document.getElementById('solve-btn')?.textContent?.includes('自動入力'), { timeout: 10_000 });
         await page.click('#solve-btn');
         await waitFor(page);

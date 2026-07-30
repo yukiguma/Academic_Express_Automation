@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>リスタン | Academic Express3</title>
+</head>
+<body>
+    <div class="AppPc__root___test">
+        <div class="AppPc__common_inner___test">
+            <button type="button">閉じる</button>
+        </div>
+        <main class="AppPc__app_root___test">
+            <p>聞き取れた単語を入力してください。</p>
+            <div>見つけた単語 0/17 (0%)</div>
+            <textarea id="listan_box" class="TypingBox__listan_box___test"></textarea>
+            <div class="PreviewBox__previewParagraph___test">
+                Look at the picture on the screen.
+                a. There is a laptop computer on the desk.
+                b. There is a computer printer on the desk.
+                c. There is a vase of tall flowers on the desk.
+                d. There is a pair of speakers on the desk.
+            </div>
+            <button id="judge-button" type="button">判定</button>
+        </main>
+    </div>
+    <script>
+        window.__judgedValue = null;
+        window.__listanExited = false;
+        document.getElementById('judge-button').addEventListener('click', () => {
+            window.__judgedValue = document.getElementById('listan_box').value;
+            document.querySelector('main').innerHTML = `
+                <h3>見つけた単語（17）</h3>
+                <h3>入力したスクリプト</h3>
+                <p>${window.__judgedValue}</p>
+                <button id="listan-finish-button" type="button">終了する</button>
+            `;
+            document.getElementById('listan-finish-button').addEventListener('click', () => {
+                window.__listanExited = true;
+            });
+        });
+    </script>
+</body>
+</html>

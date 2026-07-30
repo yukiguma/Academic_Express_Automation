@@ -18,6 +18,7 @@
 | `tests/fixtures/ListeningTest` | Listening | `listeningComprehension`、重複する `questionText`、番号参照の選択肢、単問進行 | parser / E2E |
 | `tests/fixtures/ListeningTest2` | Listening | `listeningComprehension`、`trueFalse`、`multipleChoice`、`anaumeFilIn initialLetterShown="true"`、複数 blank の `ClozeTest` | parser / E2E |
 | `tests/fixtures/ListeningTest3` | Listening | `shuffleQuestions="true"`、重複する `questionText`、音声・画像の素材 ID による現在問照合 | parser / E2E |
+| `tests/fixtures/Listan` | Listening | `listan`、`<answers>` なし、英文スクリプトを textarea へ入力して「判定」 | parser / E2E |
 | `tests/fixtures/Dictation` / `Dictation2` / `Dictation3` | Listening | `typing` XML だが画面は Dictation 専用。input 要素なし、document の keyboard event で文字枠を開く。一部 prefix が最初から開いている場合や、`QuestionHeader` レイアウトの複数問進行あり | parser / E2E |
 | `tests/fixtures/Scanning` | Reading | 開始画面つき `scanning`、本文中の該当英文クリック、複数問同時保存 | parser / E2E |
 | `tests/fixtures/VocabraryMatching` | Reading | `matching`、本文中の複数 blank に候補語句を投入、複数 `<answer>` 保存 | parser / E2E |
@@ -118,6 +119,32 @@ fixture の期待正答:
 | `1494` | `4` |
 | `1597` | `2` |
 | `1591` | `4` |
+
+## `tests/fixtures/Listan`
+
+カテゴリ `15002` の Lesson 1〜12 にある「リスタン」を、実サイトの画面、`authoring.cfc` payload、配信中の `playerjs_listan/bundle.js` で確認した fixture。
+
+特徴:
+
+- XML の問題形式は `type="listan"` で、通常の `<answers>` は存在しない。
+- `<questionText>` が英文スクリプト全文であり、プレイヤー自身もこの全文を単語分割して採点対象語を抽出する。
+- 画面は `#listan_box` の textarea と「判定」ボタンを持つ。通常の QuestionBuilder の question box ではなく、`AppPc__app_root` / `AppSp__app_root` 直下に配置される。
+- parser は `<questionText>` 全文を暗黙の正答として保持する。
+- solver は Listan 専用の textarea を優先して全文を設定し、その後の共通遷移処理が「判定」を押す。
+- ブラウザの paste 操作はプレイヤーの `onPaste` で拒否されるため、solver はクリップボード貼り付けに依存せず、native value setter と `input` / `change` event を使う。
+
+fixture の期待値:
+
+| `question_no` | 問題形式 | 正答 |
+| --- | --- | --- |
+| `230003479` | `listan` | `Look at the picture on the screen.` から始まる英文スクリプト全文 |
+
+E2E での確認:
+
+- parser が `<answers>` のない payload から英文スクリプト全文を正答として復元すること。
+- solver が `#listan_box` に全文を設定すること。
+- 共通遷移処理が「判定」を押し、判定時に textarea の値が全文と一致すること。
+- 問題一覧の実行キューから自動モードを引き継ぎ、点数表示のない結果画面でも「終了する」を押して次の問題へ戻れること。
 
 ## `tests/fixtures/Dictation` / `tests/fixtures/Dictation2` / `tests/fixtures/Dictation3`
 

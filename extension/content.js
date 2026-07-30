@@ -803,6 +803,17 @@
 
   function findQuestionContainer(el, type = "") {
     const lowerType = String(type || "").toLowerCase();
+    if (lowerType === "listan") {
+      return (
+        el.closest?.(
+          '[class*="AppPc__app_root"], [class*="AppSp__app_root"]',
+        ) ||
+        document.querySelector(
+          '[class*="AppPc__app_root"], [class*="AppSp__app_root"]',
+        ) ||
+        document.body
+      );
+    }
     if (lowerType.includes("dictation") || lowerType.includes("dectation")) {
       return (
         document.querySelector(
@@ -1133,6 +1144,13 @@
       document.querySelector(
         '[class*="dictationBox"], [class*="DictationBox"], [class*="dictationArea"]',
       ),
+    );
+  }
+
+  function hasListanQuestionData() {
+    return questionsList.some(
+      (question) =>
+        String(question?.type || "").toLowerCase() === "listan",
     );
   }
 
@@ -2076,6 +2094,28 @@
 
   function ensureSolveButton() {
     if (ensureQuestionHubControls()) return;
+
+    const listanFinishButton = findTransitionButton(["終了する"]);
+    if (
+      isAutoMode &&
+      !isSolving &&
+      !isTransitioning &&
+      hasListanQuestionData() &&
+      listanFinishButton &&
+      !document.querySelector(
+        '#listan_box, textarea[class*="TypingBox__listan_box"]',
+      )
+    ) {
+      console.log(
+        'Auto-Mode: Listan result page detected. Clicking "終了する".',
+      );
+      isTransitioning = true;
+      simulateClick(listanFinishButton);
+      setTimeout(() => {
+        isTransitioning = false;
+      }, getWaitTime("TRANSITION_WAIT"));
+      return;
+    }
 
     const finishLink = document.querySelector("a.btn");
     if (finishLink) {

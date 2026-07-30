@@ -30,6 +30,26 @@ test('parses listening XML answers through numbered choices', () => {
     assert.equal(parsed.questions[0].questionNo, '1590');
 });
 
+test('parses Listan transcript as its implicit answer', () => {
+    const { parsed, dataType } = parser.parseQuestionData(
+        readNestedFixture('Listan', 'authoring.cfc')
+    );
+
+    assert.equal(dataType, 'xml');
+    assert.equal(parsed.questions.length, 1);
+    assert.equal(parsed.questions[0].type, 'listan');
+    assert.equal(parsed.questions[0].questionNo, '230003479');
+    assert.deepEqual(parsed.questions[0].answers, [
+        [
+            'Look at the picture on the screen.',
+            'a. There is a laptop computer on the desk.',
+            'b. There is a computer printer on the desk.',
+            'c. There is a vase of tall flowers on the desk.',
+            'd. There is a pair of speakers on the desk.'
+        ].join(' ')
+    ]);
+});
+
 test('parses reading XML question range fixture', () => {
     const { parsed } = parser.parseQuestionData(readFixture('authoring2.xml'));
 
