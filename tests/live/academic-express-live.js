@@ -154,12 +154,18 @@ async function waitForQuestionData(worker) {
     return questionData;
 }
 
-async function solveCurrentQuestion(page) {
+async function startCurrentQuestion(page) {
     const startButton = page.getByRole('button', { name: /スタート|開始/ }).first();
-    if (await startButton.isVisible().catch(() => false)) {
+    const hasStartButton = await startButton
+        .waitFor({ state: 'visible', timeout: 5_000 })
+        .then(() => true)
+        .catch(() => false);
+    if (hasStartButton) {
         await startButton.click();
     }
+}
 
+async function solveCurrentQuestion(page) {
     const solveButton = page.locator('#solve-btn');
     await solveButton.waitFor({ state: 'visible', timeout: 30_000 });
     await page.waitForFunction(() => document.querySelector('#solve-btn')?.textContent?.includes('自動入力'), {
@@ -208,6 +214,8 @@ async function main() {
             for (const playerUrl of playerUrls) {
                 await worker.evaluate(() => chrome.storage.session.clear());
                 await page.goto(playerUrl, { waitUntil: 'domcontentloaded' });
+                console.log(`Testing ${area.name}: ${new URL(playerUrl).pathname}`);
+                await startCurrentQuestion(page);
                 const questionData = await waitForQuestionData(worker);
                 await solveCurrentQuestion(page);
                 summary.results.push({
