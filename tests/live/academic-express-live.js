@@ -92,8 +92,10 @@ async function collectLinks(page, area) {
             const url = new URL(href);
             if (url.origin !== currentOrigin) return false;
             if (ignored.some(prefix => url.pathname.startsWith(prefix))) return false;
-            return url.pathname.startsWith('/as/lplayer/') ||
-                url.pathname.startsWith(settings.pathPrefix);
+            if (url.pathname.startsWith('/as/lplayer/')) {
+                return ['uno', 'mno', 'tic', 'cno', 'cwn'].some(key => url.searchParams.has(key));
+            }
+            return url.pathname.startsWith(settings.pathPrefix);
         }))];
     }, area);
 }
