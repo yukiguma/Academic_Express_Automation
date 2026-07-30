@@ -68,6 +68,8 @@ Academic Express の問題ページで解答補助を行う Chrome / Edge 向け
 npm test
 ```
 
+実サイトへChrome拡張を読み込むLive E2Eは、GitHub Actionsの `Academic Express Live E2E` workflowから手動実行します。認証情報の設定と安全上の制約は [CI・テスト方針](docs/ci-and-test-policy.md#実サイト-live-e2e) を参照してください。
+
 バージョンの整合性は次のコマンドで確認します。
 
 ```powershell

@@ -1,0 +1,62 @@
+name: Academic Express Live E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample_count:
+        description: Random questions to run in each Training Bank / listening dojo area
+        required: true
+        default: "1"
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: academic-express-live-e2e
+  cancel-in-progress: false
+
+jobs:
+  live-e2e:
+    name: Live Chrome extension E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: Authentication
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run live extension E2E
+        env:
+          ACADEMIC_EXPRESS_BASE_URL: https://supereigo.campus.kit.ac.jp
+          ACADEMIC_EXPRESS_PASSWORD: ${{ secrets.PASSWORD }}
+          ACADEMIC_EXPRESS_RANDOM_SEED: ${{ github.run_id }}-${{ github.run_attempt }}
+          ACADEMIC_EXPRESS_SAMPLE_COUNT: ${{ inputs.sample_count }}
+          ACADEMIC_EXPRESS_USER_ID: ${{ secrets.USER_ID }}
+        run: npm run test:live
+
+      - name: Upload sanitized summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: academic-express-live-summary
+          path: test-results/academic-express-live-summary.json
+          if-no-files-found: warn
+          retention-days: 7

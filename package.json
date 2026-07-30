@@ -5,7 +5,8 @@
   "scripts": {
     "version:check": "node scripts/check-release-version.js",
     "version:sync": "node scripts/set-release-version.js",
-    "test": "node --test \"tests/**/*.test.js\""
+    "test": "node --test \"tests/**/*.test.js\"",
+    "test:live": "node tests/live/academic-express-live.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0"
