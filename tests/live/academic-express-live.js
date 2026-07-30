@@ -57,10 +57,17 @@ async function login(page) {
     await page.goto(`${baseUrl}/student/`, { waitUntil: 'domcontentloaded' });
     await page.getByRole('textbox', { name: 'ログインID' }).fill(userId);
     await page.getByRole('textbox', { name: 'パスワード' }).fill(password);
-    await Promise.all([
-        page.waitForURL(url => !url.pathname.includes('/main/login'), { timeout: 30_000 }),
-        page.getByRole('button', { name: 'ログイン' }).click()
-    ]);
+    await page.getByRole('button', { name: 'ログイン' }).click();
+
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+        if (!new URL(page.url()).pathname.includes('/main/login')) {
+            await page.goto(`${baseUrl}/student/`, { waitUntil: 'domcontentloaded' });
+            return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    throw new Error('Academic Express login did not complete within 30 seconds');
 }
 
 async function collectLinks(page, area) {
@@ -230,6 +237,11 @@ async function main() {
 }
 
 main().catch(error => {
-    console.error(error.message);
+    let safeMessage = String(error.message)
+        .replace(/([?&](?:token|session|sid)=[^&\s"']+)/gi, '?redacted');
+    for (const secret of [userId, password].filter(Boolean)) {
+        safeMessage = safeMessage.replaceAll(secret, '[redacted]');
+    }
+    console.error(safeMessage);
     process.exitCode = 1;
 });
