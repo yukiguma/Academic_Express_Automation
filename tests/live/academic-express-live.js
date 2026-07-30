@@ -152,9 +152,11 @@ async function waitForQuestionData(worker, diagnostics) {
     });
     if (!questionData) {
         const responsePaths = [...diagnostics.questionDataPaths].sort().join(', ') || 'none';
+        const requestPaths = [...diagnostics.requestPaths].sort().slice(0, 20).join(', ') || 'none';
         throw new Error(
             `The extension did not capture question data within 30 seconds ` +
-            `(contentScriptLoaded=${diagnostics.contentScriptLoaded}, responses=${responsePaths})`
+            `(contentScriptLoaded=${diagnostics.contentScriptLoaded}, responses=${responsePaths}, ` +
+            `xhr=${requestPaths}, state=${JSON.stringify(diagnostics.pageState)})`
         );
     }
     return questionData;
@@ -224,7 +226,9 @@ async function main() {
     const page = context.pages()[0] || await context.newPage();
     const diagnostics = {
         contentScriptLoaded: false,
-        questionDataPaths: new Set()
+        pageState: {},
+        questionDataPaths: new Set(),
+        requestPaths: new Set()
     };
     page.on('console', message => {
         if (message.text() === 'Academic Express Auto Answer Content Script Loaded') {
@@ -237,6 +241,11 @@ async function main() {
             diagnostics.questionDataPaths.add(url.pathname);
         }
     });
+    page.on('request', request => {
+        if (!['fetch', 'xhr'].includes(request.resourceType())) return;
+        const url = new URL(request.url());
+        if (url.origin === new URL(baseUrl).origin) diagnostics.requestPaths.add(url.pathname);
+    });
 
     try {
         await login(page);
@@ -248,10 +257,20 @@ async function main() {
             for (const playerUrl of playerUrls) {
                 diagnostics.contentScriptLoaded = false;
                 diagnostics.questionDataPaths.clear();
+                diagnostics.requestPaths.clear();
                 await worker.evaluate(() => chrome.storage.session.clear());
                 await page.goto(playerUrl, { waitUntil: 'domcontentloaded' });
                 console.log(`Testing ${area.name}: ${new URL(playerUrl).pathname}`);
                 await startCurrentQuestion(page);
+                diagnostics.pageState = await page.evaluate(() => {
+                    const text = document.body?.innerText || '';
+                    return {
+                        hasBrowserWarning: text.includes('現在のブラウザではご利用になれません'),
+                        hasFinish: /終了|正解数|点/.test(text),
+                        hasLogin: text.includes('ログインID') && text.includes('パスワード'),
+                        hasStart: /スタート|開始|学習する/.test(text)
+                    };
+                });
                 const questionData = await waitForQuestionData(worker, diagnostics);
                 await solveCurrentQuestion(page);
                 summary.results.push({
