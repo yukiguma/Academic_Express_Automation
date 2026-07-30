@@ -122,6 +122,10 @@ async function collectLinks(page, area) {
             const url = new URL(href);
             if (url.origin !== currentOrigin) return false;
             if (ignored.some(prefix => url.pathname.startsWith(prefix))) return false;
+            if (settings.pathPrefix === '/student/dictan-r/' &&
+                /\/(?:wordcardlist|wordlist)(?:\/|$)/.test(url.pathname)) {
+                return false;
+            }
             if (url.pathname.startsWith('/as/lplayer/')) {
                 return ['uno', 'mno', 'tic', 'cno', 'cwn'].some(key => url.searchParams.has(key));
             }
@@ -251,6 +255,11 @@ async function openRandomPlayer(page, area, random) {
                 childLinks.push(link);
             }
         }
+        childLinks.sort((left, right) => {
+            const leftPriority = new URL(left).pathname.includes('/start/') ? 0 : 1;
+            const rightPriority = new URL(right).pathname.includes('/start/') ? 0 : 1;
+            return leftPriority - rightPriority;
+        });
         pending.unshift(...childLinks.map(url => ({ loaded: false, url })));
 
         if (playerUrls.length > 0) {
