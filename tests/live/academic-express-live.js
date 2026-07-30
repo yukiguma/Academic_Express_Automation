@@ -402,8 +402,38 @@ async function openRandomPlayer(page, area, random) {
     }
 
     const visitedPaths = [...visited].map(value => new URL(value).pathname).join(', ');
+    const dojoDiagnostics = ['ディクタン', 'リスタン'].includes(area.name)
+        ? await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('a, button, [onclick], [role="button"]'))
+                .filter(element => {
+                    const box = element.getBoundingClientRect();
+                    return box.width > 0 && box.height > 0 && box.x > 180;
+                })
+                .slice(0, 40)
+                .map(element => {
+                    const href = element.getAttribute('href');
+                    let hrefPath = '';
+                    if (href) {
+                        try {
+                            hrefPath = new URL(href, location.href).pathname;
+                        } catch {
+                            hrefPath = 'invalid';
+                        }
+                    }
+                    return {
+                        tag: element.tagName.toLowerCase(),
+                        hrefPath,
+                        target: element.getAttribute('target') || '',
+                        text: (element.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60),
+                        hasOnclick: element.hasAttribute('onclick'),
+                        cursor: getComputedStyle(element).cursor
+                    };
+                });
+        }).catch(() => [])
+        : [];
     throw new Error(
-        `${area.name}: no playable question was found after checking ${visited.size} pages (${visitedPaths})`
+        `${area.name}: no playable question was found after checking ${visited.size} pages ` +
+        `(${visitedPaths}); controls=${JSON.stringify(dojoDiagnostics)}`
     );
 }
 
