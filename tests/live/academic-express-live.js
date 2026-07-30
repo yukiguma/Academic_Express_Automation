@@ -203,7 +203,7 @@ async function openRandomPlayer(page, area, random) {
             }
         }
 
-        const progressControls = page.locator('a, button, [role="button"]').filter({
+        const progressControls = page.locator('a:not([href]), button, [role="button"]:not(a[href])').filter({
             hasText: /学習する|Stage\s*\d+/i
         });
         const progressIndexes = shuffle(
