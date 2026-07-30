@@ -172,6 +172,10 @@ async function openRandomPlayer(page, area, random) {
                     { mode: 'retention', remaining: readCount('知ってる') }
                 ];
             });
+            console.log(
+                `Vocabulary controls detected: buttons=${await studyButtons.count()}, ` +
+                `remaining=${remainingByMode.map(item => `${item.mode}:${item.remaining}`).join(',')}`
+            );
             const availableButtons = [];
             const buttonCount = Math.min(await studyButtons.count(), remainingByMode.length);
             for (let index = 0; index < buttonCount; index += 1) {
