@@ -195,7 +195,13 @@ async function openRandomPlayer(page, area, random) {
         }
 
         const progressControls = page.locator(
-            'a:not([href]), a[href^="javascript:"], button, [role="button"]:not(a[href])'
+            [
+                'a:not([href])',
+                'a[href^="javascript:"]',
+                'button',
+                '[onclick]',
+                '[role="button"]:not(a[href])'
+            ].join(', ')
         ).filter({
             hasText: /学習する|Stage\s*\d+/i
         });
