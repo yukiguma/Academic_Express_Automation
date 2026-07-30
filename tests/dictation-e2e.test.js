@@ -121,6 +121,68 @@ test('Dictation2 fixture starts after an already-open prefix and exits', { timeo
     });
 });
 
+test('Dictation launched from a multi-question selection continues after player URL normalization', { timeout: 60_000 }, async () => {
+    const fixtureDir = path.join(__dirname, 'fixtures', 'Dictation');
+    const questionData = parser.parseQuestionData(
+        fs.readFileSync(path.join(fixtureDir, 'authoring.cfc'), 'utf8')
+    ).parsed;
+    const { saveRequests, server } = createFixtureServer({
+        apiResponses: new Map([
+            ['/as/flash/data_manipulate.cfc', saveSuccess]
+        ]),
+        fixtureDir,
+        returnPaths: ['/student/cw/unit/1322'],
+        routes: new Map([
+            ['/as/lplayer/index.cfm', 'ディクタン _ Academic Express3.html'],
+            ['/as/lplayer/bundle.js', 'bundle.js'],
+            ['/as/lplayer/.authoring.cfc', 'authoring.cfc'],
+            ['/as/lplayer/authoring.cfc', 'authoring.cfc']
+        ])
+    });
+
+    await runAutoSolve({
+        clickSolve: false,
+        fixtureUrlPath: '/as/lplayer/index.cfm?mno=20303814&cwn=normalized',
+        pageReadySelector: '[class*="AppPc__root"]',
+        preparePage: async page => {
+            await page.getByRole('button', { name: 'スタート' }).click();
+            await page.waitForSelector('text=スタート', { state: 'detached', timeout: 10_000 }).catch(() => { });
+            await page.evaluate(() => {
+                localStorage.setItem(
+                    'question-hub-pending-auto-url',
+                    `${location.origin}/as/lplayer/index.cfm?mno=20303814`
+                );
+                localStorage.setItem(
+                    'question-hub-run-state',
+                    JSON.stringify({
+                        active: true,
+                        queue: [],
+                        completed: 1,
+                        total: 2,
+                        hubUrl: `${location.origin}/student/cw/unit/1322`
+                    })
+                );
+            });
+        },
+        questionData,
+        server,
+        waitFor: page => page.waitForURL(/\/student\/cw\/unit\/1322/, { timeout: 45_000 })
+    });
+
+    const writes = saveRequests
+        .filter(request => request.method === 'POST')
+        .map(request => parseSavedAnswer(request.body))
+        .filter(answer => answer.questionNo);
+    assert.deepEqual(writes.map(({ soundCount, ...write }) => write), [{
+        answer: '',
+        correctFlag: '5',
+        method: 'write_answer_au',
+        missCount: '0',
+        questionNo: '20303814',
+        saveType: '1'
+    }]);
+});
+
 test('Dictation3 fixture with QuestionHeader layout shows controls', { timeout: 30_000 }, async () => {
     const fixtureDir = path.join(__dirname, 'fixtures', 'Dictation3');
     const questionData = parser.parseQuestionData(fs.readFileSync(path.join(fixtureDir, 'authoring.cfc'), 'utf8')).parsed;

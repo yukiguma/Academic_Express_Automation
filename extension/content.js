@@ -48,6 +48,20 @@
     }
   }
 
+  function isPendingQuestionHubPlayerUrl(pendingUrl, currentUrl) {
+    try {
+      const pending = new URL(pendingUrl, window.location.href);
+      const current = new URL(currentUrl, window.location.href);
+      return (
+        pending.origin === current.origin &&
+        pending.pathname === current.pathname &&
+        current.pathname.includes("/as/lplayer/")
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
   function clearAutoModeStorage() {
     localStorage.removeItem("auto-mode");
     localStorage.removeItem("auto-mode-url");
@@ -65,7 +79,7 @@
     } else if (
       isQuizPlayerPage() &&
       pendingQuestionHubAutoUrl &&
-      normalizeUrlForStorage(pendingQuestionHubAutoUrl) === currentUrl
+      isPendingQuestionHubPlayerUrl(pendingQuestionHubAutoUrl, currentUrl)
     ) {
       isAutoMode = true;
       localStorage.removeItem(QUESTION_HUB_PENDING_AUTO_URL_KEY);
