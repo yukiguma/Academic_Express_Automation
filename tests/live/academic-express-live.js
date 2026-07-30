@@ -128,7 +128,7 @@ async function findRandomPlayerUrl(page, area, random) {
     return shuffle([...new Set(playerUrls)], random).slice(0, sampleCount);
 }
 
-async function waitForQuestionData(worker) {
+async function waitForQuestionData(worker, diagnostics) {
     const deadline = Date.now() + 30_000;
     while (Date.now() < deadline) {
         const isReady = await worker.evaluate(async () => {
@@ -150,7 +150,13 @@ async function waitForQuestionData(worker) {
             types: [...new Set(result.questionData.questions.map(question => question.type || 'unknown'))].sort()
         };
     });
-    if (!questionData) throw new Error('The extension did not capture question data within 30 seconds');
+    if (!questionData) {
+        const responsePaths = [...diagnostics.questionDataPaths].sort().join(', ') || 'none';
+        throw new Error(
+            `The extension did not capture question data within 30 seconds ` +
+            `(contentScriptLoaded=${diagnostics.contentScriptLoaded}, responses=${responsePaths})`
+        );
+    }
     return questionData;
 }
 
@@ -203,6 +209,21 @@ async function main() {
         ]
     });
     const page = context.pages()[0] || await context.newPage();
+    const diagnostics = {
+        contentScriptLoaded: false,
+        questionDataPaths: new Set()
+    };
+    page.on('console', message => {
+        if (message.text() === 'Academic Express Auto Answer Content Script Loaded') {
+            diagnostics.contentScriptLoaded = true;
+        }
+    });
+    page.on('response', response => {
+        const url = new URL(response.url());
+        if (/authoring|tango_data_manipulate|bookxml|question|quiz/i.test(url.pathname)) {
+            diagnostics.questionDataPaths.add(url.pathname);
+        }
+    });
 
     try {
         await login(page);
@@ -212,11 +233,13 @@ async function main() {
         for (const area of areas) {
             const playerUrls = await findRandomPlayerUrl(page, area, random);
             for (const playerUrl of playerUrls) {
+                diagnostics.contentScriptLoaded = false;
+                diagnostics.questionDataPaths.clear();
                 await worker.evaluate(() => chrome.storage.session.clear());
                 await page.goto(playerUrl, { waitUntil: 'domcontentloaded' });
                 console.log(`Testing ${area.name}: ${new URL(playerUrl).pathname}`);
                 await startCurrentQuestion(page);
-                const questionData = await waitForQuestionData(worker);
+                const questionData = await waitForQuestionData(worker, diagnostics);
                 await solveCurrentQuestion(page);
                 summary.results.push({
                     area: area.name,
