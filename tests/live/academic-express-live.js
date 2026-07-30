@@ -131,18 +131,21 @@ async function collectLinks(page, area) {
 }
 
 async function openRandomPlayer(page, area, random) {
-    const pending = [new URL(area.path, baseUrl).href];
+    const pending = [{ loaded: false, url: new URL(area.path, baseUrl).href }];
     const visited = new Set();
     const menuDiagnostics = [];
 
     while (pending.length > 0 && visited.size < 30) {
-        const target = pending.shift();
+        const item = pending.shift();
+        const target = item.url;
         if (visited.has(target)) continue;
         visited.add(target);
-        try {
-            await gotoLivePage(page, target, 15_000);
-        } catch {
-            continue;
+        if (!item.loaded) {
+            try {
+                await gotoLivePage(page, target, 15_000);
+            } catch {
+                continue;
+            }
         }
 
         const menuState = await page.evaluate(() => {
@@ -225,7 +228,7 @@ async function openRandomPlayer(page, area, random) {
                         undefined,
                         { timeout: 10_000 }
                     ).catch(() => {});
-                    pending.unshift(currentUrl);
+                    pending.unshift({ loaded: true, url: currentUrl });
                     followedControl = true;
                     break;
                 }
@@ -246,7 +249,7 @@ async function openRandomPlayer(page, area, random) {
                 childLinks.push(link);
             }
         }
-        pending.unshift(...childLinks);
+        pending.unshift(...childLinks.map(url => ({ loaded: false, url })));
 
         if (playerUrls.length > 0) {
             const selected = shuffle([...new Set(playerUrls)], random)[0];
