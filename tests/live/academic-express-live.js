@@ -159,7 +159,7 @@ async function openRandomPlayer(page, area, random) {
                 fullPage: true
             });
 
-            const studyButtons = page.getByText('学習する', { exact: true });
+            const studyButtons = page.getByText(/学習する/);
             const remainingByMode = await page.evaluate(() => {
                 const text = (document.body?.innerText || '').replace(/\s+/g, ' ');
                 const readCount = label => {
