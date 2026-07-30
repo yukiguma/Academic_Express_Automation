@@ -166,24 +166,41 @@ async function openRandomPlayer(page, area, random) {
                     return match ? Number(match[1]) : 0;
                 };
                 return [
-                    { label: '仕分け', mode: 'sorting', remaining: readCount('未仕分け') },
-                    { label: 'ドリル', mode: 'drill', remaining: readCount('知らない') },
-                    { label: '定着', mode: 'retention', remaining: readCount('知ってる') }
+                    { countLabel: '未仕分け', mode: 'sorting', remaining: readCount('未仕分け') },
+                    { countLabel: '知らない', mode: 'drill', remaining: readCount('知らない') },
+                    { countLabel: '知ってる', mode: 'retention', remaining: readCount('知ってる') }
                 ];
             });
             const availableButtons = [];
             for (const availability of remainingByMode) {
-                const button = page.getByText(availability.label, { exact: true }).first();
-                if (!await button.isVisible().catch(() => false)) continue;
+                const labelBox = await page.evaluate(label => {
+                    const candidates = Array.from(document.querySelectorAll('body *'))
+                        .filter(element => {
+                            const rect = element.getBoundingClientRect();
+                            return rect.width > 0 &&
+                                rect.height > 0 &&
+                                (element.innerText || '').replace(/\s+/g, ' ').includes(label);
+                        })
+                        .map(element => {
+                            const rect = element.getBoundingClientRect();
+                            return { height: rect.height, width: rect.width, x: rect.x, y: rect.y };
+                        })
+                        .sort((left, right) => (left.width * left.height) - (right.width * right.height));
+                    return candidates[0] || null;
+                }, availability.countLabel);
+                if (!labelBox) continue;
                 if (availability?.remaining > 0) {
-                    availableButtons.push({ button, ...availability });
+                    const point = availability.mode === 'sorting'
+                        ? { x: labelBox.x - 90, y: labelBox.y + 140 }
+                        : { x: labelBox.x + 20, y: labelBox.y + 220 };
+                    availableButtons.push({ point, ...availability });
                 }
             }
 
             if (availableButtons.length > 0) {
                 const selected = shuffle(availableButtons, random)[0];
                 console.log(`Vocabulary mode selected: ${selected.mode} (remaining=${selected.remaining})`);
-                await selected.button.click({ noWaitAfter: true, timeout: 10_000 });
+                await page.mouse.click(selected.point.x, selected.point.y);
                 await new Promise(resolve => setTimeout(resolve, 3_000));
                 await page.screenshot({
                     path: path.join(resultDir, 'vocabulary-stage-after-click.png'),
