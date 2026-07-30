@@ -205,6 +205,68 @@ test('Dictation solver sends only input letters', { timeout: 20_000 }, async () 
     }
 });
 
+test('Dictation solver reads nested FontBox characters only once and ignores translation content', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div class="AppPc__dictationBox___test">
+                    <div id="dictation-question" class="DictationBox__line___test">
+                        <span class="FontBox__root___test">O</span>
+                        <span class="FontBox__root___test">u</span>
+                        <span class="FontBox__root___test">r</span>
+                        <span class="FontBox__root___test">b</span>
+                        <span class="FontBox__root___test">u</span>
+                        <span class="FontBox__root___test">s</span>
+                        <span class="FontBox__root___test">i</span>
+                        <span class="FontBox__root___test">s</span>
+                        <span class="FontBox__root___test">c</span>
+                        <span class="FontBox__root___test">o</span>
+                        <span class="FontBox__root___test">m</span>
+                        <span class="FontBox__root___test">i</span>
+                        <span class="FontBox__root___test">n</span>
+                        <span class="FontBox__root___test">g</span>
+                        <span class="FontBox__hide___test"></span>
+                    </div>
+                </div>
+                <div class="AppPc__dictationBox___test">日本語訳</div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    const box = document.createElement('span');
+                    box.className = 'FontBox__root___test';
+                    box.textContent = event.key;
+                    document.getElementById('dictation-question').appendChild(box);
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const result = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            const solved = await solve(
+                ['right now'],
+                'dictation',
+                document,
+                { rawText: 'Our bus is coming. [right now]' }
+            );
+            return {
+                keypresses: window.keypresses.join(''),
+                solved
+            };
+        });
+
+        assert.equal(result.solved, true);
+        assert.equal(result.keypresses, 'rightnow');
+    } finally {
+        await browser.close();
+    }
+});
+
 test('Dictation solver skips digits as player-completed boxes', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();

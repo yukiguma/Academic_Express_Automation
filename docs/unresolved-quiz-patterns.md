@@ -174,6 +174,7 @@ E2E での確認:
 - Dictation 入力前には、進捗表示だけでなく Dictation DOM が現在問として入力可能な状態であることを待つ。全文表示型は入力対象文字列の表示、prefix/空欄型は表示済み prefix と hidden box の残存で判定し、未準備なら入力せずに同じ問題を再試行する。進捗だけ先に変わった遷移中状態へキー入力すると、前問または未準備の listener に拾われてミス扱いになる。
 - Dictation は key event を送っただけでは成功扱いにしない。1文字ごとに Dictation DOM の表示文字または hidden box 数が変化したことを確認し、変化しなければ入力を中断して同じ問題を再試行する。
 - 複数問 Dictation はレイアウト検出に頼らず自動遷移扱いにする。入力中や入力直後の DOM 変化で `dictationArea` 検出が外れても、拡張側の手動 `次へ` / `採点` 遷移が割り込まないようにする。
+- 旧 Dictation 画面では英文入力欄と「日本語訳」欄の両方に小文字の `AppPc__dictationBox` クラスが使われ、英文全体の `DictationBox` 内に各文字の `FontBox` が入れ子になる。現在問の照合は `FontBox`、`DictationBox`、`dictationArea` の優先順で一階層だけを読み、日本語訳の混入と英文の二重連結を防ぐ。
 - 「スタート」ボタンは画面最前面で押せる状態のときだけ solver が押す。保存 HTML の E2E では開始オーバーレイが残るため、テスト側で開始後に拡張を注入する。
 - 画面テキストでは問題を照合できないため、`window.config.question_no` と `questionNo` の一致で active question を特定する。
 - 完答後の遷移では「採点」「続ける」「判定」を優先し、それらがなければ Dictation の「終了」ボタンを押す。

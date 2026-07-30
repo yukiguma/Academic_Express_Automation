@@ -694,13 +694,15 @@ async function waitForDictationQuestionReady(expectedChars, question = {}) {
 }
 
 function visibleDictationInputChars() {
-    const roots = Array.from(document.querySelectorAll([
-        '[class*="dictationArea"]',
-        '[class*="dictationBox"]',
+    const selectorGroups = [
+        '[class*="FontBox__root"]',
         '[class*="DictationBox"]',
-        '[class*="FontBox__root"]'
-    ].join(','))).filter(isVisible);
-    const text = (roots.length ? roots : [document.body])
+        '[class*="dictationArea"]'
+    ];
+    const roots = selectorGroups
+        .map(selector => Array.from(document.querySelectorAll(selector)).filter(isVisible))
+        .find(elements => elements.length > 0) || [document.body];
+    const text = roots
         .map(root => root?.innerText || root?.textContent || "")
         .join(' ');
     return dictationInputChars(text).join('');
