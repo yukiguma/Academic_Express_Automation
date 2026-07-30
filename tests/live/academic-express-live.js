@@ -158,6 +158,45 @@ async function openRandomPlayer(page, area, random) {
                 path: path.join(resultDir, 'vocabulary-stage-before-click.png'),
                 fullPage: true
             });
+
+            const studyButtons = page.getByText('学習する', { exact: true });
+            const availableButtons = [];
+            for (let index = 0; index < await studyButtons.count(); index += 1) {
+                const button = studyButtons.nth(index);
+                if (!await button.isVisible().catch(() => false)) continue;
+                const availability = await button.evaluate(element => {
+                    let container = element;
+                    for (let depth = 0; container && depth < 8; depth += 1, container = container.parentElement) {
+                        const text = (container.innerText || '').replace(/\s+/g, ' ').trim();
+                        const definitions = [
+                            { mode: 'sorting', modeText: '仕分け', countText: '未仕分け' },
+                            { mode: 'drill', modeText: 'ドリル', countText: '知らない' },
+                            { mode: 'retention', modeText: '定着', countText: '知ってる' }
+                        ];
+                        for (const definition of definitions) {
+                            if (!text.includes(definition.modeText) || !text.includes(definition.countText)) continue;
+                            const match = text.match(new RegExp(`${definition.countText}\\s*(\\d+)`));
+                            if (match) return { mode: definition.mode, remaining: Number(match[1]) };
+                        }
+                    }
+                    return null;
+                });
+                if (availability?.remaining > 0) {
+                    availableButtons.push({ button, ...availability });
+                }
+            }
+
+            if (availableButtons.length > 0) {
+                const selected = shuffle(availableButtons, random)[0];
+                console.log(`Vocabulary mode selected: ${selected.mode} (remaining=${selected.remaining})`);
+                await selected.button.click({ noWaitAfter: true, timeout: 10_000 });
+                await new Promise(resolve => setTimeout(resolve, 3_000));
+                await page.screenshot({
+                    path: path.join(resultDir, 'vocabulary-stage-after-click.png'),
+                    fullPage: true
+                });
+                return page.url();
+            }
         }
 
         const launchers = page.locator([
