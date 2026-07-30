@@ -130,6 +130,7 @@ async function collectLinks(page, area) {
 async function openRandomPlayer(page, area, random) {
     const pending = [new URL(area.path, baseUrl).href];
     const visited = new Set();
+    const menuDiagnostics = [];
 
     while (pending.length > 0 && visited.size < 30) {
         const target = pending.shift();
@@ -139,6 +140,26 @@ async function openRandomPlayer(page, area, random) {
             await gotoLivePage(page, target, 15_000);
         } catch {
             continue;
+        }
+
+        const menuState = await page.evaluate(() => ({
+            controls: Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]'))
+                .filter(element => element.offsetParent !== null)
+                .map(element => (element.textContent || element.value || '').trim().slice(0, 30))
+                .filter(Boolean)
+                .slice(0, 15),
+            forms: Array.from(document.forms).map(form => {
+                const action = new URL(form.action || location.href, location.href);
+                return { action: action.pathname, method: (form.method || 'get').toLowerCase() };
+            }).slice(0, 10),
+            path: location.pathname,
+            selects: Array.from(document.querySelectorAll('select'))
+                .map(select => select.name || select.id || '(unnamed)')
+                .slice(0, 15)
+        }));
+        if ((menuState.controls.length > 0 || menuState.forms.length > 0 || menuState.selects.length > 0) &&
+            menuDiagnostics.length < 3) {
+            menuDiagnostics.push(menuState);
         }
 
         const launchers = page.locator([
@@ -187,7 +208,10 @@ async function openRandomPlayer(page, area, random) {
         }
     }
 
-    throw new Error(`${area.name}: no playable question was found after checking ${visited.size} pages`);
+    throw new Error(
+        `${area.name}: no playable question was found after checking ${visited.size} pages; ` +
+        `menus=${JSON.stringify(menuDiagnostics)}`
+    );
 }
 
 async function waitForQuestionData(worker, diagnostics) {
