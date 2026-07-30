@@ -398,9 +398,20 @@ async function startCurrentQuestion(page) {
 async function solveCurrentQuestion(page) {
     const solveButton = page.locator('#solve-btn');
     await solveButton.waitFor({ state: 'visible', timeout: 30_000 });
-    await page.waitForFunction(() => document.querySelector('#solve-btn')?.textContent?.includes('自動入力'), {
-        timeout: 30_000
-    });
+    try {
+        await page.waitForFunction(
+            () => document.querySelector('#solve-btn')?.textContent?.includes('自動入力'),
+            undefined,
+            { timeout: 30_000 }
+        );
+    } catch (error) {
+        fs.mkdirSync(resultDir, { recursive: true });
+        await page.screenshot({
+            path: path.join(resultDir, 'vocabulary-player-timeout.png'),
+            fullPage: true
+        });
+        throw error;
+    }
     await solveButton.click();
 
     await page.waitForFunction(() => {
