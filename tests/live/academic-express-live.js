@@ -160,27 +160,24 @@ async function openRandomPlayer(page, area, random) {
             });
 
             const studyButtons = page.getByText('学習する', { exact: true });
+            const remainingByMode = await page.evaluate(() => {
+                const text = (document.body?.innerText || '').replace(/\s+/g, ' ');
+                const readCount = label => {
+                    const match = text.match(new RegExp(`${label}\\s*(\\d+)`));
+                    return match ? Number(match[1]) : 0;
+                };
+                return [
+                    { mode: 'sorting', remaining: readCount('未仕分け') },
+                    { mode: 'drill', remaining: readCount('知らない') },
+                    { mode: 'retention', remaining: readCount('知ってる') }
+                ];
+            });
             const availableButtons = [];
-            for (let index = 0; index < await studyButtons.count(); index += 1) {
+            const buttonCount = Math.min(await studyButtons.count(), remainingByMode.length);
+            for (let index = 0; index < buttonCount; index += 1) {
                 const button = studyButtons.nth(index);
                 if (!await button.isVisible().catch(() => false)) continue;
-                const availability = await button.evaluate(element => {
-                    let container = element;
-                    for (let depth = 0; container && depth < 8; depth += 1, container = container.parentElement) {
-                        const text = (container.innerText || '').replace(/\s+/g, ' ').trim();
-                        const definitions = [
-                            { mode: 'sorting', modeText: '仕分け', countText: '未仕分け' },
-                            { mode: 'drill', modeText: 'ドリル', countText: '知らない' },
-                            { mode: 'retention', modeText: '定着', countText: '知ってる' }
-                        ];
-                        for (const definition of definitions) {
-                            if (!text.includes(definition.modeText) || !text.includes(definition.countText)) continue;
-                            const match = text.match(new RegExp(`${definition.countText}\\s*(\\d+)`));
-                            if (match) return { mode: definition.mode, remaining: Number(match[1]) };
-                        }
-                    }
-                    return null;
-                });
+                const availability = remainingByMode[index];
                 if (availability?.remaining > 0) {
                     availableButtons.push({ button, ...availability });
                 }
