@@ -84,11 +84,58 @@ npm test
 
 ## CI にまだ入れないもの
 
-- Academic Express の実サイトへアクセスする end-to-end テスト。
-- 個人アカウント、学習履歴、セッション、Cookie に依存するテスト。
 - 速度モードの待ち時間や実クリックの完全な再現テスト。
 
-これらは必要になった時点で、ローカル検証手順または手動確認手順として別途整理する。
+通常の `push` / `pull_request` CI では、Academic Express の実サイト、個人アカウント、学習履歴、セッション、Cookie に依存するテストを実行しない。実サイトを使う検証は、後述する手動起動の Live E2E workflow に限定する。
+
+## 実サイト Live E2E
+
+`.github/workflows/live-e2e.yml` の `Academic Express Live E2E` workflow は、`main` 向けPull Requestの作成・更新時と、GitHub Actions の `workflow_dispatch` からの手動操作で起動する。通常CIとは分離し、同時実行を禁止する。ログイン不要で問題画面まで到達できる公式デモは確認できなかったため、京都工芸繊維大学の Academic Express 3 実サイトと `Authentication` Environment の認証情報を使用する。
+
+Environment Secretsをfork由来のPull Requestへ渡さないため、Live E2Eを自動実行するのは同一リポジトリ内のブランチから作成されたPull Requestに限定する。fork由来のPull Requestでは通常CIだけを実行し、Live E2E jobはスキップする。
+
+Live E2E は Playwright の persistent context に `extension/` を unpacked Chrome 拡張として読み込む。`solvers.js` や `content.js` をテストコードから直接注入せず、Manifest V3 の service worker、XHR捕捉、session storage、content scriptsを含めた実際の拡張経路を検証する。
+
+対象は次の6領域とし、各領域の一覧を実サイト上で探索して問題リンクをランダムに選ぶ。手動実行時の `sample_count` で各領域の抽出数を1～3件から選択できる。
+
+- Vocabulary Bank
+- Grammar Bank
+- Reading Bank
+- Listening Bank
+- リスニング道場のディクタン
+- リスニング道場のリスタン
+
+ランダム選択は GitHub Actions の run ID と再実行番号をseedにする。同一workflow runの調査可能性を残しながら、複数回の実行で異なる問題を通す。Live E2E は実際に自動入力と画面遷移を行うため、学習履歴が更新される可能性がある。通常のpush、Dependabot、forkからは自動実行しない。
+
+Vocabulary Bank と Grammar Bank の学習メニューでは、`未仕分け`、`知らない`、`知ってる` の実表示件数を読み取り、残数が1件以上のモードだけをランダム選択の候補にする。正解済み問題の除外などで出題順と取得payloadの配列順が一致しない場合は、配列位置ではなく現在画面に表示されている問題文で照合する。
+
+1領域の探索や解答に失敗しても後続領域の検証は続行し、最後に失敗領域をまとめてworkflowを失敗させる。これにより、先頭領域の不具合だけでほかの領域の状態が不明になることを防ぐ。
+
+### Environment Secrets
+
+GitHub リポジトリの `Settings` → `Environments` → `Authentication` に、次のEnvironment Secretsを登録する。
+
+- `USER_ID`: Academic ExpressのログインID
+- `PASSWORD`: Academic Expressのパスワード
+
+workflowではSecretをコマンドライン引数にせず、テストプロセスの環境変数としてだけ渡す。テストコードは認証情報、Cookie、storage state、Playwright traceをファイルや標準出力へ保存しない。成果物は問題領域、クエスチョンタイプ、問題数、クエリ文字列を除いたページパスだけを含むJSONサマリーに限定し、保持期間を7日とする。
+
+Environmentにdeployment branch ruleを設定する場合は、`main`だけでなくLive E2Eを実行する同一リポジトリ内のPull Requestブランチも許可する。`main`だけに制限するとPull RequestのLive E2EがEnvironmentへアクセスできない。Required reviewersを設定した場合は、承認されるまでEnvironment Secretsはrunnerへ渡されず、Pull Requestごとに手動承認が必要になる。
+
+ローカルで実行する場合は、認証情報をシェル履歴へ直接書かず、現在のプロセスの環境変数に設定してから実行する。
+
+```powershell
+$env:ACADEMIC_EXPRESS_USER_ID = Read-Host "Academic Express user ID"
+$env:ACADEMIC_EXPRESS_PASSWORD = Read-Host "Academic Express password" -MaskInput
+npm run test:live
+```
+
+実行後は環境変数を削除する。
+
+```powershell
+Remove-Item Env:ACADEMIC_EXPRESS_USER_ID
+Remove-Item Env:ACADEMIC_EXPRESS_PASSWORD
+```
 
 ## E2E fixture 方針
 

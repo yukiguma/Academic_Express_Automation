@@ -885,7 +885,7 @@ test('content script waits for clickable sorting tokens before using the visible
     }
 });
 
-test('content script scopes shuffled auto-advance typing to the current visible question box', { timeout: 20_000 }, async () => {
+test('content script matches the visible auto-advance prompt when payload count differs from progress total', { timeout: 20_000 }, async () => {
     const questionData = {
         questions: [
             {
@@ -895,7 +895,7 @@ test('content script scopes shuffled auto-advance typing to the current visible 
                 questionNo: '101',
                 rawText: 'The tax [burden] has increased since last year.',
                 signature: 'thetaxburdenhasincreasedsincelastyear',
-                shuffleQuestions: true,
+                shuffleQuestions: false,
                 type: 'sentenceTyping'
             },
             {
@@ -905,7 +905,7 @@ test('content script scopes shuffled auto-advance typing to the current visible 
                 questionNo: '102',
                 rawText: 'To know more about this, you can ask at the sales [division].',
                 signature: 'toknowmoreaboutthisyoucanaskatthesalesdivision',
-                shuffleQuestions: true,
+                shuffleQuestions: false,
                 type: 'sentenceTyping'
             },
             {
@@ -915,7 +915,7 @@ test('content script scopes shuffled auto-advance typing to the current visible 
                 questionNo: '103',
                 rawText: 'unused third',
                 signature: 'unusedthird',
-                shuffleQuestions: true,
+                shuffleQuestions: false,
                 type: 'typing'
             },
             {
@@ -925,7 +925,7 @@ test('content script scopes shuffled auto-advance typing to the current visible 
                 questionNo: '104',
                 rawText: 'unused fourth',
                 signature: 'unusedfourth',
-                shuffleQuestions: true,
+                shuffleQuestions: false,
                 type: 'typing'
             },
             {
@@ -935,7 +935,7 @@ test('content script scopes shuffled auto-advance typing to the current visible 
                 questionNo: '105',
                 rawText: '自信がある、確信して、自信に満ちた',
                 signature: '自信がある確信して自信に満ちた',
-                shuffleQuestions: true,
+                shuffleQuestions: false,
                 type: 'typing'
             }
         ]
@@ -945,7 +945,7 @@ test('content script scopes shuffled auto-advance typing to the current visible 
         <!doctype html>
         <html>
         <body>
-            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div><span>3 / 5</span></div></div>
+            <div class="AppHeader__fixed-top"><div><div>前のページに戻る</div><span>3 / 10</span></div></div>
             <main>
                 <div class="TangoSentenceTypingQuestionBuilder__questionBox___old" style="position:absolute; left:-10000px; top:0; width:600px; height:160px;">
                     <div class="QuestionTitleText__root___dJe1E"><span>1</span></div>:
