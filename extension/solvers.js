@@ -644,10 +644,11 @@ async function solveDictation(answers, scope, question = {}) {
 
     await dismissDictationStartModal();
 
-    const chars = dictationInputChars(answer);
-    if (!await waitForDictationQuestionReady(chars, question)) {
+    const answerChars = dictationInputChars(answer);
+    if (!await waitForDictationQuestionReady(answerChars, question)) {
         return false;
     }
+    const chars = remainingDictationInputChars(answerChars);
     console.log(`Dictation Strategy: Typing ${chars.length} characters.`);
     for (const char of chars) {
         const before = dictationInputSnapshot();
@@ -668,6 +669,27 @@ function dictationInputChars(answer) {
         .filter(char => /\p{L}/u.test(char));
 }
 
+function remainingDictationInputChars(answerChars) {
+    const boxes = Array.from(document.querySelectorAll('[class*="FontBox__root"]'))
+        .filter(isVisible);
+    const firstHiddenIndex = boxes.findIndex(box =>
+        box.matches('[class*="FontBox__hide"]') ||
+        box.querySelector('[class*="FontBox__hide"]')
+    );
+    if (firstHiddenIndex <= 0) return answerChars;
+
+    const enteredPrefix = dictationInputChars(
+        boxes.slice(0, firstHiddenIndex)
+            .map(box => box.innerText || box.textContent || "")
+            .join("")
+    );
+    const normalizedAnswer = answerChars.join("").toLowerCase();
+    const normalizedPrefix = enteredPrefix.join("").toLowerCase();
+    return normalizedPrefix && normalizedAnswer.startsWith(normalizedPrefix)
+        ? answerChars.slice(enteredPrefix.length)
+        : answerChars;
+}
+
 async function waitForDictationQuestionReady(expectedChars, question = {}) {
     const expected = expectedChars.join('').toLowerCase();
     const questionTextChars = dictationInputChars(question.rawText || "").join('').toLowerCase();
@@ -678,7 +700,7 @@ async function waitForDictationQuestionReady(expectedChars, question = {}) {
         if (visibleChars.includes(expected)) return true;
         if (visibleChars && expected.startsWith(visibleChars)) return true;
         if (visibleChars && questionTextChars.startsWith(visibleChars)) return true;
-        if (visibleChars.length < expected.length && hasHiddenDictationBoxes()) return true;
+        if (hasHiddenDictationBoxes()) return true;
 
         // Some Dictation layouts render blank boxes before typing, so there is
         // no current-answer text to compare against. In that case readiness has
@@ -694,13 +716,15 @@ async function waitForDictationQuestionReady(expectedChars, question = {}) {
 }
 
 function visibleDictationInputChars() {
-    const roots = Array.from(document.querySelectorAll([
-        '[class*="dictationArea"]',
-        '[class*="dictationBox"]',
+    const selectorGroups = [
+        '[class*="FontBox__root"]',
         '[class*="DictationBox"]',
-        '[class*="FontBox__root"]'
-    ].join(','))).filter(isVisible);
-    const text = (roots.length ? roots : [document.body])
+        '[class*="dictationArea"]'
+    ];
+    const roots = selectorGroups
+        .map(selector => Array.from(document.querySelectorAll(selector)).filter(isVisible))
+        .find(elements => elements.length > 0) || [document.body];
+    const text = roots
         .map(root => root?.innerText || root?.textContent || "")
         .join(' ');
     return dictationInputChars(text).join('');

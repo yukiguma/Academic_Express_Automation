@@ -147,6 +147,7 @@ Remove-Item Env:ACADEMIC_EXPRESS_PASSWORD
 - 解答結果の検証は、画面の見た目だけではなく、保存 API に送られる `question_no`、`answer`、`correct_flag`、`totalscore` を優先する。
 - Grammar Bank のように問題順がシャッフルされる E2E fixture は、保存順ではなく送信された `question_no` の集合と `correct_flag` を検証する。
 - questionHub のように複数の問題セットを選択して実行する画面は、実サイトへの遷移ではなく、選択状態の保存・選択済み表示・保存順での保存 URL 直接遷移をローカル fixture で検証する。
+- 問題選択モードから起動したプレイヤーは、サイト側でクエリ文字列が追加・正規化される場合がある。同一 origin・同一プレイヤーパスへの到着をローカル fixture で再現し、自動解答が開始して問題一覧へ戻ることまで検証する。
 
 ## ドキュメント更新ルール
 

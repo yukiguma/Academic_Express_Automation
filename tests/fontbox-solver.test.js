@@ -205,6 +205,122 @@ test('Dictation solver sends only input letters', { timeout: 20_000 }, async () 
     }
 });
 
+test('Dictation solver reads nested FontBox characters only once and ignores translation content', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div class="AppPc__dictationBox___test">
+                    <div id="dictation-question" class="DictationBox__line___test">
+                        <span class="FontBox__root___test">O</span>
+                        <span class="FontBox__root___test">u</span>
+                        <span class="FontBox__root___test">r</span>
+                        <span class="FontBox__root___test">b</span>
+                        <span class="FontBox__root___test">u</span>
+                        <span class="FontBox__root___test">s</span>
+                        <span class="FontBox__root___test">i</span>
+                        <span class="FontBox__root___test">s</span>
+                        <span class="FontBox__root___test">c</span>
+                        <span class="FontBox__root___test">o</span>
+                        <span class="FontBox__root___test">m</span>
+                        <span class="FontBox__root___test">i</span>
+                        <span class="FontBox__root___test">n</span>
+                        <span class="FontBox__root___test">g</span>
+                        <span class="FontBox__hide___test"></span>
+                    </div>
+                </div>
+                <div class="AppPc__dictationBox___test">日本語訳</div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    const box = document.createElement('span');
+                    box.className = 'FontBox__root___test';
+                    box.textContent = event.key;
+                    document.getElementById('dictation-question').appendChild(box);
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const result = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            const solved = await solve(
+                ['right now'],
+                'dictation',
+                document,
+                { rawText: '[right now]' }
+            );
+            return {
+                keypresses: window.keypresses.join(''),
+                solved
+            };
+        });
+
+        assert.equal(result.solved, true);
+        assert.equal(result.keypresses, 'rightnow');
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver resumes after an accepted prefix instead of restarting the answer', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div id="dictation-question" class="DictationBox__line___test">
+                    ${Array.from("IfoundPeter's").map(char =>
+                        `<span class="FontBox__root___test">${char}</span>`
+                    ).join('')}
+                    ${Array.from('dictionary').map(() =>
+                        '<span class="FontBox__root___test"><span class="FontBox__hide___test"></span></span>'
+                    ).join('')}
+                    ${Array.from('ItwasonNicksChair').map(char =>
+                        `<span class="FontBox__root___test">${char}</span>`
+                    ).join('')}
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    const hidden = document.querySelector('[class*="FontBox__hide"]');
+                    if (!hidden) return;
+                    const box = hidden.closest('[class*="FontBox__root"]');
+                    hidden.remove();
+                    box.textContent = event.key;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const result = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            const solved = await solve(
+                ["I found Peter's dictionary."],
+                'dictation',
+                document,
+                { rawText: "[I found {Peter's} dictionary.] It was on Nick's chair." }
+            );
+            return {
+                keypresses: window.keypresses.join(''),
+                solved
+            };
+        });
+
+        assert.equal(result.solved, true);
+        assert.equal(result.keypresses, 'dictionary');
+    } finally {
+        await browser.close();
+    }
+});
+
 test('Dictation solver skips digits as player-completed boxes', { timeout: 20_000 }, async () => {
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
