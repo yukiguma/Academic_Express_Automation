@@ -53,8 +53,23 @@ function safePageIdentity(rawUrl) {
     return `${url.origin}${url.pathname}`;
 }
 
+async function gotoLivePage(page, target) {
+    const expected = new URL(target);
+    try {
+        await page.goto(target, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    } catch (error) {
+        const current = new URL(page.url());
+        if (error.name !== 'TimeoutError' ||
+            current.origin !== expected.origin ||
+            current.pathname !== expected.pathname) {
+            throw new Error(`Live page navigation failed: ${expected.pathname}`);
+        }
+    }
+    await page.locator('body').waitFor({ state: 'attached', timeout: 10_000 });
+}
+
 async function login(page) {
-    await page.goto(`${baseUrl}/student/`, { waitUntil: 'domcontentloaded' });
+    await gotoLivePage(page, `${baseUrl}/student/`);
     await page.getByRole('textbox', { name: 'ログインID' }).fill(userId);
     await page.getByRole('textbox', { name: 'パスワード' }).fill(password);
     await page.getByRole('button', { name: 'ログイン' }).click();
@@ -62,7 +77,7 @@ async function login(page) {
     const deadline = Date.now() + 30_000;
     while (Date.now() < deadline) {
         if (!new URL(page.url()).pathname.includes('/main/login')) {
-            await page.goto(`${baseUrl}/student/`, { waitUntil: 'domcontentloaded' });
+            await gotoLivePage(page, `${baseUrl}/student/`);
             return;
         }
         await new Promise(resolve => setTimeout(resolve, 250));
@@ -109,7 +124,7 @@ async function findRandomPlayerUrl(page, area, random) {
         const target = pending.shift();
         if (visited.has(target)) continue;
         visited.add(target);
-        await page.goto(target, { waitUntil: 'domcontentloaded' });
+        await gotoLivePage(page, target);
 
         const links = await collectLinks(page, area);
         for (const link of shuffle(links, random)) {
@@ -261,7 +276,7 @@ async function main() {
                 diagnostics.questionDataPaths.clear();
                 diagnostics.requestPaths.clear();
                 await worker.evaluate(() => chrome.storage.session.clear());
-                await page.goto(playerUrl, { waitUntil: 'domcontentloaded' });
+                await gotoLivePage(page, playerUrl);
                 console.log(`Testing ${area.name}: ${new URL(playerUrl).pathname}`);
                 await startCurrentQuestion(page);
                 diagnostics.pageState = await page.evaluate(() => {
