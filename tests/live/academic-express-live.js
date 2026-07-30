@@ -219,6 +219,12 @@ async function openRandomPlayer(page, area, random) {
                 const currentUrl = page.url();
                 if (new URL(currentUrl).pathname.startsWith('/as/lplayer/')) return currentUrl;
                 if (currentUrl !== previousUrl) {
+                    await page.waitForLoadState('domcontentloaded', { timeout: 15_000 }).catch(() => {});
+                    await page.waitForFunction(
+                        () => (document.body?.innerText || '').trim().length > 0,
+                        undefined,
+                        { timeout: 10_000 }
+                    ).catch(() => {});
                     pending.unshift(currentUrl);
                     followedControl = true;
                     break;
