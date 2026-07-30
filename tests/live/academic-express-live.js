@@ -53,10 +53,10 @@ function safePageIdentity(rawUrl) {
     return `${url.origin}${url.pathname}`;
 }
 
-async function gotoLivePage(page, target) {
+async function gotoLivePage(page, target, timeout = 30_000) {
     const expected = new URL(target);
     try {
-        await page.goto(target, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        await page.goto(target, { waitUntil: 'domcontentloaded', timeout });
     } catch (error) {
         const current = new URL(page.url());
         if (error.name !== 'TimeoutError' ||
@@ -124,7 +124,11 @@ async function findRandomPlayerUrl(page, area, random) {
         const target = pending.shift();
         if (visited.has(target)) continue;
         visited.add(target);
-        await gotoLivePage(page, target);
+        try {
+            await gotoLivePage(page, target, 15_000);
+        } catch {
+            continue;
+        }
 
         const links = await collectLinks(page, area);
         for (const link of shuffle(links, random)) {
