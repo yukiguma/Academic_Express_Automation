@@ -1170,10 +1170,7 @@
 
     const shouldUseActiveOrder =
       activeQuestionRange !== null &&
-      (forceOrderMatch ||
-        hasDuplicateSignature(question) ||
-        (question.isAutoAdvance &&
-          activeQuestionRange.totalMatchesQuestionList === false));
+      (forceOrderMatch || hasDuplicateSignature(question));
     if (!shouldUseActiveOrder) return true;
     const order = Number(question.displayOrder);
     return (

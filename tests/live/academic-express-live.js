@@ -53,6 +53,15 @@ function safePageIdentity(rawUrl) {
     return `${url.origin}${url.pathname}`;
 }
 
+function sanitizeErrorMessage(error) {
+    let message = String(error?.message || error)
+        .replace(/([?&](?:token|session|sid)=[^&\s"']+)/gi, '?redacted');
+    for (const secret of [userId, password].filter(Boolean)) {
+        message = message.replaceAll(secret, '[redacted]');
+    }
+    return message;
+}
+
 async function gotoLivePage(page, target, timeout = 30_000) {
     const expected = new URL(target);
     try {
@@ -160,12 +169,6 @@ async function openRandomPlayer(page, area, random) {
             currentPath.startsWith('/student/sorting/start/')
         );
         if (isBankStage) {
-            fs.mkdirSync(resultDir, { recursive: true });
-            await page.screenshot({
-                path: path.join(resultDir, 'vocabulary-stage-before-click.png'),
-                fullPage: true
-            });
-
             const remainingByMode = await page.evaluate(() => {
                 const text = (document.body?.innerText || '').replace(/\s+/g, ' ');
                 const readCount = label => {
@@ -209,10 +212,6 @@ async function openRandomPlayer(page, area, random) {
                 console.log(`${area.name} mode selected: ${selected.mode} (remaining=${selected.remaining})`);
                 await page.mouse.click(selected.point.x, selected.point.y);
                 await new Promise(resolve => setTimeout(resolve, 3_000));
-                await page.screenshot({
-                    path: path.join(resultDir, 'vocabulary-stage-after-click.png'),
-                    fullPage: true
-                });
                 return page.url();
             }
         }
@@ -291,13 +290,6 @@ async function openRandomPlayer(page, area, random) {
             while (Date.now() < deadline) {
                 const currentUrl = page.url();
                 if (new URL(currentUrl).pathname.startsWith('/as/lplayer/')) {
-                    if (area.name === 'Vocabulary Bank') {
-                        fs.mkdirSync(resultDir, { recursive: true });
-                        await page.screenshot({
-                            path: path.join(resultDir, 'vocabulary-stage-after-click.png'),
-                            fullPage: true
-                        });
-                    }
                     return currentUrl;
                 }
                 if (currentUrl !== previousUrl) {
@@ -313,25 +305,26 @@ async function openRandomPlayer(page, area, random) {
                 }
                 await new Promise(resolve => setTimeout(resolve, 250));
             }
-            if (area.name === 'Vocabulary Bank') {
-                fs.mkdirSync(resultDir, { recursive: true });
-                await page.screenshot({
-                    path: path.join(resultDir, 'vocabulary-stage-after-click.png'),
-                    fullPage: true
-                });
-            }
             if (followedControl) break;
         }
         if (followedControl) continue;
 
         if (['ディクタン', 'リスタン'].includes(area.name)) {
-            const dojoCards = page.locator(
-                'img[src*="dictan" i], img[src*="listan" i], img[alt*="ディクタン"], img[alt*="リスタン"]'
-            );
-            const cardIndexes = shuffle(
-                Array.from({ length: await dojoCards.count() }, (_, index) => index),
-                random
-            );
+            const dojoCards = page.locator('img');
+            const cardIndexes = shuffle((await Promise.all(
+                Array.from({ length: await dojoCards.count() }, async (_, index) => {
+                    const box = await dojoCards.nth(index).boundingBox();
+                    return box &&
+                        box.x > 200 &&
+                        box.y > 120 &&
+                        box.width >= 60 &&
+                        box.width <= 300 &&
+                        box.height >= 60 &&
+                        box.height <= 300
+                        ? index
+                        : null;
+                })
+            )).filter(index => index !== null), random);
             for (const index of cardIndexes) {
                 const card = dojoCards.nth(index);
                 if (!await card.isVisible().catch(() => false)) continue;
@@ -442,20 +435,11 @@ async function startCurrentQuestion(page) {
 async function solveCurrentQuestion(page) {
     const solveButton = page.locator('#solve-btn');
     await solveButton.waitFor({ state: 'visible', timeout: 30_000 });
-    try {
-        await page.waitForFunction(
-            () => document.querySelector('#solve-btn')?.textContent?.includes('自動入力'),
-            undefined,
-            { timeout: 30_000 }
-        );
-    } catch (error) {
-        fs.mkdirSync(resultDir, { recursive: true });
-        await page.screenshot({
-            path: path.join(resultDir, 'vocabulary-player-timeout.png'),
-            fullPage: true
-        });
-        throw error;
-    }
+    await page.waitForFunction(
+        () => document.querySelector('#solve-btn')?.textContent?.includes('自動入力'),
+        undefined,
+        { timeout: 30_000 }
+    );
     await solveButton.click();
 
     await page.waitForFunction(() => {
@@ -546,17 +530,12 @@ async function main() {
                         types: questionData.types
                     });
                 } catch (error) {
-                    const safeAreaName = area.name.replace(/[^\p{Letter}\p{Number}]+/gu, '-').toLowerCase();
-                    fs.mkdirSync(resultDir, { recursive: true });
-                    await page.screenshot({
-                        path: path.join(resultDir, `${safeAreaName}-failure.png`),
-                        fullPage: true
-                    }).catch(() => {});
+                    const message = sanitizeErrorMessage(error);
                     summary.failures.push({
                         area: area.name,
-                        message: String(error.message)
+                        message
                     });
-                    console.error(`${area.name}: ${error.message}`);
+                    console.error(`${area.name}: ${message}`);
                 }
             }
         }
@@ -576,11 +555,6 @@ async function main() {
 }
 
 main().catch(error => {
-    let safeMessage = String(error.message)
-        .replace(/([?&](?:token|session|sid)=[^&\s"']+)/gi, '?redacted');
-    for (const secret of [userId, password].filter(Boolean)) {
-        safeMessage = safeMessage.replaceAll(secret, '[redacted]');
-    }
-    console.error(safeMessage);
+    console.error(sanitizeErrorMessage(error));
     process.exitCode = 1;
 });

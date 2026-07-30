@@ -105,6 +105,10 @@ Live E2E は Playwright の persistent context に `extension/` を unpacked Chr
 
 ランダム選択は GitHub Actions の run ID と再実行番号をseedにする。同一workflow runの調査可能性を残しながら、複数回の実行で異なる問題を通す。Live E2E は実際に自動入力と画面遷移を行うため、学習履歴が更新される可能性がある。push、pull request、Dependabot、forkからは自動実行しない。
 
+Vocabulary Bank と Grammar Bank の学習メニューでは、`未仕分け`、`知らない`、`知ってる` の実表示件数を読み取り、残数が1件以上のモードだけをランダム選択の候補にする。正解済み問題の除外などで出題順と取得payloadの配列順が一致しない場合は、配列位置ではなく現在画面に表示されている問題文で照合する。
+
+1領域の探索や解答に失敗しても後続領域の検証は続行し、最後に失敗領域をまとめてworkflowを失敗させる。これにより、先頭領域の不具合だけでほかの領域の状態が不明になることを防ぐ。
+
 ### Environment Secrets
 
 GitHub リポジトリの `Settings` → `Environments` → `Authentication` に、次のEnvironment Secretsを登録する。
