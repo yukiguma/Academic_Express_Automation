@@ -66,6 +66,9 @@ async function gotoLivePage(page, target, timeout = 30_000) {
         }
     }
     await page.locator('body').waitFor({ state: 'attached', timeout: 10_000 });
+    await page.waitForFunction(() => (document.body?.innerText || '').trim().length > 0, undefined, {
+        timeout: 10_000
+    });
 }
 
 async function login(page) {
@@ -143,7 +146,9 @@ async function openRandomPlayer(page, area, random) {
         }
 
         const menuState = await page.evaluate(() => ({
-            controls: Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]'))
+            controls: Array.from(document.querySelectorAll(
+                'a, button, input[type="button"], input[type="submit"]'
+            ))
                 .filter(element => element.offsetParent !== null)
                 .map(element => (element.textContent || element.value || '').trim().slice(0, 30))
                 .filter(Boolean)
