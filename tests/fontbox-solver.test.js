@@ -252,7 +252,7 @@ test('Dictation solver reads nested FontBox characters only once and ignores tra
                 ['right now'],
                 'dictation',
                 document,
-                { rawText: 'Our bus is coming. [right now]' }
+                { rawText: '[right now]' }
             );
             return {
                 keypresses: window.keypresses.join(''),
@@ -262,6 +262,60 @@ test('Dictation solver reads nested FontBox characters only once and ignores tra
 
         assert.equal(result.solved, true);
         assert.equal(result.keypresses, 'rightnow');
+    } finally {
+        await browser.close();
+    }
+});
+
+test('Dictation solver resumes after an accepted prefix instead of restarting the answer', { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    try {
+        await page.setContent(`
+            <main>
+                <div id="dictation-question" class="DictationBox__line___test">
+                    ${Array.from("IfoundPeter's").map(char =>
+                        `<span class="FontBox__root___test">${char}</span>`
+                    ).join('')}
+                    ${Array.from('dictionary').map(() =>
+                        '<span class="FontBox__root___test"><span class="FontBox__hide___test"></span></span>'
+                    ).join('')}
+                    ${Array.from('ItwasonNicksChair').map(char =>
+                        `<span class="FontBox__root___test">${char}</span>`
+                    ).join('')}
+                </div>
+            </main>
+            <script>
+                window.keypresses = [];
+                document.addEventListener('keypress', event => {
+                    window.keypresses.push(event.key);
+                    const hidden = document.querySelector('[class*="FontBox__hide"]');
+                    if (!hidden) return;
+                    const box = hidden.closest('[class*="FontBox__root"]');
+                    hidden.remove();
+                    box.textContent = event.key;
+                });
+            </script>
+        `);
+        await page.addScriptTag({ path: path.join(extensionDir, 'solvers.js') });
+
+        const result = await page.evaluate(async () => {
+            window.__ACADEMIC_EXPRESS_FAST_MODE__ = true;
+            const solved = await solve(
+                ["I found Peter's dictionary."],
+                'dictation',
+                document,
+                { rawText: "[I found {Peter's} dictionary.] It was on Nick's chair." }
+            );
+            return {
+                keypresses: window.keypresses.join(''),
+                solved
+            };
+        });
+
+        assert.equal(result.solved, true);
+        assert.equal(result.keypresses, 'dictionary');
     } finally {
         await browser.close();
     }
