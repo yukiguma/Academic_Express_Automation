@@ -6,10 +6,12 @@
     "permissions": [
         "storage",
         "scripting",
-        "activeTab"
+        "activeTab",
+        "alarms"
     ],
     "host_permissions": [
-        "*://supereigo.campus.kit.ac.jp/*"
+        "*://supereigo.campus.kit.ac.jp/*",
+        "https://api.github.com/*"
     ],
     "optional_host_permissions": [
         "*://*/*"

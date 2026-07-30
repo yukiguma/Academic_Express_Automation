@@ -78,11 +78,96 @@
             color: #dc3545;
             background: none;
         }
+
+        #update-panel {
+            display: none;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #b9dfc4;
+            border-radius: 6px;
+            background: #f0faf3;
+            text-align: left;
+            font-size: 12px;
+        }
+
+        #update-panel strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #176b32;
+        }
+
+        #update-version {
+            margin-bottom: 8px;
+        }
+
+        .update-download {
+            display: block;
+            box-sizing: border-box;
+            padding: 9px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            background: #16803a;
+            color: #fff;
+            text-align: center;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .update-download:hover {
+            background: #11662e;
+        }
+
+        .update-secondary {
+            padding: 0;
+            margin: 0;
+            width: auto;
+            background: none;
+            color: #555;
+            text-decoration: underline;
+            font-size: 11px;
+        }
+
+        .update-secondary:hover {
+            background: none;
+            color: #222;
+        }
+
+        #update-help {
+            margin: 8px 0;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        #update-check-row {
+            margin-bottom: 10px;
+            font-size: 11px;
+            color: #777;
+        }
     </style>
 </head>
 
 <body>
     <h2>Academic Express Automation</h2>
+
+    <div id="update-panel">
+        <strong>新しいバージョンがあります</strong>
+        <div id="update-version"></div>
+        <a
+            class="update-download"
+            href="https://github.com/yukiguma/Academic_Express_Automation/releases/latest/download/academic-express-automation.zip"
+            target="_blank"
+            rel="noreferrer"
+        >最新版ZIPをダウンロード</a>
+        <div id="update-help">ダウンロード後、現在の拡張機能フォルダへ展開し、拡張機能を再読み込みしてください。</div>
+        <button id="dismiss-update-btn" class="update-secondary">このバージョンを通知しない</button>
+    </div>
+
+    <div id="update-check-row">
+        <span id="current-version"></span>
+        <button id="check-update-btn" class="update-secondary">最新版を再確認</button>
+        <span id="update-status"></span>
+    </div>
+
     <div id="domain-display">Checking...</div>
 
     <button id="enable-btn">このサイトで有効にする</button>
@@ -97,6 +182,7 @@
         <li style="color: #999;">読み込み中...</li>
     </ul>
 
+    <script src="update-checker.js"></script>
     <script src="popup.js"></script>
 </body>
 

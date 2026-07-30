@@ -39,6 +39,10 @@
 
 Release PR をレビューして `main` にマージした後、`Publish Release` workflow を手動実行する。この workflow は `main` の `package.json` からバージョンを読み取り、`extension/manifest.json` との一致を確認してから `v1.2.3` タグを作成し、`extension/` の内容だけを `academic-express-automation.zip` として GitHub Release に添付する。導入手順では GitHub Releases の `latest/download` URL からこの zip を取得する。
 
+拡張機能はGitHub Releases APIを24時間ごとに確認し、現在の `manifest.json` より新しい安定版がある場合にアイコンとポップアップで通知する。更新確認の失敗は自動入力などの既存機能に影響させず、保存済みの確認結果を維持して次回に再試行する。ダウンロードボタンはGitHub Releases APIの応答内URLではなく、リポジトリで固定した `releases/latest/download/academic-express-automation.zip` を使用する。インストールは自動化せず、利用者が展開、ファイル置換、拡張機能の再読み込みを行う。
+
+バージョン文字列の正規化、数値比較、GitHub Release応答の検証、通知対象の判定は `extension/update-checker.js` に分離し、`tests/update-checker.test.js` でChrome APIに依存しない単体テストを行う。
+
 ローカルでは次のコマンドでバージョン同期と確認を行う。
 
 ```powershell

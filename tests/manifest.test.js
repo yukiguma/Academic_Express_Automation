@@ -34,6 +34,8 @@ test('manifest is valid Manifest V3 and references existing files', () => {
 
     assert.ok(manifest.permissions.includes('storage'));
     assert.ok(manifest.permissions.includes('scripting'));
+    assert.ok(manifest.permissions.includes('alarms'));
+    assert.ok(manifest.host_permissions.includes('https://api.github.com/*'));
 });
 
 test('manifest version matches package version', () => {
@@ -46,12 +48,12 @@ test('manifest version matches package version', () => {
     assert.equal(packageLock.packages[''].version, packageJson.version);
 });
 
-test('background imports parser file that exists', () => {
+test('background imports worker dependencies that exist', () => {
     const background = fs.readFileSync(path.join(extensionDir, 'background.js'), 'utf8');
     const imports = [...background.matchAll(/importScripts\(([^)]+)\)/g)]
         .flatMap(match => match[1].split(','))
         .map(value => value.trim().replace(/^['"]|['"]$/g, ''));
 
-    assert.deepEqual(imports, ['parser.js']);
+    assert.deepEqual(imports, ['parser.js', 'update-checker.js']);
     imports.forEach(assertExtensionFile);
 });

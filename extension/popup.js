@@ -1,8 +1,71 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    const manifest = chrome.runtime.getManifest();
+    const updatePanel = document.getElementById('update-panel');
+    const updateVersion = document.getElementById('update-version');
+    const currentVersion = document.getElementById('current-version');
+    const checkUpdateBtn = document.getElementById('check-update-btn');
+    const dismissUpdateBtn = document.getElementById('dismiss-update-btn');
+    const updateStatus = document.getElementById('update-status');
+    const UPDATE_API_ORIGIN = 'https://api.github.com/*';
     const domainDisplay = document.getElementById('domain-display');
     const enableBtn = document.getElementById('enable-btn');
     const disableBtn = document.getElementById('disable-btn');
     const statusMsg = document.getElementById('status-msg');
+
+    currentVersion.textContent = `現在 v${manifest.version} · `;
+
+    function renderUpdateState(response, showError = false) {
+        const state = response?.updateState || {};
+        const hasUpdate = state.latestVersion
+            && AcademicExpressUpdateChecker.shouldNotify(
+                manifest.version,
+                state.latestVersion,
+                state.dismissedVersion
+            );
+
+        updatePanel.style.display = hasUpdate ? 'block' : 'none';
+        if (hasUpdate) {
+            updateVersion.textContent = `v${manifest.version} → v${state.latestVersion}`;
+            dismissUpdateBtn.dataset.version = state.latestVersion;
+        }
+
+        updateStatus.textContent = showError && !response?.success
+            ? '（確認失敗）'
+            : '';
+    }
+
+    async function loadUpdateState(force = false) {
+        checkUpdateBtn.disabled = true;
+        updateStatus.textContent = '（確認中）';
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: force ? 'CHECK_FOR_UPDATE' : 'GET_UPDATE_STATE'
+            });
+            renderUpdateState(response, force);
+        } catch (error) {
+            console.error('Failed to load update state:', error);
+            updateStatus.textContent = force ? '（確認失敗）' : '';
+        } finally {
+            checkUpdateBtn.disabled = false;
+        }
+    }
+
+    checkUpdateBtn.addEventListener('click', () => {
+        loadUpdateState(true);
+    });
+
+    dismissUpdateBtn.addEventListener('click', async () => {
+        const version = dismissUpdateBtn.dataset.version;
+        if (!version) return;
+
+        const response = await chrome.runtime.sendMessage({
+            type: 'DISMISS_UPDATE',
+            version
+        });
+        renderUpdateState(response);
+    });
+
+    loadUpdateState();
 
     // Get current tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -117,8 +180,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const listContainer = document.getElementById('enabled-list');
 
     // 固定権限（manifest.jsonのhost_permissionsから取得）
-    const manifest = chrome.runtime.getManifest();
-    const FIXED_ORIGINS = manifest.host_permissions || [];
+    const FIXED_ORIGINS = (manifest.host_permissions || [])
+        .filter(originPattern => originPattern !== UPDATE_API_ORIGIN);
 
     function isFixedOrigin(originStr) {
         return FIXED_ORIGINS.some(fixed => {
@@ -134,7 +197,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         listContainer.innerHTML = '';
 
-        const meaningfulOrigins = origins.filter(o => o.includes('://') && !o.includes('<all_urls>'));
+        const meaningfulOrigins = origins.filter(originPattern =>
+            originPattern.includes('://')
+            && !originPattern.includes('<all_urls>')
+            && originPattern !== UPDATE_API_ORIGIN
+        );
 
         // Group by domain
         const domainMap = {}; // domain -> { origins: [], isFixed: boolean }
