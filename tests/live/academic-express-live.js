@@ -127,10 +127,9 @@ async function collectLinks(page, area) {
     }, area);
 }
 
-async function findRandomPlayerUrl(page, area, random) {
+async function openRandomPlayer(page, area, random) {
     const pending = [new URL(area.path, baseUrl).href];
     const visited = new Set();
-    const playerUrls = [];
 
     while (pending.length > 0 && visited.size < 30) {
         const target = pending.shift();
@@ -142,7 +141,36 @@ async function findRandomPlayerUrl(page, area, random) {
             continue;
         }
 
+        const launchers = page.locator([
+            'form[action*="/as/lplayer/"] button',
+            'form[action*="/as/lplayer/"] input[type="button"]',
+            'form[action*="/as/lplayer/"] input[type="submit"]',
+            '[formaction*="/as/lplayer/"]',
+            '[onclick*="/as/lplayer/"]'
+        ].join(', '));
+        const launcherIndexes = shuffle(
+            Array.from({ length: await launchers.count() }, (_, index) => index),
+            random
+        );
+        for (const index of launcherIndexes) {
+            const launcher = launchers.nth(index);
+            if (!await launcher.isVisible().catch(() => false)) continue;
+            await launcher.evaluate(element => {
+                element.removeAttribute('target');
+                element.closest('form')?.removeAttribute('target');
+            });
+            await launcher.click({ timeout: 10_000 });
+            const deadline = Date.now() + 10_000;
+            while (Date.now() < deadline) {
+                if (new URL(page.url()).pathname.startsWith('/as/lplayer/')) {
+                    return page.url();
+                }
+                await new Promise(resolve => setTimeout(resolve, 250));
+            }
+        }
+
         const links = await collectLinks(page, area);
+        const playerUrls = [];
         for (const link of shuffle(links, random)) {
             const url = new URL(link);
             if (url.pathname.startsWith('/as/lplayer/')) {
@@ -152,13 +180,14 @@ async function findRandomPlayerUrl(page, area, random) {
             }
         }
 
-        if (playerUrls.length >= sampleCount) break;
+        if (playerUrls.length > 0) {
+            const selected = shuffle([...new Set(playerUrls)], random)[0];
+            await gotoLivePage(page, selected);
+            return selected;
+        }
     }
 
-    if (playerUrls.length === 0) {
-        throw new Error(`${area.name}: no playable question link was found after checking ${visited.size} pages`);
-    }
-    return shuffle([...new Set(playerUrls)], random).slice(0, sampleCount);
+    throw new Error(`${area.name}: no playable question was found after checking ${visited.size} pages`);
 }
 
 async function waitForQuestionData(worker, diagnostics) {
@@ -286,13 +315,12 @@ async function main() {
         if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 10_000 });
 
         for (const area of areas) {
-            const playerUrls = await findRandomPlayerUrl(page, area, random);
-            for (const playerUrl of playerUrls) {
+            for (let sample = 0; sample < sampleCount; sample += 1) {
                 diagnostics.contentScriptLoaded = false;
                 diagnostics.questionDataPaths.clear();
                 diagnostics.requestPaths.clear();
                 await worker.evaluate(() => chrome.storage.session.clear());
-                await gotoLivePage(page, playerUrl);
+                const playerUrl = await openRandomPlayer(page, area, random);
                 console.log(`Testing ${area.name}: ${new URL(playerUrl).pathname}`);
                 await startCurrentQuestion(page);
                 diagnostics.pageState = await page.evaluate(() => {
