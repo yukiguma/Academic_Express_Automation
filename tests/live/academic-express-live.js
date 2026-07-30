@@ -145,13 +145,17 @@ async function openRandomPlayer(page, area, random) {
             continue;
         }
 
-        const menuState = await page.evaluate(() => ({
-            controls: Array.from(document.querySelectorAll(
+        const menuState = await page.evaluate(() => {
+            const root = document.querySelector(
+                'main, [role="main"], .main-content, .page-content, #main-content, #content'
+            ) || document.body;
+            return {
+            controls: Array.from(root.querySelectorAll(
                 'a, button, input[type="button"], input[type="submit"]'
             ))
                 .filter(element => element.offsetParent !== null)
                 .map(element => (element.textContent || element.value || '').trim().slice(0, 30))
-                .filter(Boolean)
+                .filter(text => text && !text.includes('ようこそ'))
                 .slice(0, 15),
             forms: Array.from(document.forms).map(form => {
                 const action = new URL(form.action || location.href, location.href);
@@ -161,7 +165,8 @@ async function openRandomPlayer(page, area, random) {
             selects: Array.from(document.querySelectorAll('select'))
                 .map(select => select.name || select.id || '(unnamed)')
                 .slice(0, 15)
-        }));
+        };
+        });
         if ((menuState.controls.length > 0 || menuState.forms.length > 0 || menuState.selects.length > 0) &&
             menuDiagnostics.length < 3) {
             menuDiagnostics.push(menuState);
@@ -197,14 +202,16 @@ async function openRandomPlayer(page, area, random) {
 
         const links = await collectLinks(page, area);
         const playerUrls = [];
+        const childLinks = [];
         for (const link of shuffle(links, random)) {
             const url = new URL(link);
             if (url.pathname.startsWith('/as/lplayer/')) {
                 playerUrls.push(link);
             } else if (!visited.has(link)) {
-                pending.push(link);
+                childLinks.push(link);
             }
         }
+        pending.unshift(...childLinks);
 
         if (playerUrls.length > 0) {
             const selected = shuffle([...new Set(playerUrls)], random)[0];
