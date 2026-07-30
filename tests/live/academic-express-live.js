@@ -197,6 +197,12 @@ async function openRandomPlayer(page, area, random) {
                 element.removeAttribute('target');
                 element.closest('form')?.removeAttribute('target');
             });
+            await page.evaluate(() => {
+                window.open = url => {
+                    window.location.href = String(url);
+                    return window;
+                };
+            });
             await launcher.click({ noWaitAfter: true, timeout: 10_000 });
             const deadline = Date.now() + 10_000;
             while (Date.now() < deadline) {
@@ -222,6 +228,12 @@ async function openRandomPlayer(page, area, random) {
             if (!await control.isVisible().catch(() => false)) continue;
             const previousUrl = page.url();
             await control.evaluate(element => element.removeAttribute('target'));
+            await page.evaluate(() => {
+                window.open = url => {
+                    window.location.href = String(url);
+                    return window;
+                };
+            });
             await control.click({ noWaitAfter: true, timeout: 10_000 });
             const deadline = Date.now() + 10_000;
             while (Date.now() < deadline) {
