@@ -310,7 +310,29 @@ async function openRandomPlayer(page, area, random) {
         if (followedControl) continue;
 
         if (['ディクタン', 'リスタン'].includes(area.name)) {
-            const dojoCards = page.locator('img');
+            await page.evaluate(() => {
+                let candidateIndex = 0;
+                for (const element of document.querySelectorAll('body *')) {
+                    const box = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    const isCandidate = (
+                        style.cursor === 'pointer' ||
+                        element.hasAttribute('onclick') ||
+                        ['A', 'BUTTON'].includes(element.tagName)
+                    ) &&
+                        box.x > 200 &&
+                        box.y > 120 &&
+                        box.width >= 60 &&
+                        box.width <= 350 &&
+                        box.height >= 60 &&
+                        box.height <= 350;
+                    if (isCandidate) {
+                        element.setAttribute('data-live-dojo-card', String(candidateIndex));
+                        candidateIndex += 1;
+                    }
+                }
+            });
+            const dojoCards = page.locator('[data-live-dojo-card]');
             const cardIndexes = shuffle((await Promise.all(
                 Array.from({ length: await dojoCards.count() }, async (_, index) => {
                     const box = await dojoCards.nth(index).boundingBox();
