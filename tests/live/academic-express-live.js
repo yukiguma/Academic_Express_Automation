@@ -159,7 +159,6 @@ async function openRandomPlayer(page, area, random) {
                 fullPage: true
             });
 
-            const studyButtons = page.getByText(/学習する/);
             const remainingByMode = await page.evaluate(() => {
                 const text = (document.body?.innerText || '').replace(/\s+/g, ' ');
                 const readCount = label => {
@@ -167,21 +166,15 @@ async function openRandomPlayer(page, area, random) {
                     return match ? Number(match[1]) : 0;
                 };
                 return [
-                    { mode: 'sorting', remaining: readCount('未仕分け') },
-                    { mode: 'drill', remaining: readCount('知らない') },
-                    { mode: 'retention', remaining: readCount('知ってる') }
+                    { label: '仕分け', mode: 'sorting', remaining: readCount('未仕分け') },
+                    { label: 'ドリル', mode: 'drill', remaining: readCount('知らない') },
+                    { label: '定着', mode: 'retention', remaining: readCount('知ってる') }
                 ];
             });
-            console.log(
-                `Vocabulary controls detected: buttons=${await studyButtons.count()}, ` +
-                `remaining=${remainingByMode.map(item => `${item.mode}:${item.remaining}`).join(',')}`
-            );
             const availableButtons = [];
-            const buttonCount = Math.min(await studyButtons.count(), remainingByMode.length);
-            for (let index = 0; index < buttonCount; index += 1) {
-                const button = studyButtons.nth(index);
+            for (const availability of remainingByMode) {
+                const button = page.getByText(availability.label, { exact: true }).first();
                 if (!await button.isVisible().catch(() => false)) continue;
-                const availability = remainingByMode[index];
                 if (availability?.remaining > 0) {
                     availableButtons.push({ button, ...availability });
                 }
