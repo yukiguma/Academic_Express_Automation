@@ -200,6 +200,35 @@ async function openRandomPlayer(page, area, random) {
             }
         }
 
+        const progressControls = page.locator('a, button, [role="button"]').filter({
+            hasText: /学習する|Stage\s*\d+/i
+        });
+        const progressIndexes = shuffle(
+            Array.from({ length: await progressControls.count() }, (_, index) => index),
+            random
+        );
+        let followedControl = false;
+        for (const index of progressIndexes) {
+            const control = progressControls.nth(index);
+            if (!await control.isVisible().catch(() => false)) continue;
+            const previousUrl = page.url();
+            await control.evaluate(element => element.removeAttribute('target'));
+            await control.click({ timeout: 10_000 });
+            const deadline = Date.now() + 10_000;
+            while (Date.now() < deadline) {
+                const currentUrl = page.url();
+                if (new URL(currentUrl).pathname.startsWith('/as/lplayer/')) return currentUrl;
+                if (currentUrl !== previousUrl) {
+                    pending.unshift(currentUrl);
+                    followedControl = true;
+                    break;
+                }
+                await new Promise(resolve => setTimeout(resolve, 250));
+            }
+            if (followedControl) break;
+        }
+        if (followedControl) continue;
+
         const links = await collectLinks(page, area);
         const playerUrls = [];
         const childLinks = [];
