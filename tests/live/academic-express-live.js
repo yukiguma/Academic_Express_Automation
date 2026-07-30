@@ -122,19 +122,29 @@ async function findRandomPlayerUrl(page, area, random) {
 }
 
 async function waitForQuestionData(worker) {
-    await worker.waitForFunction(async () => {
-        const result = await chrome.storage.session.get(['questionData']);
-        return Array.isArray(result.questionData?.questions) && result.questionData.questions.length > 0;
-    }, undefined, { timeout: 30_000 });
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+        const isReady = await worker.evaluate(async () => {
+            const result = await chrome.storage.session.get(['questionData']);
+            return Array.isArray(result.questionData?.questions) && result.questionData.questions.length > 0;
+        });
+        if (isReady) break;
+        await new Promise(resolve => setTimeout(resolve, 250));
+    }
 
-    return worker.evaluate(async () => {
+    const questionData = await worker.evaluate(async () => {
         const result = await chrome.storage.session.get(['questionData', 'dataUrl']);
+        if (!Array.isArray(result.questionData?.questions) || result.questionData.questions.length === 0) {
+            return null;
+        }
         return {
             count: result.questionData.questions.length,
             dataPath: result.dataUrl ? new URL(result.dataUrl, 'https://fixture.invalid').pathname : '',
             types: [...new Set(result.questionData.questions.map(question => question.type || 'unknown'))].sort()
         };
     });
+    if (!questionData) throw new Error('The extension did not capture question data within 30 seconds');
+    return questionData;
 }
 
 async function solveCurrentQuestion(page) {
