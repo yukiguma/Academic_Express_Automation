@@ -432,7 +432,8 @@ async function main() {
         generatedAt: new Date().toISOString(),
         sampleCount,
         seed: seedText,
-        results: []
+        results: [],
+        failures: []
     };
 
     const context = await chromium.launchPersistentContext(profileDir, {
@@ -474,31 +475,45 @@ async function main() {
 
         for (const area of areas) {
             for (let sample = 0; sample < sampleCount; sample += 1) {
-                diagnostics.contentScriptLoaded = false;
-                diagnostics.questionDataPaths.clear();
-                diagnostics.requestPaths.clear();
-                await worker.evaluate(() => chrome.storage.session.clear());
-                const playerUrl = await openRandomPlayer(page, area, random);
-                console.log(`Testing ${area.name}: ${new URL(playerUrl).pathname}`);
-                await startCurrentQuestion(page);
-                diagnostics.pageState = await page.evaluate(() => {
-                    const text = document.body?.innerText || '';
-                    return {
-                        hasBrowserWarning: text.includes('現在のブラウザではご利用になれません'),
-                        hasFinish: /終了|正解数|点/.test(text),
-                        hasLogin: text.includes('ログインID') && text.includes('パスワード'),
-                        hasStart: /スタート|開始|学習する/.test(text)
-                    };
-                });
-                const questionData = await waitForQuestionData(worker, diagnostics);
-                await solveCurrentQuestion(page);
-                summary.results.push({
-                    area: area.name,
-                    page: safePageIdentity(playerUrl),
-                    questionCount: questionData.count,
-                    questionDataPath: questionData.dataPath,
-                    types: questionData.types
-                });
+                try {
+                    diagnostics.contentScriptLoaded = false;
+                    diagnostics.questionDataPaths.clear();
+                    diagnostics.requestPaths.clear();
+                    await worker.evaluate(() => chrome.storage.session.clear());
+                    const playerUrl = await openRandomPlayer(page, area, random);
+                    console.log(`Testing ${area.name}: ${new URL(playerUrl).pathname}`);
+                    await startCurrentQuestion(page);
+                    diagnostics.pageState = await page.evaluate(() => {
+                        const text = document.body?.innerText || '';
+                        return {
+                            hasBrowserWarning: text.includes('現在のブラウザではご利用になれません'),
+                            hasFinish: /終了|正解数|点/.test(text),
+                            hasLogin: text.includes('ログインID') && text.includes('パスワード'),
+                            hasStart: /スタート|開始|学習する/.test(text)
+                        };
+                    });
+                    const questionData = await waitForQuestionData(worker, diagnostics);
+                    await solveCurrentQuestion(page);
+                    summary.results.push({
+                        area: area.name,
+                        page: safePageIdentity(playerUrl),
+                        questionCount: questionData.count,
+                        questionDataPath: questionData.dataPath,
+                        types: questionData.types
+                    });
+                } catch (error) {
+                    const safeAreaName = area.name.replace(/[^\p{Letter}\p{Number}]+/gu, '-').toLowerCase();
+                    fs.mkdirSync(resultDir, { recursive: true });
+                    await page.screenshot({
+                        path: path.join(resultDir, `${safeAreaName}-failure.png`),
+                        fullPage: true
+                    }).catch(() => {});
+                    summary.failures.push({
+                        area: area.name,
+                        message: String(error.message)
+                    });
+                    console.error(`${area.name}: ${error.message}`);
+                }
             }
         }
     } finally {
@@ -511,10 +526,8 @@ async function main() {
         fs.rmSync(profileDir, { force: true, recursive: true });
     }
 
-    const testedAreas = new Set(summary.results.map(result => result.area));
-    const missingAreas = areas.filter(area => !testedAreas.has(area.name)).map(area => area.name);
-    if (missingAreas.length > 0) {
-        throw new Error(`Live E2E did not complete: ${missingAreas.join(', ')}`);
+    if (summary.failures.length > 0) {
+        throw new Error(`Live E2E failed in ${summary.failures.map(failure => failure.area).join(', ')}`);
     }
 }
 
