@@ -138,6 +138,10 @@ async function collectLinks(page, area) {
             if (url.pathname.startsWith('/as/lplayer/')) {
                 return ['uno', 'mno', 'tic', 'cno', 'cwn'].some(key => url.searchParams.has(key));
             }
+            if (['ディクタン', 'リスタン'].includes(settings.name) &&
+                url.pathname.startsWith('/student/cw/')) {
+                return true;
+            }
             return url.pathname.startsWith(settings.pathPrefix);
         }))];
     }, area);
