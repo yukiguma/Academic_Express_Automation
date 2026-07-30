@@ -1,6 +1,9 @@
 name: Academic Express Live E2E
 
 on:
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       sample_count:
@@ -18,10 +21,13 @@ permissions:
 
 concurrency:
   group: academic-express-live-e2e
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   live-e2e:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     name: Live Chrome extension E2E
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -48,7 +54,7 @@ jobs:
           ACADEMIC_EXPRESS_BASE_URL: https://supereigo.campus.kit.ac.jp
           ACADEMIC_EXPRESS_PASSWORD: ${{ secrets.PASSWORD }}
           ACADEMIC_EXPRESS_RANDOM_SEED: ${{ github.run_id }}-${{ github.run_attempt }}
-          ACADEMIC_EXPRESS_SAMPLE_COUNT: ${{ inputs.sample_count }}
+          ACADEMIC_EXPRESS_SAMPLE_COUNT: ${{ inputs.sample_count || '1' }}
           ACADEMIC_EXPRESS_USER_ID: ${{ secrets.USER_ID }}
         run: npm run test:live
 
