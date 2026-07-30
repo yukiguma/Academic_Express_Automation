@@ -86,7 +86,7 @@ async function login(page) {
 }
 
 async function collectLinks(page, area) {
-    return page.locator('a[href]').evaluateAll((anchors, settings) => {
+    return page.locator('[href], [onclick], [data-href], [data-url]').evaluateAll((elements, settings) => {
         const currentOrigin = location.origin;
         const ignored = [
             '/student/main/logout',
@@ -96,9 +96,21 @@ async function collectLinks(page, area) {
             '/student/questionnaires/'
         ];
 
-        return [...new Set(anchors.map(anchor => {
+        const rawCandidates = elements.flatMap(element => {
+            const values = [
+                element.getAttribute('href'),
+                element.getAttribute('data-href'),
+                element.getAttribute('data-url'),
+                element.getAttribute('onclick')
+            ].filter(Boolean);
+            return values.flatMap(value =>
+                value.match(/https?:\/\/[^'")\s]+|\/(?:as\/lplayer|student)\/[^'")\s]+/g) || []
+            );
+        }).map(value => value.replaceAll('&amp;', '&'));
+
+        return [...new Set(rawCandidates.map(candidate => {
             try {
-                return new URL(anchor.href, location.href).href;
+                return new URL(candidate, location.href).href;
             } catch {
                 return '';
             }
